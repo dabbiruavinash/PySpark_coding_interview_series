@@ -1,0 +1,531 @@
+write a sql to find the total number of people present inside the hospital
+
+create table hospital ( emp_id int
+, action varchar(10)
+, time datetime);
+
+insert into hospital values ('1', 'in', '2019-12-22 09:00:00');
+insert into hospital values ('1', 'out', '2019-12-22 09:15:00');
+insert into hospital values ('2', 'in', '2019-12-22 09:00:00');
+insert into hospital values ('2', 'out', '2019-12-22 09:15:00');
+insert into hospital values ('2', 'in', '2019-12-22 09:30:00');
+insert into hospital values ('3', 'out', '2019-12-22 09:00:00');
+insert into hospital values ('3', 'in', '2019-12-22 09:15:00');
+insert into hospital values ('3', 'out', '2019-12-22 09:30:00');
+insert into hospital values ('3', 'in', '2019-12-22 09:45:00');
+insert into hospital values ('4', 'in', '2019-12-22 09:45:00');
+insert into hospital values ('5', 'out', '2019-12-22 09:40:00');
+
+select emp_id,
+max(case when action = 'in' then time end) as intime,
+max(case when action = 'out' then time end) as outtime from hospital group by emp_id having
+max(case when action = 'in' then time end) > max(case when action = 'out' then time end))
+select * from cte where intime > outtime is null;
+
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.functions._
+
+object HospitalCount {
+  def main(args: Array[String]): Unit = {
+    val spark = SparkSession.builder
+      .appName("Hospital People Count")
+      .master("local[*]")
+      .getOrCreate()
+
+    import spark.implicits._
+
+    // Sample data creation
+    val data = Seq(
+      (1, "in", "2019-12-22 09:00:00"),
+      (1, "out", "2019-12-22 09:15:00"),
+      (2, "in", "2019-12-22 09:00:00"),
+      (2, "out", "2019-12-22 09:15:00"),
+      (2, "in", "2019-12-22 09:30:00"),
+      (3, "out", "2019-12-22 09:00:00"),
+      (3, "in", "2019-12-22 09:15:00"),
+      (3, "out", "2019-12-22 09:30:00"),
+      (3, "in", "2019-12-22 09:45:00"),
+      (4, "in", "2019-12-22 09:45:00"),
+      (5, "out", "2019-12-22 09:40:00")
+    )
+
+    // Create DataFrame from the data
+    val hospitalDF = data.toDF("emp_id", "action", "time")
+      .withColumn("time", to_timestamp($"time", "yyyy-MM-dd HH:mm:ss"))
+
+    // Group by employee and calculate the latest in and out times
+    val empStatusDF = hospitalDF.groupBy("emp_id")
+      .agg(
+        max(when($"action" === "in", $"time")).as("last_in"),
+        max(when($"action" === "out", $"time")).as("last_out")
+      )
+
+    // Filter where the last "in" is later than the last "out" or there is no "out" (i.e., still inside)
+    val insideHospitalDF = empStatusDF.filter($"last_in" > $"last_out" || $"last_out".isNull)
+
+    // Show the people still inside
+    insideHospitalDF.show()
+
+    // Count the total number of people inside the hospital
+    val countInside = insideHospitalDF.count()
+
+    println(s"Total number of people currently inside the hospital: $countInside")
+    
+    spark.stop()
+  }
+}
+
+---------------
+find the room types that are searched most no of times. output the room type alongside the number of searches for it
+if the filter for room types has more than one room type consider each unique room type as separate row.
+sort the result based on the number of searches descending order.
+
+create table airbnb_searches 
+(
+user_id int,
+date_searched date,
+filter_room_types varchar(200)
+);
+delete from airbnb_searches;
+insert into airbnb_searches values
+(1,'2022-01-01','entire home,private room')
+,(2,'2022-01-02','entire home,shared room')
+,(3,'2022-01-02','private room,shared room')
+,(4,'2022-01-03','private room')
+
+select value as room_type, count(1) as no_of_searches from airbnb_searches cross apply string_split(filter_room_type,' , ') group by value order by no_of_searches desc;
+
+ import spark.implicits._
+
+    // Sample data creation
+    val data = Seq(
+      (1, "2022-01-01", "entire home,private room"),
+      (2, "2022-01-02", "entire home,shared room"),
+      (3, "2022-01-02", "private room,shared room"),
+      (4, "2022-01-03", "private room")
+    )
+
+    // Create DataFrame from the data
+    val searchesDF = data.toDF("user_id", "date_searched", "filter_room_types")
+
+    // Split filter_room_types by ',' and explode it into separate rows
+    val roomTypeSearchesDF = searchesDF
+      .withColumn("room_type", explode(split($"filter_room_types", ",")))
+      .withColumn("room_type", trim($"room_type")) // Trim leading/trailing spaces
+
+    // Group by room_type and count the number of occurrences
+    val roomTypeCountDF = roomTypeSearchesDF.groupBy("room_type")
+      .agg(count("*").as("no_of_searches"))
+      .orderBy(desc("no_of_searches"))
+
+    // Show the result
+    roomTypeCountDF.show()
+
+    spark.stop()
+  }
+}
+
+----------------------------
+
+for every customer that brought photoshop, return a list of customers, and the total spent on all the product except for photoshop products
+
+adobe_transaction - customer_id, product, revenue
+
+with cte as (
+select * from abobetxn where product = 'photoshop')
+select a.customer_id,sum(a.revenue) from adobetxn a inner join cte c on a.customer_id = c.customer_id where a.product ! = 'photoshop'' group by customer_id;
+
+val adobeTxnDF = data.toDF("customer_id", "product", "revenue")
+
+    // Step 1: Find all customers who bought Photoshop
+    val photoshopCustomersDF = adobeTxnDF
+      .filter($"product" === "photoshop")
+      .select("customer_id")
+      .distinct()
+
+    // Step 2: Calculate the total revenue for non-Photoshop products for those customers
+    val totalSpentExcludingPhotoshopDF = adobeTxnDF
+      .join(photoshopCustomersDF, "customer_id")  // Join with Photoshop customers
+      .filter($"product" =!= "photoshop")  // Exclude Photoshop products
+      .groupBy("customer_id")
+      .agg(sum("revenue").as("total_spent"))
+
+    // Show the result
+    totalSpentExcludingPhotoshopDF.show()
+
+    spark.stop()
+  }
+}
+---------------------------
+Write a query to find the top 5 artists whose songs appear most frequently in the Top 10 of the global_song_rank table. Display the top 5 artist names in ascending order, along with their song appearance ranking.
+
+
+artists Table:
+Column Name	Type
+artist_id	integer
+artist_name	varchar
+label_owner	varchar
+
+songs Table:
+Column Name	Type
+song_id	integer
+artist_id	integer
+name	varchar
+
+global_song_rank Table:
+Column Name	Type
+day	integer (1-52)
+song_id	integer
+rank	integer (1-1,000,000)
+
+with cte_1 as (
+select dense_rank() over (order by count(a.song_id) desc) as rnk, count(a.song_id) as song_cnt, artist_id from songs a inner join global_song_rank b on a.song_id = b.song_id where rank_no <= 10 group by artist_id order by song_cnt desc)
+select rnk as artist_rank, b.artist_name as artist_name from cte_1 a inner join artist b on a.artist_id = b.artist_id where rnk <= 5 order by artist_rank, artist_name asc;
+
+ // Step 1: Join the songs and global_song_rank tables, filter for Top 10 ranks
+    val topSongsDF = songsDF
+      .join(globalSongRankDF, "song_id")
+      .filter($"rank" <= 10)
+
+    // Step 2: Group by artist_id and count the number of Top 10 song appearances
+    val artistSongCountDF = topSongsDF
+      .groupBy("artist_id")
+      .agg(count("song_id").as("song_cnt"))
+
+    // Step 3: Apply dense rank based on the song count
+    val windowSpec = Window.orderBy(desc("song_cnt"))
+    val rankedArtistsDF = artistSongCountDF
+      .withColumn("artist_rank", dense_rank().over(windowSpec))
+
+    // Step 4: Join with the artists table to get the artist name and filter the top 5 artists
+    val top5ArtistsDF = rankedArtistsDF
+      .join(artistsDF, "artist_id")
+      .filter($"artist_rank" <= 5)
+      .select("artist_rank", "artist_name")
+      .orderBy("artist_rank", "artist_name")
+
+    // Show the result
+    top5ArtistsDF.show()
+
+    spark.stop()
+  }
+}
+--------------------------------
+
+write a query to print highest and lowest salary emp in each department;
+
+script:
+create table employee 
+(
+emp_name varchar(10),
+dep_id int,
+salary int
+);
+delete from employee;
+insert into employee values 
+('Siva',1,30000),('Ravi',2,40000),('Prasad',1,50000),('Sai',2,20000)
+
+with cte as (
+select *,
+row_number() over(partition by dep_id order by salary asc) as min_sal,
+row_number() over(partition by dep_id order by salary desc) as max_sal from employee)
+select dep_id,
+max(case when min_sal = 1 then emp_name else null end) as emp_with_min_sal,
+max(case when max_sal = 1 then emp_name else null end) as emp_with_max_sal from cte group by dep_id;
+
+ val employeeDF = data.toDF("emp_name", "dep_id", "salary")
+
+    // Define Window specification to partition by department and order by salary ascending/descending
+    val windowSpecMin = Window.partitionBy("dep_id").orderBy("salary")
+    val windowSpecMax = Window.partitionBy("dep_id").orderBy(col("salary").desc)
+
+    // Add row numbers for min and max salary employees per department
+    val rankedDF = employeeDF
+      .withColumn("min_sal_rank", row_number().over(windowSpecMin))
+      .withColumn("max_sal_rank", row_number().over(windowSpecMax))
+
+    // Select the employees with the minimum and maximum salary per department
+    val minMaxSalaryDF = rankedDF
+      .groupBy("dep_id")
+      .agg(
+        max(when($"min_sal_rank" === 1, $"emp_name")).as("emp_with_min_sal"),
+        max(when($"max_sal_rank" === 1, $"emp_name")).as("emp_with_max_sal")
+      )
+
+    // Show the result
+    minMaxSalaryDF.show()
+
+    spark.stop()
+----------------------------
+
+condition , if criteria1 and criteria2 both Y and minimum of 2 team members. should have y then the ouput should be Y else N
+create table Ameriprise_LLC
+(
+teamID varchar(2),
+memberID varchar(10),
+Criteria1 varchar(1),
+Criteria2 varchar(1)
+);
+insert into Ameriprise_LLC values 
+('T1','T1_mbr1','Y','Y'),
+('T1','T1_mbr2','Y','Y'),
+('T1','T1_mbr3','Y','Y'),
+('T1','T1_mbr4','Y','Y'),
+('T1','T1_mbr5','Y','N'),
+('T2','T2_mbr1','Y','Y'),
+('T2','T2_mbr2','Y','N'),
+('T2','T2_mbr3','N','Y'),
+('T2','T2_mbr4','N','N'),
+('T2','T2_mbr5','N','N'),
+('T3','T3_mbr1','Y','Y'),
+('T3','T3_mbr2','Y','Y'),
+('T3','T3_mbr3','N','Y'),
+('T3','T3_mbr4','N','Y'),
+('T3','T3_mbr5','Y','N');
+
+with cte as (
+select *,
+case when criteria1 = 'Y' and criteria2 = 'Y' the  'Y' else 'N' end as is_eligble,
+count(case when criteria1 = 'Y' and criteria2 = 'Y' then 1 end) over(partition by teamID) as eligible_member_cnt from ameriprise_LLC)
+select *, case when is_eligible = 'Y' and eligible_member_cnt >= 2 then 'Y' else 'N' end as output from cte;
+
+// Create DataFrame from the sample data
+    val df = data.toDF("teamID", "memberID", "Criteria1", "Criteria2")
+
+    // Define the Window specification to partition by teamID
+    val windowSpec = Window.partitionBy("teamID")
+
+    // Add columns for eligibility and count of eligible members
+    val withEligibilityDF = df
+      .withColumn("is_eligible", when($"Criteria1" === "Y" && $"Criteria2" === "Y", "Y").otherwise("N"))
+      .withColumn("eligible_member_cnt", 
+        sum(when($"is_eligible" === "Y", 1).otherwise(0)).over(windowSpec)
+      )
+
+    // Determine the final output based on eligibility and count
+    val resultDF = withEligibilityDF
+      .groupBy("teamID")
+      .agg(
+        max("eligible_member_cnt").as("eligible_member_cnt"),
+        first("is_eligible").as("is_eligible")
+      )
+      .withColumn("output", 
+        when($"is_eligible" === "Y" && $"eligible_member_cnt" >= 2, "Y").otherwise("N")
+      )
+
+    // Show the result
+    resultDF.show()
+-------------------------
+we need the output as pair table:
+adult and child in the table and they are going for a fair and they have a ride on some jhoola. so one adult can go with on child and in last adult will be alone
+
+create table family 
+(
+person varchar(5),
+type varchar(10),
+age int
+);
+delete from family ;
+insert into family values ('A1','Adult',54)
+,('A2','Adult',53),('A3','Adult',52),('A4','Adult',58),('A5','Adult',54),('C1','Child',20),('C2','Child',19),('C3','Child',22),('C4','Child',15);
+
+WITH CTE_Adult AS
+(
+select person , type , row_number() OVER(order by person) as rn_p from input
+WHERE type = 'adult'
+),
+
+CTE_Child AS(
+select person , type , row_number() OVER(order by type) as rn_t from input
+where type = 'child'
+)
+
+select p.person , t.person from CTE_Person p
+LEFT JOIN  CTE_type t ON p.rn_p = t.rn_t
+
+ // Create DataFrame from the sample data
+    val df = data.toDF("person", "type", "age")
+
+    // Define Window specifications to assign row numbers
+    val windowSpecAdult = Window.orderBy("person")
+    val windowSpecChild = Window.orderBy("person")
+
+    // Assign row numbers to adults and children
+    val adultDF = df.filter($"type" === "Adult")
+      .withColumn("rn", row_number().over(windowSpecAdult))
+
+    val childDF = df.filter($"type" === "Child")
+      .withColumn("rn", row_number().over(windowSpecChild))
+
+    // Perform a left join to pair adults with children
+    val pairedDF = adultDF
+      .join(childDF, adultDF("rn") === childDF("rn"), "left")
+      .select(adultDF("person").as("adult"), childDF("person").as("child"))
+
+    // Show the result
+    pairedDF.show()
+
+-------------------
+
+find the company only whose revenue increasing every year
+suppose a company revenue is increaing for 3years and very next year revenue is dipped in that cse it should not come in output
+
+with cte as (
+select *,
+revenue - lag(revenue,1,0) over(partition by company order by year) as revenue_diff from company_revenue)
+select company from cte where company not in (select company from cte where revenue_diff < 0) group by company;
+
+  // Create DataFrame from the sample data
+    val df = data.toDF("company", "year", "revenue")
+
+    // Define Window specification to partition by company and order by year
+    val windowSpec = Window.partitionBy("company").orderBy("year")
+
+    // Calculate the revenue difference
+    val withRevenueDiffDF = df
+      .withColumn("revenue_diff", col("revenue") - lag("revenue", 1, 0).over(windowSpec))
+
+    // Identify companies where revenue decreased
+    val companiesWithDecreaseDF = withRevenueDiffDF
+      .filter($"revenue_diff" < 0)
+      .select("company")
+      .distinct()
+
+    // Identify companies where revenue only increased every year
+    val increasingCompaniesDF = withRevenueDiffDF
+      .join(companiesWithDecreaseDF, Seq("company"), "left_anti")
+      .select("company")
+      .distinct()
+
+    // Show the result
+    increasingCompaniesDF.show()
+
+    spark.stop()
+---------------------------
+
+print movie stars for each best movie in each
+
+CREATE TABLE movies (
+    id INT PRIMARY KEY,
+    genre VARCHAR(50),
+    title VARCHAR(100)
+);
+
+-- Create reviews table
+CREATE TABLE reviews (
+    movie_id INT,
+    rating DECIMAL(3,1),
+    FOREIGN KEY (movie_id) REFERENCES movies(id)
+);
+
+-- Insert sample data into movies table
+INSERT INTO movies (id, genre, title) VALUES
+(1, 'Action', 'The Dark Knight'),
+(2, 'Action', 'Avengers: Infinity War'),
+(3, 'Action', 'Gladiator'),
+(4, 'Action', 'Die Hard'),
+(5, 'Action', 'Mad Max: Fury Road'),
+(6, 'Drama', 'The Shawshank Redemption'),
+(7, 'Drama', 'Forrest Gump'),
+(8, 'Drama', 'The Godfather'),
+(9, 'Drama', 'Schindler''s List'),
+(10, 'Drama', 'Fight Club'),
+(11, 'Comedy', 'The Hangover'),
+(12, 'Comedy', 'Superbad'),
+(13, 'Comedy', 'Dumb and Dumber'),
+(14, 'Comedy', 'Bridesmaids'),
+(15, 'Comedy', 'Anchorman: The Legend of Ron Burgundy');
+
+-- Insert sample data into reviews table
+INSERT INTO reviews (movie_id, rating) VALUES
+(1, 4.5),
+(1, 4.0),
+(1, 5.0),
+(2, 4.2),
+(2, 4.8),
+(2, 3.9),
+(3, 4.6),
+(3, 3.8),
+(3, 4.3),
+(4, 4.1),
+(4, 3.7),
+(4, 4.4),
+(5, 3.9),
+(5, 4.5),
+(5, 4.2),
+(6, 4.8),
+(6, 4.7),
+(6, 4.9),
+(7, 4.6),
+(7, 4.9),
+(7, 4.3),
+(8, 4.9),
+(8, 5.0),
+(8, 4.8),
+(9, 4.7),
+(9, 4.9),
+(9, 4.5),
+(10, 4.6),
+(10, 4.3),
+(10, 4.7),
+(11, 3.9),
+(11, 4.0),
+(11, 3.5),
+(12, 3.7),
+(12, 3.8),
+(12, 4.2),
+(13, 3.2),
+(13, 3.5),
+(13, 3.8),
+(14, 3.8),
+(14, 4.0),
+(14, 4.2),
+(15, 3.9),
+(15, 4.0),
+(15, 4.1);
+
+with cte as 
+(
+select m.genre, m.title, avg(r.rating) as avg_rating, replicate('*',round(avg(r.rating),0)) as stars,
+rank() over(partition by m.genre order by avg(r.rating) desc) as rnk
+from movies m
+join reviews r
+on m.id= r.movie_id
+group by m.genre, m.title
+)
+
+select genre, string_agg(title,', ') as title, max(stars) as stars
+from cte
+where rnk = 1
+group by genre
+order by genre
+
+----------------------------------
+
+find the busiest route along with total ticket count
+
+Script:
+CREATE TABLE tickets (
+    airline_number VARCHAR(10),
+    origin VARCHAR(3),
+    destination VARCHAR(3),
+    oneway_round CHAR(1),
+    ticket_count INT
+);
+
+
+INSERT INTO tickets (airline_number, origin, destination, oneway_round, ticket_count)
+VALUES
+    ('DEF456', 'BOM', 'DEL', 'O', 150),
+    ('GHI789', 'DEL', 'BOM', 'R', 50),
+    ('JKL012', 'BOM', 'DEL', 'R', 75),
+    ('MNO345', 'DEL', 'NYC', 'O', 200),
+    ('PQR678', 'NYC', 'DEL', 'O', 180),
+    ('STU901', 'NYC', 'DEL', 'R', 60),
+    ('ABC123', 'DEL', 'BOM', 'O', 100),
+    ('VWX234', 'DEL', 'NYC', 'R', 90);
+
+with cte as (
+select origin,destination,sum(case when oneway_round='O' then ticket_count else ticket_count*2 end) as tickets_sold from tickets group by origin,destination)
+
+select origin,destination,tickets_sold from cte where tickets_sold=(select max(tickets_sold) from cte)

@@ -1,0 +1,1175 @@
+1. How many times each job appears with the Dataset (citi bank)
+
+df = spark.read.csv('dbfs:/FileStore/source_file/jobs.csv', header = True)
+#df = df.dropDuplicates(['job'])
+display(df)
+
+df_rdd = df.rdd.collect()
+print(df_rdd)
+
+d = { }
+job_list = []
+for i in df_rdd:
+     job_list.append(i[1])
+for i in job_list:
+     if i not in job_list:
+         d[i] = 1
+     else:
+         d[i] = d[i] + 1
+print(d)
+
+scala:
+
+import org.apache.spark.sql.SparkSession
+
+// Create Spark session
+val spark = SparkSession.builder.appName("Job Count").getOrCreate()
+
+// Read the CSV file into a DataFrame
+val df = spark.read.option("header", "true").csv("dbfs:/FileStore/source_file/jobs.csv")
+
+// Show the DataFrame
+df.show()
+
+// Group by the 'job' column and count the occurrences
+val jobCountDF = df.groupBy("job").count()
+
+// Show the result
+jobCountDF.show()
+
+// Collect the result as a Map
+val jobCountMap = jobCountDF.collect().map(row => (row.getString(0), row.getLong(1))).toMap
+
+// Print the result
+jobCountMap.foreach { case (job, count) => println(s"$job: $count") }
+
+
+2. find all the customers without a single order (Tech Mahindra)
+
+cust_data = []
+cust_schema = []
+cust_df = spark.createDataFrame(cust_data,cust_schema)
+display(cust_df)
+
+order_data = []
+order_schema = []
+order_df = spark.createDataFrame(order_data,order_schema)
+display(order_df)
+
+df = cust_df.join(order_df, ['cust_id'],'left')
+display(df)
+
+df.filter(df.order_id.isNotNull())
+df.filter(df.order_id.isNull()).select(df.name).show()
+
+scala:
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.functions._
+
+// Create Spark session
+val spark = SparkSession.builder.appName("Find Customers Without Orders").getOrCreate()
+
+// Create empty customer DataFrame with schema
+val custData = Seq.empty[(String, String)] // Assuming (cust_id, name) as schema
+val custSchema = List("cust_id", "name")
+val custDF = spark.createDataFrame(custData).toDF(custSchema: _*)
+
+// Create empty order DataFrame with schema
+val orderData = Seq.empty[(String, String)] // Assuming (order_id, cust_id) as schema
+val orderSchema = List("order_id", "cust_id")
+val orderDF = spark.createDataFrame(orderData).toDF(orderSchema: _*)
+
+// Display the DataFrames (optional)
+custDF.show()
+orderDF.show()
+
+// Perform a left join on cust_id between customers and orders
+val joinedDF = custDF.join(orderDF, Seq("cust_id"), "left")
+
+// Filter customers who have no orders (where order_id is null)
+val customersWithoutOrdersDF = joinedDF.filter(col("order_id").isNull).select("name")
+
+// Display the result
+customersWithoutOrdersDF.show()
+
+3. Find the products whose total sales has increased every year (Deloitte)
+
+product_data = []
+product_schema = []
+product_df = spark.createDataFrame(product_data,product_schema)
+display(product_df)
+
+sales_data = []
+sales_schema = []
+sales_df = spark.createDataFrame(sales_data,sales_schema)
+display(sales_df)
+
+from pyspark.sql.window import Window
+from pyspark.sql.functions import col,min,lag
+
+w_df = Window.partitionBy(sales_df.product_id).orderBy(sales_df.year)
+new_df = sales_df.withColumn('previous_year_revenue', lag(sales_df.total_sales_revenue).over(w_df)
+new_df = new_df.withColumn('diff', new_df.total_sales_revenue - new_df.previous_year_revenue)
+display(new_df)
+---
+new_df1 = new_df.groupBy(col('product_id')).agg(min(col('diff')).alias('min_diff')).filter(col('min_diff')>0)
+display(new_df1)
+
+df = product_id.join(new_df1,['product_id'],'inner').drop(col('min_diff'))
+df.show()
+
+scala:
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.expressions.Window
+import org.apache.spark.sql.functions._
+
+// Create Spark session
+val spark = SparkSession.builder.appName("Products with Increasing Sales").getOrCreate()
+
+// Create product DataFrame (empty in this example, add data as required)
+val productData = Seq.empty[(String, String)] // Assuming (product_id, product_name) as schema
+val productSchema = List("product_id", "product_name")
+val productDF = spark.createDataFrame(productData).toDF(productSchema: _*)
+
+// Create sales DataFrame (empty in this example, add data as required)
+val salesData = Seq.empty[(String, Int, Double)] // Assuming (product_id, year, total_sales_revenue) as schema
+val salesSchema = List("product_id", "year", "total_sales_revenue")
+val salesDF = spark.createDataFrame(salesData).toDF(salesSchema: _*)
+
+// Display the DataFrames (optional)
+productDF.show()
+salesDF.show()
+
+// Define window specification to partition by product_id and order by year
+val wDF = Window.partitionBy("product_id").orderBy("year")
+
+// Calculate previous year's revenue and the difference from current year's revenue
+val newDF = salesDF
+  .withColumn("previous_year_revenue", lag("total_sales_revenue", 1).over(wDF))
+  .withColumn("diff", col("total_sales_revenue") - col("previous_year_revenue"))
+
+// Display the new DataFrame with calculated columns
+newDF.show()
+
+// Group by product_id and check if the minimum difference is greater than 0
+val newDF1 = newDF.groupBy("product_id")
+  .agg(min("diff").alias("min_diff"))
+  .filter(col("min_diff") > 0)
+
+// Display the products whose sales have increased every year
+newDF1.show()
+
+// Join with productDF to get product details
+val resultDF = productDF.join(newDF1, Seq("product_id"), "inner")
+  .drop("min_diff")
+
+// Show the final result
+resultDF.show()
+
+4. write a pyspark query to report the movies with an odd_numbers ID  and description that is not "boring". Return the result table in descending order by rating (Accenture)
+
+movie_data = []
+movie_schema = []
+movie_df = spark.createDataFrame(movie_data, movie_schema)
+display(movie_df)
+
+final_df = movie_df.select('*').filter(col("id") % 2 != 0) & (movie_df.description != "boring")).orderBy("rating").ascending = False)
+final_df.show()
+
+scala:
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import col
+
+# Create Spark session
+spark = SparkSession.builder.appName("Movies Filter").getOrCreate()
+
+# Create movie DataFrame (empty in this example, add data as required)
+movie_data = []  # Add your movie data here
+movie_schema = []  # Define your schema here
+movie_df = spark.createDataFrame(movie_data, movie_schema)
+
+# Display the DataFrame (optional)
+movie_df.show()
+
+# Filter for movies with an odd-numbered ID and description not equal to "boring"
+final_df = movie_df.filter((col("id") % 2 != 0) & (col("description") != "boring"))
+
+# Order the result by rating in descending order
+final_df = final_df.orderBy(col("rating").desc())
+
+# Show the final result
+final_df.show()
+
+5. find out total weight of each fruits (Fractal)
+
+data = []
+schema = []
+df = spark.createDataFrame(data, schema)
+df.show()
+
+final_df = df.groupBy("name", "items").sum("weight").alias("total_weight")
+final_df = final_df.withColumnRename("sum(weight)", total_weight")
+final_df.show()
+
+from pyspark.sql.functions import collect_set,struct
+
+df_final = final_df.groupBy("name").agg(collect_set(sturct("item")).alias("items"))
+df_final.show(truncate = False)
+
+scala:
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import col, sum, collect_set, struct
+
+# Create Spark session
+spark = SparkSession.builder.appName("Fruits Total Weight").getOrCreate()
+
+# Create an empty DataFrame (you should populate this with your actual data)
+data = []  # Add your data here
+schema = []  # Define your schema here (e.g., name, item, weight)
+df = spark.createDataFrame(data, schema)
+
+# Display the initial DataFrame (optional)
+df.show()
+
+# Group by 'name' and 'item' and sum the 'weight'
+final_df = df.groupBy("name", "items").agg(sum("weight").alias("total_weight"))
+
+# Display the DataFrame with total weight
+final_df.show()
+
+# Group by 'name' and collect items into a set
+df_final = final_df.groupBy("name").agg(collect_set(struct("items", "total_weight")).alias("items"))
+
+# Show the final result
+df_final.show(truncate=False)
+
+
+6. Find out the head count of employee in each job (tiger analytics)
+
+df = spark.read.csv('dbfs:/FileStore/source_file/jobs.csv', header = True)
+display(df)
+
+df_rdd = df.rdd.collect()
+
+dict1 = ()
+list1 = []
+
+for i in df_rdd:
+     list1.append(i[1])
+print(list1)
+
+for i in list1:
+     if i not in dict1:
+          dict[i] = 1
+     else:
+          dict[i] = dict[i] + 1
+print(dict1)
+
+final_df = df.groupBy('job').count()
+final_df.show()
+
+dict_list = []
+dict_list.append(dict1)
+dict_df = spark.read.json(sc.parallelize(dict_list))
+dict1_df.show()
+
+scala:
+from pyspark.sql import SparkSession
+
+# Create Spark session
+spark = SparkSession.builder.appName("Employee Head Count").getOrCreate()
+
+# Load the CSV file into a DataFrame
+df = spark.read.csv('dbfs:/FileStore/source_file/jobs.csv', header=True)
+
+# Display the DataFrame (optional)
+df.show()
+
+# Group by 'job' column and count the number of occurrences (headcount) for each job
+final_df = df.groupBy('job').count()
+
+# Show the final DataFrame with headcounts
+final_df.show()
+
+
+7. Login at least two consecutive days (PWC)
+
+data = []
+schema = "emp_id int", log_date string, flat string"
+df = spark.createDataFrame(data, schema)
+df.show()
+
+from pyspark.sql.functions import to_date,col
+df = df.select("*", to_date(col('log_date'),"dd-mm-yy").alias('log_date_format')).drop('log_date')
+df.show()
+
+filter_df = df.filter(col('flag') == 'Y')
+filter_df.show()
+
+from pyspark.sql.window import Window
+from pyspark.sql.functions import rank,day,abs
+
+w_df = Window.partitionBy(col('emp_id')).orderBy('log_date_format')
+filter_df = filter_df.withColumn('rank', rank() over(w_df)).withColumn('date',day('log_date_format')).withColumn('diff', abs(col('rank').col('date')))
+filter_df.show()
+
+from pyspark.sql.functions import max,min,count
+final_df = filter.df.groupBy('emp_id','diff').agg(count('*').alias('consecutive_day'),min('log_date_format').alias('start_date'),max('log_date_format').alias('end_date')).drop('diff')
+final_df.show()
+
+scala:
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import to_date, col, lag, datediff
+from pyspark.sql.window import Window
+
+# Create Spark session
+spark = SparkSession.builder.appName("Consecutive Days Login").getOrCreate()
+
+# Create DataFrame (you should replace data with actual data)
+data = []  # Add your data here
+schema = ["emp_id", "log_date", "flag"]  # Define your schema correctly
+df = spark.createDataFrame(data, schema)
+
+# Display the initial DataFrame
+df.show()
+
+# Convert 'log_date' to date format
+df = df.withColumn('log_date_format', to_date(col('log_date'), "dd-MM-yy")).drop('log_date')
+df.show()
+
+# Filter DataFrame where flag is 'Y'
+filter_df = df.filter(col('flag') == 'Y')
+filter_df.show()
+
+# Define a window specification by 'emp_id' and ordered by 'log_date_format'
+w_df = Window.partitionBy('emp_id').orderBy('log_date_format')
+
+# Calculate the difference in days between the current row and the previous row
+filter_df = filter_df.withColumn('prev_log_date', lag('log_date_format').over(w_df))
+filter_df = filter_df.withColumn('day_diff', datediff(col('log_date_format'), col('prev_log_date')))
+filter_df.show()
+
+# Filter rows where the difference is 1 (indicating consecutive days)
+consecutive_df = filter_df.filter(col('day_diff') == 1)
+consecutive_df.show()
+
+# Optional: Group by 'emp_id' if you want to see summary stats or just see the consecutive days
+# For example, to count the number of consecutive days
+result_df = consecutive_df.groupBy('emp_id').count().alias("consecutive_day_count")
+result_df.show()
+
+
+8. Find out the highest and lowest salaried employee from each department
+
+data = []
+schema = ['dept_id','emp_name','salary']
+df = spark.createDataFrame(data,schema)
+display(df)
+
+from pyspark.sql.window import window
+from pyspark.sql.functions import row_number,col,count,when,max,min
+
+w_df = window.partitionBy(col('dept_id')).orderBy(col('salary'),col('emp_name'))
+df1 = df.withColumn('row_num',row_number().over(w_df))
+display(df1)
+
+df1 = df1.withColumn('count', count('*').over(window.partitionBy('dept_id')))
+display(df1)
+
+final_df = df1.groupBy('dept_id').agg(max(when(col('row_num') == 1,col('emp_name'))).alias('min_salary'),
+max(when(col('row_num') == col('count), col('emp_name'))).alias('max_salary'))
+final_df.show()
+
+scala:
+from pyspark.sql import SparkSession
+from pyspark.sql.window import Window
+from pyspark.sql.functions import col, row_number, first, last
+
+# Create Spark session
+spark = SparkSession.builder.appName("Min and Max Salary per Department").getOrCreate()
+
+# Create DataFrame
+data = []  # Add your data here
+schema = ['dept_id', 'emp_name', 'salary']
+df = spark.createDataFrame(data, schema)
+
+# Display the initial DataFrame
+df.show()
+
+# Define a window specification by 'dept_id' and ordered by 'salary'
+w_df = Window.partitionBy('dept_id').orderBy(col('salary'))
+
+# Add a row number column to identify the lowest and highest salaries
+df_with_row_num = df.withColumn('row_num', row_number().over(w_df))
+
+# Select the first (lowest) and last (highest) rows within each department
+final_df = df_with_row_num.groupBy('dept_id')\
+    .agg(first(col('emp_name')).alias('min_salary_emp'),
+         first(col('salary')).alias('min_salary'),
+         last(col('emp_name')).alias('max_salary_emp'),
+         last(col('salary')).alias('max_salary'))
+
+# Show the final DataFrame
+final_df.show()
+
+9.Transform the column value as row (KPMG)
+
+data = []
+schema = ['product','jan_sales',feb_sales','mar_sales']
+df = spark.createDataFrame(data,schema)
+display(df)
+
+df_final = df.unpivot('product', ['jan_sales','feb_sales','mar_sales'],'month','sales')
+display(df_final)
+
+data1 = []
+schema1 = ['user_id','product_category',activity_type','timesstamp']
+df1 = spark.createDataFrame(data1,schema1)
+display(df1)
+
+df1_final = df1.groupBy('product_category').pivot('activity_type').count()
+display(df1_final)
+
+scala:
+
+
+10. List the airlines that operate flights to all the destination (nagarro)
+
+flight_data = []
+flight_schema = ['flight_id','airline_id','airport_id']
+flight_df = spark.createDataFrame(flight_data,flight_schema)
+flight_df.show()
+
+count_airport = flight_df.select('airport_id').distinct().count()
+display(count_airport)
+
+from pyspark.sql.functions import countDistinct, col
+flight_filter_df = flight_df.groupBy('airline_id').agg(countDistinct('airport_id').alias('distinct_airport'))
+filter(col('distinct_airport') == count_airport)
+flight_filter_df.show()
+
+final_df = flight_filter_df.join(air_df.['airline_id']).select('airline_id','airline_name')
+final_df.show()
+
+scala:
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.functions._
+
+val spark = SparkSession.builder().appName("FlightApp").getOrCreate()
+import spark.implicits._
+
+// Sample flight data
+val flightData = Seq.empty[(String, String, String)]
+val flightSchema = Seq("flight_id", "airline_id", "airport_id")
+val flightDF = spark.createDataFrame(flightData.map(Tuple3.tupled), flightSchema)
+flightDF.show()
+
+// Count the number of distinct airports
+val countAirport = flightDF.select("airport_id").distinct().count()
+println(s"Total distinct airports: $countAirport")
+
+// Group by airline_id and count distinct airports for each airline
+val flightFilterDF = flightDF.groupBy("airline_id").agg(countDistinct("airport_id").alias("distinct_airport"))
+
+// Filter airlines that operate in all distinct airports
+val resultDF = flightFilterDF.filter(col("distinct_airport") === countAirport)
+resultDF.show()
+
+// Assuming airDF contains airline_id and airline_name
+// Replace `airDF` with your actual DataFrame that contains the airline information
+val airDF = Seq.empty[(String, String)].toDF("airline_id", "airline_name")
+
+// Join with airline DataFrame to get airline names
+val finalDF = resultDF.join(airDF, Seq("airline_id")).select("airline_id", "airline_name")
+finalDF.show()
+
+spark.stop()
+
+11. Find out the duplicate emails (IBM)
+
+data = []
+schema = ['id','email']
+df = spark.createDataFrame(data,schema)
+df.show()
+
+from pyspark.sql.function import col
+df.groupBy('email').count().filter(col('count' > 1).select(col('email").show()
+
+scala:
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.functions._
+
+val spark = SparkSession.builder().appName("FindDuplicateEmails").getOrCreate()
+import spark.implicits._
+
+// Sample data
+val data = Seq.empty[(String, String)]  // Replace with actual data
+val schema = Seq("id", "email")
+val df = spark.createDataFrame(data.map(Tuple2.tupled)).toDF(schema: _*)
+df.show()
+
+// Group by 'email' and count occurrences
+val duplicateEmailsDF = df.groupBy("email").count().filter(col("count") > 1).select("email")
+duplicateEmailsDF.show()
+
+spark.stop()
+
+12. Get those customers who bought all the products (Deutsche Bank)
+
+cust_data = []
+cust_schema = ['customer_id', 'product_key']
+df = spark.createDataFrame(cust_data,cust_schema)
+df.show()
+
+product_data = []
+product_schema = ['product_key']
+df = spark.createDataFrame(product_date,product_schema)
+df.show()
+
+from pyspark.sql.functions import col, countDistinct
+
+df_cust = df_cust.groupBy(col('customer_id')).agg(countDistinct(col('product_key')).alias('product_count'))
+df_product = df_product.agg(countDistinct(col('product_key')).alias('total_product_count'))
+df_cust.show()
+df_product.show()
+
+df_cust.join(df_product), df_cust.product_count == df_product.total_product_count).select(col('customer_id')).show()
+
+scala:
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.functions._
+
+val spark = SparkSession.builder().appName("CustomersBoughtAllProducts").getOrCreate()
+import spark.implicits._
+
+// Sample customer data
+val custData = Seq.empty[(String, String)]  // Replace with actual data
+val custSchema = Seq("customer_id", "product_key")
+val dfCust = spark.createDataFrame(custData.map(Tuple2.tupled)).toDF(custSchema: _*)
+dfCust.show()
+
+// Sample product data
+val productData = Seq.empty[String]  // Replace with actual data
+val productSchema = Seq("product_key")
+val dfProduct = spark.createDataFrame(productData.map(Tuple1(_))).toDF(productSchema: _*)
+dfProduct.show()
+
+// Count distinct products bought by each customer
+val dfCustProductCount = dfCust.groupBy("customer_id").agg(countDistinct("product_key").alias("product_count"))
+
+// Count the total number of distinct products available
+val dfProductCount = dfProduct.agg(countDistinct("product_key").alias("total_product_count")).as[Long].first
+
+dfCustProductCount.show()
+println(s"Total number of distinct products: $dfProductCount")
+
+// Filter customers who bought all products
+val customersBoughtAllProducts = dfCustProductCount.filter(col("product_count") === dfProductCount).select("customer_id")
+customersBoughtAllProducts.show()
+
+spark.stop()
+
+13. how to handle multiple delimiter data (PwC)
+
+df = spark.read.csv(dbfs:/FileStore/pwc_multiple_delimiter.csv, header=True, sep = '|')
+
+from pyspark.sql.functions import split,col
+
+df_final = df.withColumn('lst_Q', split(col('Quarterly_Sales'),',')
+df_final.show()
+
+scala:
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.functions._
+
+val spark = SparkSession.builder().appName("MultipleDelimiterHandling").getOrCreate()
+import spark.implicits._
+
+// Read CSV file with a specific delimiter
+val df = spark.read.option("header", "true").option("sep", "|").csv("dbfs:/FileStore/pwc_multiple_delimiter.csv")
+df.show()
+
+// Split the column 'Quarterly_Sales' by commas
+val dfFinal = df.withColumn("lst_Q", split(col("Quarterly_Sales"), ","))
+dfFinal.show()
+
+spark.stop()
+
+14. Validate data between source and target table (PwC)
+
+source_data = []
+source_schema = ['id','name']
+source_df = spark.createDataFrame(source_data, source_schema)
+source_df.show()
+
+target_data = []
+target_schema = ['id','name']
+target_df = spark.createDataFrame(target_data,target_schema)
+target_df.show()
+
+from pyspark.sql.functions import col,where,coalesce
+
+df=source_df.alias("t1").join(target_df.alias("t2"), on = (col("t1.id") == col("t2.id")), how = "full")
+df.show()
+
+df = df.select(col("t1.id").alias("source_id"),col("t2.id").alias("target_id"), col("t1.name").alias("source_name"),col("t2.name").alias("target_name"))
+df.show()
+
+df = df.withColumn("comment", when(col("source_id") == col("target_id")) & (col("source_name") != col("target_name")), "Mismatched") \
+        .when(col("target_id").isNull(),"new_in_source").when(col("source_id").isNull(),"new_in_target"))
+df.show()
+
+final_df = df.withColumn("id", coalesce(col("source_id"),col("target_id"))).select("id","comment")
+final_df.show()
+
+scala:
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.functions._
+
+val spark = SparkSession.builder().appName("ValidateData").getOrCreate()
+import spark.implicits._
+
+// Sample source data
+val sourceData = Seq.empty[(String, String)]  // Replace with actual data
+val sourceSchema = Seq("id", "name")
+val sourceDF = spark.createDataFrame(sourceData.map(Tuple2.tupled)).toDF(sourceSchema: _*)
+sourceDF.show()
+
+// Sample target data
+val targetData = Seq.empty[(String, String)]  // Replace with actual data
+val targetSchema = Seq("id", "name")
+val targetDF = spark.createDataFrame(targetData.map(Tuple2.tupled)).toDF(targetSchema: _*)
+targetDF.show()
+
+// Full outer join between source and target tables
+val df = sourceDF.alias("t1")
+  .join(targetDF.alias("t2"), $"t1.id" === $"t2.id", "full")
+df.show()
+
+// Select relevant columns and rename them
+val selectedDF = df.select(
+  $"t1.id".alias("source_id"),
+  $"t2.id".alias("target_id"),
+  $"t1.name".alias("source_name"),
+  $"t2.name".alias("target_name")
+)
+selectedDF.show()
+
+// Add a 'comment' column based on comparison
+val validatedDF = selectedDF.withColumn("comment", 
+  when($"source_id".isNotNull && $"target_id".isNotNull && $"source_name" =!= $"target_name", "Mismatched")
+   .when($"target_id".isNull, "new_in_source")
+   .when($"source_id".isNull, "new_in_target")
+)
+validatedDF.show()
+
+// Create a final DataFrame with 'id' and 'comment'
+val finalDF = validatedDF.withColumn("id", coalesce($"source_id", $"target_id"))
+  .select("id", "comment")
+finalDF.show()
+
+spark.stop()
+
+15. Find all the strong friendship (ThoughtWorks)
+
+data = []
+schema = ['user1_id','user2_id']
+df = spark.createDataFrame(data,schema)
+df.show()
+
+from pyspark.sql.functions import col
+
+df1 = df.select(col("user2_id").alias("user1_id"),col("user1_id).alias("user2_id"))
+df1.show()
+
+df_union = df.union(df1)
+display(df_union)
+
+df_union1 = df_union.select(col("user1_id").alias("user1"),col("user2_id").alias("user2"))
+df_final = df_union.join(df_union1).filter((df_union.user1_id < df_union1.user1) & (df_union.user2_id == df_union1.user2))
+display(df_final1)
+
+df_final = df_final.filter(col("count") > 2)
+df_final.show()
+
+scala:
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.functions._
+
+val spark = SparkSession.builder().appName("StrongFriendship").getOrCreate()
+import spark.implicits._
+
+// Sample data for friendship pairs
+val data = Seq.empty[(String, String)]  // Replace with actual data
+val schema = Seq("user1_id", "user2_id")
+val df = spark.createDataFrame(data.map(Tuple2.tupled)).toDF(schema: _*)
+df.show()
+
+// Swap the columns to create reverse pairs
+val df1 = df.select($"user2_id".alias("user1_id"), $"user1_id".alias("user2_id"))
+df1.show()
+
+// Union the original DataFrame with the swapped pairs to ensure symmetry
+val dfUnion = df.union(df1)
+dfUnion.show()
+
+// Self-join to find pairs where (user1_id, user2_id) and (user2_id, user1_id) exist
+val dfUnion1 = dfUnion.select($"user1_id".alias("user1"), $"user2_id".alias("user2"))
+val dfFinal = dfUnion.join(dfUnion1, ($"user1_id" < $"user1") && ($"user2_id" === $"user2"))
+
+dfFinal.show()
+
+// Filter the result where the count of the pairs is greater than 2 (indicating strong friendship)
+val strongFriendshipDF = dfFinal.groupBy("user1_id", "user2_id").count().filter($"count" > 2)
+strongFriendshipDF.show()
+
+spark.stop()
+
+16. Find the returning active user (Amazon)
+
+data = []
+schema = ['user_id','item','created_at','cost']
+df = spark.createDataFrame(data,schema)
+df.show()
+
+from pyspark.sql.functions import to_date,col
+
+df = df.select("*",to_date(col("created_at"),("dd-mm-yyyy").alias("created_date")).drop("created_at")
+df.createOrReplaceTempView("tp1")
+df.show()
+
+from pyspark.sql.window import Window
+from pyspark.sql.functions import lag,rank,current_data,datadiff
+
+w_df = Window.partitionBy("user_id").orderBy("created_date")
+
+win_df = df.withColumn("last_created_date", lag("created_date").over(w_df).withColumn("date_diff", datediff(col("created_date"), col("last_created_date")))
+win_df.show()
+
+final_df = win_df.select("user_id").filter(col("date_diff") <= 7)
+final_df.show()
+
+%sql
+
+with cte as (
+select user_id, created_date,lag(created_date) over(partition by user_id order by created_date) as last_created_date from tp1),
+cte1 as (
+select *,date_diff(created_date,last_created_date) as date_diff from cte)
+select distinct user_id from cte1 where date_diff <= 7;
+
+scala:
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.functions._
+import org.apache.spark.sql.expressions.Window
+
+val spark = SparkSession.builder().appName("ReturningActiveUsers").getOrCreate()
+import spark.implicits._
+
+// Sample data
+val data = Seq.empty[(String, String, String, Double)]  // Replace with actual data
+val schema = Seq("user_id", "item", "created_at", "cost")
+val df = spark.createDataFrame(data.map(Tuple4.tupled)).toDF(schema: _*)
+df.show()
+
+// Convert 'created_at' to 'created_date' with proper date format
+val dfWithDate = df.withColumn("created_date", to_date($"created_at", "dd-MM-yyyy")).drop("created_at")
+dfWithDate.createOrReplaceTempView("tp1")
+dfWithDate.show()
+
+// Define a window specification for partitioning by user_id and ordering by created_date
+val w_df = Window.partitionBy("user_id").orderBy("created_date")
+
+// Use lag to find the previous created_date for each user and calculate the date difference
+val win_df = dfWithDate.withColumn("last_created_date", lag("created_date", 1).over(w_df))
+  .withColumn("date_diff", datediff($"created_date", $"last_created_date"))
+win_df.show()
+
+// Filter users who made purchases within 7 days of their last purchase
+val final_df = win_df.select("user_id").filter($"date_diff" <= 7)
+final_df.show()
+
+spark.stop()
+
+17. Percentage of immediate order within the first orders (snowflake)
+
+data = []
+schema = ["delivery_id","customer_id","order_date","customer_perf_delivery_date"]
+df = spark.createDataFrame(data,schema)
+df.show()
+
+from pyspark.sql.functions import col,to_date,min,datediff
+from pyspark.sql.window import Window
+
+df = df.withColumn("order_date", to_date(col("order_date"), "yyyy-mm-dd"))\
+           .withColumn("customer_pref_delivery_date",to_date(col("customer_pref_delivery_date"), "yyyy-mm-dd")).orderBy("customer_id","order_date"))
+df.show()
+
+w_df = Window.partitionBy("customer_id").orderBy("order_date")
+df_new = df.withColumn("first_order_date", min("order_date").over(w_df))\
+                     .withColumn("date_diff", datediff("customer_pref_delivery_date","first_order_date"))\
+                     .withColumn("first_delivery_id", min("delivery_id").over(w_df))
+df_new.show()
+
+df_total_first_order = df.new.where(col("delivery_id") == col("first_delivery_id"))
+df_total_immediate_order = df_new.where(col("delivery_id") == col("first_delivery_id")) & (col("date_diff") < 1))
+df_total_order.show()
+df_total_immediate_order.show()
+
+df_total_order_count = df_total_first_order.count()
+df_total_immediate_order_count = df_total_immediate_order.count()
+df_final = (round(df_total_immediate_orde_count/df_total_order_count) * 100,2))
+print(df_final)
+
+scala:
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.expressions.Window
+import org.apache.spark.sql.functions._
+
+val spark = SparkSession.builder().appName("PercentageImmediateOrders").getOrCreate()
+import spark.implicits._
+
+// Sample data (replace with actual data)
+val data = Seq.empty[(String, String, String, String)]
+val schema = Seq("delivery_id", "customer_id", "order_date", "customer_pref_delivery_date")
+val df = spark.createDataFrame(data.map(Tuple4.tupled)).toDF(schema: _*)
+df.show()
+
+// Convert order_date and customer_pref_delivery_date to DateType and order by customer_id and order_date
+val dfWithDate = df.withColumn("order_date", to_date($"order_date", "yyyy-MM-dd"))
+  .withColumn("customer_pref_delivery_date", to_date($"customer_pref_delivery_date", "yyyy-MM-dd"))
+  .orderBy("customer_id", "order_date")
+dfWithDate.show()
+
+// Define a window partitioned by customer_id and ordered by order_date
+val w_df = Window.partitionBy("customer_id").orderBy("order_date")
+
+// Calculate first order date, date difference, and first delivery ID
+val df_new = dfWithDate
+  .withColumn("first_order_date", min("order_date").over(w_df))
+  .withColumn("date_diff", datediff($"customer_pref_delivery_date", $"first_order_date"))
+  .withColumn("first_delivery_id", min("delivery_id").over(w_df))
+df_new.show()
+
+// Filter for total first orders and immediate orders (delivery on the same day as the first order)
+val df_total_first_order = df_new.filter($"delivery_id" === $"first_delivery_id")
+val df_total_immediate_order = df_total_first_order.filter($"date_diff" < 1)
+df_total_first_order.show()
+df_total_immediate_order.show()
+
+// Calculate counts and percentage
+val df_total_order_count = df_total_first_order.count()
+val df_total_immediate_order_count = df_total_immediate_order.count()
+val percentageImmediateOrders = BigDecimal(df_total_immediate_order_count.toDouble / df_total_order_count * 100).setScale(2, BigDecimal.RoundingMode.HALF_UP).toDouble
+
+println(s"Percentage of immediate orders: $percentageImmediateOrders%")
+
+spark.stop()
+
+18. Query to find the competitive price (Amazon)
+
+data = []
+schema = ['product','store','price']
+df = spark.createOrReplaceTempView("tp")
+df.show()
+
+from pyspark.sql.functions import col,min,when
+from pyspark.sql.window import Window
+
+win_df = Window.partitionBy("store").orderBy("price")
+w_df = df.withColumn("min_price",min("price").over(win_df))
+w_df.show()
+
+new_df = df.groupBy("product").pivot("store",["walmart","BestBuy","Amazon"]).max("price")
+new_df = new_df.selectExpr("product","walmart as walmart_price","BestBuy as BestBuy_price","Amazon as Amazon_price")
+new_df.show()
+
+min_df = df.groupBy("product").agg(min("price").alias("min_price"))
+min_df.show()
+
+final_df = new_df.join(min_df,["product"],"inner").withColumn("competitive_price", when(col("Amazon_price") == col("min_price"),"Y").otherwise("N")).drop("min_price")
+final_df.show()
+
+%sql
+with cte_pivot as (
+select * from tp pivot(max(price) for store in ("walmart" as walmart_price,"bestbuy" as bestbuy_price,"amazon" as amazon_price)),
+cte_minprice as (
+selet min(price) as min_price,product from tp group by product)
+select m1.*,case where m1.amazon_price = m2.min_price then "y" else "N" end as competitive_price from cte_pivot m1 inner join cte_minprice m2 on m1.product = m2.product order by m1.product;
+
+scala:
+# Sample data (replace with actual data)
+data = []  # Replace with your data
+schema = ['product', 'store', 'price']
+df = spark.createDataFrame(data, schema)
+df.createOrReplaceTempView("tp")
+df.show()
+
+from pyspark.sql.functions import col, min, when
+from pyspark.sql.window import Window
+
+# Window specification partitioned by store and ordered by price
+win_df = Window.partitionBy("store").orderBy("price")
+
+# Add a new column to the DataFrame with the minimum price over the window
+w_df = df.withColumn("min_price", min("price").over(win_df))
+w_df.show()
+
+# Pivot the DataFrame to get prices for each product across different stores
+new_df = df.groupBy("product").pivot("store", ["walmart", "BestBuy", "Amazon"]).max("price")
+new_df = new_df.selectExpr("product", "walmart as walmart_price", "BestBuy as BestBuy_price", "Amazon as Amazon_price")
+new_df.show()
+
+# Group by product to find the minimum price across all stores
+min_df = df.groupBy("product").agg(min("price").alias("min_price"))
+min_df.show()
+
+# Join the DataFrames on the product column and indicate if Amazon has the competitive price
+final_df = new_df.join(min_df, ["product"], "inner")
+final_df = final_df.withColumn("competitive_price", when(col("Amazon_price") == col("min_price"), "Y").otherwise("N")).drop("min_price")
+final_df.show()
+
+19. Calculate each user's average session time (Meta)
+
+data = []
+schema = ["user_id","timestamp","action"]
+df = spark.createDataFrame(data,schema)
+df.show()
+
+import pyspark.sql.function as F
+df = df.withColumn("timestamp",F.to_timestamp("timestamp","yyyy-mm-dd HH:mm:ss"))
+df.createOrReplaceTempView("tp")
+df.show()
+
+load_df = df.filter(F.col("action") == "page_load").select("user_id","timestamp").alias("load")
+exit_df = df.filter(F.col("action") == "page_exist").select("user_id","timestamp").alias("exit")
+new_df = load_df.join(exit_df,"user_id","left")
+final_df = new_df.filter(F.col("load.timestamp") < F.col("exit.timestamp")).withColumn("date_load", F.to_date(F.col("load.timestamp")))
+final_df.show()
+
+final_df = final_df.groupBy("user_id","date_load").agg(F.max("load.timestamp").alias("timestamp_load"),F.min("exit.timestamp").alias("timestamp_exit")).withColumn("duration", F.unix_timstamp("timestamp_exit") - F.unix_timestamp("timestamp_load))
+final_df.show()
+
+final_df = final_df.groupBy("user_id").agg(F.mean("duration").alias("duration"))
+final_df.show()
+
+%sql
+with cte as (
+select user_id, date(timestamp) as d, max(case when action = "page_load" then timestamp else null end) as last_page_load,
+min(case when action = "page_exit" then timestamp else null end) as first_page_exit from tp group by user_id,d),
+cte2 as (
+select user_id,d,unix_timestamp(first_page_exit) - unix_timestamp(last_page_load) as session_time from cte)
+select user_id,avg(session_time) as avg from cte group by user_id having avg is not null;
+
+20. Find out the total match and win count for each team
+
+data = []
+schema = ["team_A", "team_B","win"]
+df = spark.createDataFrame(data,schema)
+df.show()
+
+from pyspark.sql.functions import col,count
+df1 = df.select(col("team_B").alias("team_A"),col("team_A").alias("team_B"),col("win"))
+df1.show()
+
+new_df = df.union(df1)
+new_df.show()
+
+final_df1 = new_df.groupBy("team_A").agg(count("*").alias("played"))
+final_df1.show()
+
+final_df2 = new_df.groupBy("win").agg(count("*"))
+final_df2.show()
+
+final_df = final_df1.join(final_df2,col("team_A") == col("win"), "left").select(col("team_A").alias("team"),col("played"),col(count(1)/2 ) * ).cast("int").alias("win")).na.fill(0)
+final_df.show()
+
+scala:
+# Sample data (replace with actual data)
+data = []  # Replace with your data
+schema = ["team_A", "team_B", "win"]
+df = spark.createDataFrame(data, schema)
+df.show()
+
+from pyspark.sql.functions import col, count
+
+# Create a DataFrame with swapped team_A and team_B
+df1 = df.select(col("team_B").alias("team_A"), col("team_A").alias("team_B"), col("win"))
+df1.show()
+
+# Union the original DataFrame with the reversed one
+new_df = df.union(df1)
+new_df.show()
+
+# Count the total number of matches played by each team
+final_df1 = new_df.groupBy("team_A").agg(count("*").alias("played"))
+final_df1.show()
+
+# Count the total number of wins for each team
+final_df2 = new_df.groupBy("win").agg(count("*").alias("win_count"))
+final_df2.show()
+
+# Join the DataFrames on the team name and handle teams with no wins
+final_df = final_df1.join(final_df2, final_df1["team_A"] == final_df2["win"], "left") \
+                    .select(col("team_A").alias("team"), col("played"), col("win_count").alias("win")) \
+                    .na.fill(0)  # Fill missing win counts with 0
+
+final_df.show()
+
+21. Get the month-over-month percentage change in revenue
+
+data = []
+schema = ["id","created_at","value","purchase_id"]
+df = spark.createDataFrame(data,schema)
+df.show()
+
+from pyspark.sql.functions import col,to_date,date_format,sum,lag
+from pyspark.sql.window import Window
+
+df = df.withColumn("created_at",to_date(col("created_at"),"dd-mm-yyyy"))
+df.show()
+
+new_df = df.withColumn("year_month", date_format("created_at","yyyy-mm"))
+new_df.show()
+
+new_df = new_df.groupBy("year_month").agg(sum("value").alias("revenue")).withColumn("pre_revenue",lag("revenue").over(Window.orderBy("year_month")))
+new_df.show()
+
+final_df = new_df.withColumn("pre_revenue",lag("revenue").over(Window.orderBy('year_month'))).withColumn("percentage",round(col("pre_revenue)-col("revenue")/col("pre_revenue") * 100,2))
+final_df.show()
+
+scala:
+# Sample data (replace with actual data)
+data = []  # Replace with your data
+schema = ["id", "created_at", "value", "purchase_id"]
+df = spark.createDataFrame(data, schema)
+df.show()
+
+from pyspark.sql.functions import col, to_date, date_format, sum, lag, round
+from pyspark.sql.window import Window
+
+# Convert created_at to date format
+df = df.withColumn("created_at", to_date(col("created_at"), "dd-MM-yyyy"))
+df.show()
+
+# Extract year and month
+new_df = df.withColumn("year_month", date_format(col("created_at"), "yyyy-MM"))
+new_df.show()
+
+# Calculate revenue per month and previous month's revenue
+new_df = new_df.groupBy("year_month") \
+               .agg(sum("value").alias("revenue")) \
+               .withColumn("pre_revenue", lag("revenue").over(Window.orderBy("year_month")))
+new_df.show()
+
+# Calculate the month-over-month percentage change in revenue
+final_df = new_df.withColumn(
+    "percentage_change",
+    round((col("revenue") - col("pre_revenue")) / col("pre_revenue") * 100, 2)
+)
+final_df.show()
+
+22. Find the movies with highest average rating from each genre (Honeywell)
+
+data1 = []
+schema1 = ["id","genre","title"]
+movie_df = spark.createDataFrame(data1,schema1)
+movie_df.show()
+
+data2 = []
+schema2 = ['movie_id','rating']
+rating_df = spark.createDataFrame(data2,schema2)
+rating_df.show()
+
+from pyspark.sql.window import Window
+import pyspark.sql.functions as F
+
+rating_df = rating_df.groupBy("movie_id").agg(F.round(F.avg("rating"),1).alias("avg_rating"))
+rating_df.show()
+
+df = movie_df.join(rating_df, movie_df.id == rating_df.movie_id,"inner").orderby("movie_id")
+df.show()
+
+w_df = Window.partitionBy("genre").orderBy(F.col("avg_rating").desc())
+new_df = df.withColumn("row_num", F.row_number().over(w_df)).filter(F.col("row_num") == 1).select("genre","title","avg_rating")
+new_df.show()
+
+final_df = new_df.withColumn('rating',F.expr("repeat("*",round(avg_rating))"))
+final_df.show()
+
+scala:
+# Sample data (replace with your data)
+data1 = []  # Replace with your movie data
+schema1 = ["id", "genre", "title"]
+movie_df = spark.createDataFrame(data1, schema1)
+movie_df.show()
+
+data2 = []  # Replace with your rating data
+schema2 = ['movie_id', 'rating']
+rating_df = spark.createDataFrame(data2, schema2)
+rating_df.show()
+
+from pyspark.sql.functions import avg, round
+from pyspark.sql.window import Window
+import pyspark.sql.functions as F
+
+# Calculate average rating for each movie
+rating_df = rating_df.groupBy("movie_id").agg(round(avg("rating"), 1).alias("avg_rating"))
+rating_df.show()
+
+# Join movie details with average ratings
+df = movie_df.join(rating_df, movie_df.id == rating_df.movie_id, "inner").select("genre", "title", "avg_rating")
+df.show()
+
+# Rank movies by rating within each genre and select the highest rated movie
+w_df = Window.partitionBy("genre").orderBy(F.col("avg_rating").desc())
+new_df = df.withColumn("row_num", F.row_number().over(w_df)).filter(F.col("row_num") == 1).select("genre", "title", "avg_rating")
+new_df.show()
+
+# (Optional) Format the rating column
+final_df = new_df.withColumn('rating', F.expr("repeat('*', round(avg_rating))"))
+final_df.show()
+
+23. Find the room type that are searched most no of times (Airbnb)
+
+data = []
+schema = ["user_id","date_searched","filter_room_types")
+df = spark.createDataFrame(data,schema)
+df.show(truncate = False)
+
+from pyspark.sql.functions import col,explode,split,count,desc
+
+new_df = df.withColumn("filter_room_types',split('filter_room_types',','))
+new_df.show(truncate=False)
+
+new_df = df.withColumn("filter_room_types',explode('filter_room_types',','))
+new_df.show()
+
+final_df = new_df.groupBy('filter_room_types').agg(count('filter_room_types').alias('cnt'))
+final_df.show()
+
+scala:
+# Sample data (replace with your actual data)
+data = []  # Replace with your data
+schema = ["user_id", "date_searched", "filter_room_types"]
+df = spark.createDataFrame(data, schema)
+df.show(truncate=False)
+
+from pyspark.sql.functions import col, split, explode, count
+
+# Split 'filter_room_types' into an array of room types
+new_df = df.withColumn("filter_room_types", split(col("filter_room_types"), ","))
+
+# Explode the array into separate rows
+new_df = new_df.withColumn("filter_room_types", explode(col("filter_room_types")))
+new_df.show(truncate=False)
+
+# Count occurrences of each room type
+final_df = new_df.groupBy("filter_room_types").agg(count("filter_room_types").alias("cnt"))
+
+# Sort by count in descending order
+final_df = final_df.orderBy(col("cnt").desc())
+final_df.show(truncate=False)
+
+
+
+

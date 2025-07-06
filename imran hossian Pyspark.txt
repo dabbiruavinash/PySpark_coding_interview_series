@@ -1,0 +1,573 @@
+Write a solution to find all dates' Id with higher temperatures compared to its previous dates (yesterday).
+Return the result table in any order.
+The result format is in the following example.
+
+My solution
+---------------
+from pyspark.sql import SparkSession
+from pyspark.sql.window import Window
+import pyspark.sql.functions as F
+
+# Initialize a Spark session
+spark = SparkSession.builder \
+ .appName("Weather DataFrame with CTE") \
+ .getOrCreate()
+
+# Define the schema for the DataFrame
+schema = ["id", "recordDate", "temperature"]
+
+# Create the data
+data = [
+ (1, "2015-01-01", 10),
+ (2, "2015-01-02", 25),
+ (3, "2015-01-03", 20),
+ (4, "2015-01-04", 30)
+]
+
+df = spark.createDataFrame(data, schema)
+df = df.withColumn("recordDate", F.to_date(F.col("recordDate"), "yyyy-MM-dd"))
+windowSpec = Window.orderBy("recordDate")
+df = df.withColumn("prev", F.lag("temperature", 1).over(windowSpec))
+df = df.withColumn("DiffinDays", F.datediff("recordDate", F.lag("recordDate", 1).over(windowSpec)))
+df.show()
+
+result = df.filter((F.col("temperature") > F.col("prev")) & (F.col("DiffinDays") == 1))
+
+# Select the id column
+result = result.select("id")
+
+# Show the result
+result.show()
+--------------------------------
+
+You are given transaction dataframe where we need to identify returning active users.Returning active user is the user who made a transaction within 7 days of their first purchase.
+
+My solution
+-----------------
+from pyspark.sql import SparkSession
+from pyspark.sql.types import *
+from pyspark.sql.functions import *
+from pyspark.sql.window import Window
+from datetime import datetime
+transactions_schema = StructType([
+ StructField("Transaction_ID", IntegerType(), True),
+ StructField("User_ID", IntegerType(), True),
+ StructField("Transaction_Date", TimestampType(), True)
+])
+
+transactions_df = spark.createDataFrame(data=transactions_data, schema=transactions_schema)
+transactions_df.show()
+
+# Define window specification
+window_spec = Window.partitionBy("User_ID").orderBy("Transaction_Date")
+
+# find rank of user transactions
+cte_df = transactions_df.withColumn("rn", rank().over(window_spec))
+
+cte_df_alias1 = cte_df.alias("c1")
+cte_df_alias2 = cte_df.alias("c2")
+result_df = cte_df_alias1.join(
+ cte_df_alias2,
+ (col("c1.User_ID") == col("c2.User_ID")) &
+ (col("c1.rn") == 1) &
+ (col("c2.rn") == 2) &
+ (datediff(col("c2.Transaction_Date"), col("c1.Transaction_Date")) <= 7)
+).select(
+ col("c1.User_ID"),
+ col("c1.Transaction_Date").alias("firstdate"),
+ col("c2.Transaction_Date").alias("secdate")
+).distinct().orderBy("User_ID")
+
+result_df.show()
+
+---------------------------------
+
+--Write a pyspark code to obtain a breakdown of the time spent sending vs. opening snaps 
+--as a percentage of total time spent on these activities grouped by age group. 
+
+My solution
+---------------
+from pyspark.sql import SparkSession
+from pyspark.sql.types import StructType, StructField, IntegerType, StringType, DecimalType, TimestampType
+from pyspark.sql.functions import col, sum, when, round
+import decimal
+from datetime import datetime
+
+# Create Spark session
+spark = SparkSession.builder.appName("CreateTables").getOrCreate()
+
+activities_schema = StructType([
+ StructField("ACTIVITY_ID", IntegerType(), True),
+ StructField("USER_ID", IntegerType(), True),
+ StructField("ACTIVITY_TYPE", StringType(), True),
+ StructField("TIME_SPENT", DecimalType(5, 2), True),
+ StructField("ACTIVITY_DATE", TimestampType(), True)
+])
+
+activities_df = spark.createDataFrame(data=activities_data, schema=activities_schema)
+
+age_breakdown_schema = StructType([
+ StructField("USER_ID", IntegerType(), True),
+ StructField("AGE_BUCKET", StringType(), True)
+])
+
+age_breakdown_df = spark.createDataFrame(data=age_breakdown_data, schema=age_breakdown_schema)
+
+cte_df = activities_df.filter(col("ACTIVITY_TYPE").isin("open", "send")) \
+ .groupBy("USER_ID") \
+ .agg(
+ sum(when(col("ACTIVITY_TYPE") == "send", col("TIME_SPENT"))).alias("send_time"),
+ sum(when(col("ACTIVITY_TYPE") == "open", col("TIME_SPENT"))).alias("opening_time"),
+ sum("TIME_SPENT").alias("total_time")
+ )
+# Join with AGE_BREAKDOWN and calculate percentages
+result_df = cte_df.join(age_breakdown_df, "USER_ID") \
+ .select(
+ col("AGE_BUCKET"),
+ round((col("send_time") / col("total_time")) * 100, 2).cast(DecimalType(5, 2)).alias("Send_Time_Percentage"),
+ round((col("opening_time") / col("total_time")) * 100, 2).cast(DecimalType(5, 2)).alias("Opening_Time_Percentage")
+ ) \
+ .orderBy("AGE_BUCKET")
+
+# Show the result
+result_df.show()
+----------------------------
+
+You are given a dataframe having columns Name and Gender. The Gender value given in the dataframe is not correct. Your task is to correctly put the gender value.
+
+My solution
+---------------
+from pyspark.sql import SparkSession
+from pyspark.sql import Row
+
+# Initialize Spark Session
+spark = SparkSession.builder \
+ .appName("Create DataFrame Example") \
+ .getOrCreate()
+
+# Create DataFrame
+data = [
+ Row(Name='Ram', Gender='Female'),
+ Row(Name='Ajay', Gender='Female'),
+ Row(Name='Meena', Gender='Male'),
+ Row(Name='Neha', Gender='Male')
+]
+
+df = spark.createDataFrame(data)
+df_transformed = df.withColumn(
+ "Gender",
+ when(col("Gender") == "Male", "Female")
+ .when(col("Gender") == "Female", "Male")
+ .otherwise(col("Gender"))
+)
+df_transformed.show()
+------------------------------------
+
+You are given a student dataframe containing columns student_id and marks. Your task is to find out best of 3 marks using pyspark and avg of that for best of three? 
+
+My solution
+---------------
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import *
+from pyspark.sql.window import Window
+
+# Initialize Spark Session
+spark = SparkSession.builder.appName("BestOfThreeMarks").getOrCreate()
+
+# Sample data
+data = [
+ (1, 85), (1, 78), (1, 90), (1, 88), (1, 92),
+ (2, 76), (2, 65), (2, 80), (2, 85), (2, 77),
+ (3, 95), (3, 88), (3, 91), (3, 89), (3, 87)
+]
+
+# Create DataFrame
+columns = ["student_id", "marks"]
+df = spark.createDataFrame(data, columns)
+hashtag#define the window clause
+spec=Window.partitionBy("student_id").orderBy(col("marks").desc())
+hashtag#assigning ranks to the subjects for each students
+df=df.withColumn("rank",rank().over(spec))
+hashtag#filtering out best 3 marks for each student
+filter_df=df.filter(df.rank<=3)
+agg_df=filter_df.groupBy("student_id").agg(avg("marks").cast("int").alias("avg_marks"))
+agg_df.show()
+
+----------------------------
+
+Suppose you are having some purchase data and product data.
+Find customers who have bought only product A.
+
+from pyspark.sql import SparkSession
+# If not, create one: spark = SparkSession.builder.appName("example").getOrCreate()
+
+purchase_data = [
+ (1, "A"), (1, "B"), (2, "A"), (2, "B"), (3, "A"), (3, "B"),
+ (1, "C"), (1, "D"), (1, "E"), (3, "E"), (4, "A")
+]
+
+columns = ["customer", "product_model"]
+
+# Create DataFrame using the provided data and column names
+df = spark.createDataFrame(purchase_data, columns)
+
+product_data = [
+ ("A",), ("B",), ("C",), ("D",), ("E",)
+]
+
+columns = ["product_model"]
+
+df_products = spark.createDataFrame(product_data, columns)
+
+df.createOrReplaceTempView("order")
+
+spark.sql("""
+ with cte as (
+ select customer,count(1) as total,
+ count(case when product_model="A" then product_model else null end) as Acount
+ from order 
+ group by customer
+ )
+ select customer from cte where total=Acount
+ """).show()
+
+-----------------------------
+
+We are having a dataframe with columns sender,receiver,amount and transaction_date. Each of the user can send and receive money to/from other users. Your task is to find out the difference of total amount is received and sent for each user.
+
+My solution
+---------------
+from pyspark.sql import SparkSession
+from pyspark.sql.types import StructType, StructField, IntegerType, DateType
+from pyspark.sql import functions as F
+
+# Create a SparkSession
+spark = SparkSession.builder \
+ .appName("Create DataFrame with Transactions") \
+ .getOrCreate()
+
+# Define the schema for the DataFrame
+schema = StructType([
+ StructField("sender", IntegerType(), True),
+ StructField("receiver", IntegerType(), True),
+ StructField("amount", IntegerType(), True),
+ StructField("transaction_date", StringType(), True)
+])
+
+# Data
+data = [
+ (5, 2, 10, '2020-02-12'),
+ (1, 3, 15, '2020-02-13'), 
+ (2, 1, 20, '2020-02-13'), 
+ (2, 3, 25, '2020-02-14'), 
+ (3, 1, 20, '2020-02-15'), 
+ (3, 2, 15, '2020-02-15'), 
+(1, 4, 5, '2020-02-16')
+]
+
+# Create DataFrame
+df = spark.createDataFrame(data, schema=schema)
+
+# Calculate total sent for each sender
+total_sent = df.groupBy("sender").agg(
+ F.sum("amount").alias("total_sent"),
+ F.lit(0).alias("total_received")
+).select(
+ F.col("sender").alias("user"),
+ "total_sent",
+ "total_received"
+)
+
+# Calculate total received for each receiver
+total_received = df.groupBy("receiver").agg(
+ F.sum("amount").alias("total_received"),
+ F.lit(0).alias("total_sent")
+).select(
+ F.col("receiver").alias("user"),
+ "total_sent",
+ "total_received"
+)
+
+union_df = total_sent.unionAll(total_received)
+
+# Aggregate the results to find the difference
+result = union_df.groupBy("user").agg(
+ (F.sum("total_received") - F.sum("total_sent")).alias("amount_difference")
+).orderBy("user")
+
+# Show the final result
+result.show()
+
+------------------------------------
+
+Find the departments with the highest and lowest average employee salaries.
+from pyspark.sql.functions import *
+from pyspark.sql import SparkSession, Window
+from pyspark.sql.types import *
+
+# Initialize Spark Session
+spark = SparkSession.builder \
+ .appName("Department Salaries") \
+ .getOrCreate()
+
+# Define schema
+schema = StructType([
+ StructField("EmployeeID", IntegerType(), True),
+ StructField("Department", StringType(), True),
+ StructField("Salary", IntegerType(), True)
+])
+
+# Sample data as list of tuples
+data = [
+ (1, 'Sales', 50000),
+ (2, 'Engineering', 80000),
+ (3, 'Sales', 52000),
+ (4, 'HR', 45000),
+ (5, 'Engineering', 90000),
+ (6, 'HR', 46000),
+ (7, 'Sales', 55000),
+ (8, 'Engineering', 85000),
+ (9, 'HR', 48000),
+ (10, 'Sales', 53000),
+ (11, 'Sales', 57000),
+ (12, 'Engineering', 92000),
+ (13, 'HR', 49000),
+ (14, 'Marketing', 60000),
+ (15, 'IT', 62000),
+ (16, 'Marketing', 63000),
+ (17, 'IT', 65000),
+ (18, 'Marketing', 61000),
+ (19, 'IT', 67000),
+ (20, 'Marketing', 64000)
+]
+df = spark.createDataFrame(data, schema=schema)
+df_mod=df.groupBy(col("Department")).agg(avg("salary").cast("int").alias("avg_sal"))
+spec=Window.orderBy(col("avg_sal").desc())
+spec1=Window.orderBy(col("avg_sal").asc())
+df_mod=df_mod.withColumn("des_rank",dense_rank().over(spec))\
+ .withColumn("asc_rank",dense_rank().over(spec1))
+df_mod=df_mod.filter((col("des_rank")==1)| (col("asc_rank")==1)).drop("des_rank","asc_rank")
+df_mod.show()
+
+------------------------
+
+You are given a pyspark dataframe having columns state,date_value. Your task is to find out the event start_date and event end_date for all the events.
+Output format given below.
+
+My solution
+-----------------
+from pyspark.sql.functions import *
+from pyspark.sql import Window
+wind_spec = Window.partitionBy("state").orderBy("date_value")
+df=spark.read.csv("/FileStore/eventd.csv",header=True)
+df_mod = df.withColumn('rn', row_number().over(wind_spec)) \
+ .withColumn('group_date', date_add('date_value', (-1 * col('rn'))))
+df_final=df_mod.groupBy("state","group_date").agg(
+ min("date_value").alias("start_date"),
+ max("date_value").alias("end_date")
+).drop("group_date").orderBy("start_date")
+df_final.show()
+
+-------------------
+
+You are given a dataframe having columns Revenue,Date. Your task is to find out cumulative monthly sum of revenue and add it as new column. The expected output snapshot listed below.
+
+My solution
+-----------------
+from pyspark.sql.functions import *
+from pyspark.sql.types import *
+from pyspark.sql import Window
+schema = StructType([
+ StructField("Revenue", IntegerType(), True),
+ StructField("Date", StringType(), True)
+])
+data = [
+ (1000, '2023-01-01'),
+ (1500, '2023-01-05'),
+ (1200, '2023-01-10'),
+ (1800, '2023-02-02'),
+ (2000, '2023-02-15'),
+ (2500, '2023-02-20'),
+ (3000, '2023-03-03'),
+ (2800, '2023-03-08'),
+ (3200, '2023-03-25')
+]
+
+df = spark.createDataFrame(data, schema)
+df=df.withColumn("Date",to_date(col("Date")))
+hashtag#find month number
+df=df.withColumn("MonthNumber",month(col("Date")))
+hashtag#derive month name column from monthno column
+df = df.withColumn("MonthName",
+ when(df["MonthNumber"] == 1, "January")
+ .when(df["MonthNumber"] == 2, "February")
+ .when(df["MonthNumber"] == 3, "March")
+ .otherwise("Unknown"))
+
+spec=Window.orderBy("MonthNumber").rangeBetween(Window.unboundedPreceding,Window.currentRow)
+df=df.groupBy("MonthName","MonthNumber").agg(sum("Revenue").alias("total"))
+df_mod=df.withColumn("cum_sum",sum("total").over(spec)).drop("MonthNumber")
+df_mod.show()
+-----------------------------
+
+Implement a basic word count program in PySpark. Given text files as input, calculate word occurrence counts and output sorted by frequency or alphabetically.
+
+My solution
+------------------
+from pyspark.sql.functions import *
+df=spark.read.text("/FileStore/myfiles/randomtext.txt")
+df_words=df.withColumn("words",split(col("value")," "))
+df_mod=df_words.select(explode(col("words")).alias("word"))
+res_df=df_mod.groupBy(col("word")).count().orderBy(col("count").desc(),col("word"))
+display(res_df)
+-----------------------
+
+Write a query to find out the customers who booked both air and train tickets.
+My solution
+------------------
+from pyspark.sql import SparkSession
+from pyspark.sql.types import StructType, StructField, IntegerType, StringType
+from pyspark.sql.functions import *
+
+# Initialize SparkSession
+spark = SparkSession.builder \
+ .appName("Create DataFrame from Data") \
+ .getOrCreate()
+
+# Define schema for the DataFrame
+schema = StructType([
+ StructField("booking_id", IntegerType(), True),
+ StructField("customer_id", IntegerType(), True),
+ StructField("ticket_type", StringType(), True)
+])
+data = [
+ (1, 101, 'air'),
+ (2, 101, 'train'),
+ (3, 102, 'air'),
+ (4, 103, 'train'),
+ (5, 104, 'air'),
+ (6, 104, 'train'),
+ (7, 105, 'train')
+]
+
+# Create DataFrame
+df = spark.createDataFrame(data, schema)
+dfmod=df.groupBy(col("customer_id"))\
+ .agg(sum(when(col("ticket_type").isin("air", "train"), 1)).alias("cnt")) \
+ .filter(col("cnt")==2).drop(col("cnt"))
+dfmod.show()
+-------------------------
+
+Challenge: How to keep only the top 2 most frequent values as it is and replace everything else as ‘Other’ 
+
+My solution
+------------------
+from pyspark.sql import Row
+from pyspark.sql.functions import *
+from pyspark.sql import Window
+# Sample data
+data = [
+Row(name='John', job='Engineer'),
+Row(name='John', job='Engineer'),
+Row(name='Mary', job='Scientist'),
+Row(name='Bob', job='Engineer'),
+Row(name='Bob', job='Engineer'),
+Row(name='Bob', job='Scientist'),
+Row(name='Sam', job='Doctor'),
+]
+
+# create DataFrame
+df = spark.createDataFrame(data)
+spec=Window.partitionBy("job")
+df_grp = df.withColumn("cnt", count("*").over(spec))
+df_grp = df.withColumn("cnt", count("*").over(spec)) \
+ .withColumn("rank", dense_rank().over(Window.orderBy(col("cnt").desc()))) \
+ .withColumn("job", when(col("rank") <= 2, col("job")).otherwise("other"))
+df_grp.select("name","job").show()
+
+--------------------------
+
+You are given a dataframe having columns "ID", "Name", "Sal". Your task is to add a new column "running_total_salary" as below.
+
+Pyspark solution
+--------------------
+from pyspark.sql import SparkSession
+from pyspark.sql.window import Window
+from pyspark.sql.functions import *
+
+# Create a SparkSession
+spark = SparkSession.builder \
+ .appName("DataFrameExample") \
+ .getOrCreate()
+
+# Sample data
+data = [(1, "A", 1000),
+ (2, "B", 2000),
+ (3, "C", 3000),
+ (4, "D", 4000)]
+schema = ["ID", "Name", "Sal"]
+
+# Create DataFrame
+df = spark.createDataFrame(data, schema)
+
+windowSpec = Window.orderBy("ID").rowsBetween(Window.unboundedPreceding, Window.currentRow)
+df = df.withColumn("running_total_sal", sum("Sal").over(windowSpec))
+
+# Show DataFrame
+df.show()
+-------------------
+
+You are given a dataframe with columns  id, product,salesyear,QuantitySold
+
+Write pyspark solution to get the total Sales in year 1998,1999 and 2000 for all the products as shown below.
+
+My solution
+------------------
+from pyspark.sql import SparkSession
+from pyspark.sql.types import StructType, StructField, IntegerType, StringType
+from pyspark.sql.functions import *
+spark = SparkSession.builder.appName("SalesTable").getOrCreate()
+
+# Define the schema for the DataFrame
+schema = StructType([
+ StructField("id", IntegerType(), False),
+ StructField("product", StringType(), False),
+ StructField("salesyear", IntegerType(), False),
+ StructField("QuantitySold", IntegerType(), False)
+])
+
+# Insert the provided data into the DataFrame
+data = [
+ (1, 'Laptop', 1998, 2500),
+ (2, 'Laptop', 1999, 3600),
+ (3, 'Laptop', 2000, 4200),
+ (4, 'Keyboard', 1998, 2300),
+ (5, 'Keyboard', 1999, 3600),
+ (6, 'Keyboard', 2000, 5000),
+ (7, 'Mouse', 1998, 6000),
+ (8, 'Mouse', 1999, 3400),
+ (9, 'Mouse', 2000, 4600)
+]
+
+# Create a DataFrame
+df = spark.createDataFrame(data, schema=schema)
+res=df.groupBy(col("salesyear")).agg(sum(col("QuantitySold")).alias("total"))
+pivot_df = res.groupBy().pivot("salesyear").sum("total")
+pivot_df = pivot_df.withColumn("TotalSales", lit("TotalSales"))
+# Reorder the columns with "total" as the first column
+pivot_df = pivot_df.select("TotalSales", "1998", "1999", "2000")
+pivot_df.show()
+-------------
+
+You are given a fixed length text file. Your task is to create multiple columns from the single row like below.
+
+My solution
+--------------------
+from pyspark.sql.functions import *
+df=spark.read.text("dbfs:/FileStore/fixedlenghthfile.txt")
+df.show(truncate=False)
+feildList={"Date":(1,8),"Citycode":(9,3),"Pincode":(12,8),"Temperature":(20,4)}
+for field,(start,length) in feildList.items():
+ df=df.withColumn(field,substring(df["value"],start,length))
+df=df.drop("value")
+df.show()

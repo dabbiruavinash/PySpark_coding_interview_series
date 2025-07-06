@@ -1,0 +1,293 @@
+streaming data
+------Same Schema
+df = spark.read.format("csv").option("header",True).option("inferSchema",True).load("/FileStore/tables/RawSource/sales_data_first.csv")
+display(df)
+
+AutoLoader
+
+df = spark.readStream.format("cloudFiles").option("cloudFiles.format","csv")\
+    .option("cloudFiles.schemaLocation","/FileStore/tables/rawdestination/checkpoint")\
+        .load("/FileStore/tables/RawSource/")
+
+df.writeStream.format("delta")\
+    .option("checkpointlocation","/FileStore/tables/rawdestination/checkpoint")\
+        .trigger(processingTime = "3 seconds")\
+            .start("/FileStore/tables/rawdestination/data")
+
+%sql
+select * from delta.`/FileStore/tables/rawdestination/data`
+
+"/FileStore/tables/RawSource/sales_data_third.csv"
+----different schema
+org.apache.spark.sql.catalyst.util.UnknownFieldException: [UNKNOWN_FIELD_EXCEPTION.NEW_FIELDS_IN_FILE] Encountered unknown fields during parsing: [ReturnFlag], which can be fixed by an automatic retry: true
+
+df = spark.readStream.format("cloudFiles").option("cloudFiles.format","csv")\
+   .option("cloudFile.schemaEvolutionMode","addNewColumns")
+    .option("cloudFiles.schemaLocation","/FileStore/tables/rawdestination/checkpoint")\
+        .load("/FileStore/tables/RawSource/")
+
+df.writeStream.format("delta")\
+    .option("checkpointlocation","/FileStore/tables/rawdestination/checkpoint")\
+        .trigger(processingTime = "3 seconds")\
+            .option("mergeSchema",True)\
+                .start("/FileStore/tables/rawdestination/data")
+
+--SCD
+rawcsv
+
+df = spark.read.format("csv").option("header",True).option("inferSchema",True).load("/Files/tables/rawcsv")
+df.display()
+
+from pyspark.sql.functions import *
+from pyspark.sql.types import *
+from delta.tables import DeltaTable
+df = df.select("p_id","p_name","p_category").filter(col("p_id").isNotNull())
+
+initial_run = 1
+if (initial_run == 0):
+delta_table = DeltaTable.forPath(spark,"/FilesStore/rawcsvsink")
+
+delt_table.alias("trg").merge(df.alias("src"),"trg.p_id = src.id).whenMatchedThenUpdatedAll().whenNotMatchedInsertAll().execute()
+
+else:
+df.write.format("delta").mode("append").option("path","/FilesStore/tables/rawcsvsink").saveAsTable("productsDim")
+
+select * from productsDim;
+
+
+---oops
+class
+
+class window_functions:
+
+   df = spark.read.format("csv").option("header",True).option("inferSchema",True).load("/FileStore/rawsoruce/sales_data_first.csv")
+
+def dense_rank_func(self,new_col,part_col,ord_cols):
+   self.df = self.df.withColumn(new_col,dense_rank().over(Window.partitionBy(part_cols).orderBy(col(ord_cols).desc())))
+   return self.df
+
+obj = window_functions()
+obj.df = df_new
+df_new = obj.dense_rank_func("dense_rank_col","Month","Units_Sold")
+
+df_new.display()
+
+import----
+%run "./Class
+
+obj = window_functions()
+
+--dynamic content
+
+for i in var_units_sold:
+ df = spark.read.format("csv").option("header",True).option("inferSchema",True).load("/FileStore/rawsource/sales_data_first.csv").filter(col("units_sold") == i)
+
+ df.write.format("csv").mode("append").option("path",f"/FIleStore/loopdata/units_sold = {i}").save()
+
+------deltaStream
+%sql
+create table detlasource
+(
+id int,
+name string,
+salary int)
+USING DELTA
+LOCATION '/FileStore/deltasource/source1'
+
+%sql
+ALTER TABLE detlasource SET TBLPROPERITIES ('delta.enableDeletionVectores' = true)
+
+%sql
+INSERT INTO deltasource VALUES 
+(1,"priya", 100),
+(2,"rahul", 150),
+(3,"shanti",200)
+
+df = spark.readStream.table("deltasoruce")
+
+df.writeStream.format("detla").option("checkpointLocation","/FileStore/deltasource/sink1/checkpoint")
+.option("path","/FileStore/deltasource/sink1/data")
+.trigger(processingTime = "3 seconds")
+.start()
+
+DESCRIBE HISTORY deltasource
+
+---------------
+import pyspark
+from delta import *
+from pyspark.sql.types import *
+from delta.tables import *
+from pyspark.sql.functions import *
+
+builder = pyspark.sql.SparkSession.builder.appName("DeltaTutorial") \
+    .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension") \
+    .config("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog")
+
+# Create spark context
+spark = configure_spark_with_delta_pip(builder).getOrCreate()
+spark.sparkContext.setLogLevel("ERROR")
+
+# Create a spark dataframe and write as a delta table
+print("Starting Delta table creation")
+
+data = [("Robert", "Baratheon", "Baratheon", "Storms End", 48),
+        ("Eddard", "Stark", "Stark", "Winterfell", 46),
+        ("Jamie", "Lannister", "Lannister", "Casterly Rock", 29)
+        ]
+schema = StructType([
+    StructField("firstname", StringType(), True),
+    StructField("lastname", StringType(), True),
+    StructField("house", StringType(), True),
+    StructField("location", StringType(), True),
+    StructField("age", IntegerType(), True)])
+
+sample_dataframe = spark.createDataFrame(data,schema)
+sample_dataframe.write.mode(saveMode = "overwrite").format("delta").save("data/delta-table")
+
+got_df = spark.read.format("delta").load("data/delta-table")
+got_df.show()
+
+print("Updating Delta table...!")
+data = [("Robert", "Baratheon", "Baratheon", "Storms End", 49),
+        ("Eddard", "Stark", "Stark", "Winterfell", 47),
+        ("Jamie", "Lannister", "Lannister", "Casterly Rock", 30)
+        ]
+schema = StructType([
+    StructField("firstname", StringType(), True),
+    StructField("lastname", StringType(), True),
+    StructField("house", StringType(), True),
+    StructField("location", StringType(), True),
+    StructField("age", IntegerType(), True)])
+sample_dataframe = spark.createDataFrame(data=data, schema=schema)
+sample_dataframe.write.mode(saveMode="overwrite").format("delta").save("data/delta-table")
+
+deltaTable = DeltaTable.forPath(spark, "data/delta-table")
+deltaTable.toDF().show()
+
+deltatable.update(
+ condition=expr("firstname == 'Jamie'"),
+    set={"firstname": lit("Jamie"), "lastname": lit("Lannister"), "house": lit("Lannister"),
+         "location": lit("Kings Landing"), "age": lit(37)})
+
+deltaTable.toDF().show()
+
+# Upsert Data
+print("Upserting Data...!")
+# delta table path
+deltaTable = DeltaTable.forPath(spark, "data/delta-table")
+deltaTable.toDF().show()
+
+# define new data
+data = [("Gendry", "Baratheon", "Baratheon", "Kings Landing", 19),
+        ("Jon", "Snow", "Stark", "Winterfell", 21),
+        ("Jamie", "Lannister", "Lannister", "Casterly Rock", 36)
+        ]
+schema = StructType([
+    StructField("firstname", StringType(), True),
+    StructField("lastname", StringType(), True),
+    StructField("house", StringType(), True),
+    StructField("location", StringType(), True),
+    StructField("age", IntegerType(), True)
+])
+
+newData = spark.createDataFrame(data=data, schema=schema)
+
+deltaTable.alias("oldData") \
+    .merge(
+    newData.alias("newData"),
+    "oldData.firstname = newData.firstname") \
+    .whenMatchedUpdate(
+    set={"firstname": col("newData.firstname"), "lastname": col("newData.lastname"), "house": col("newData.house"),
+         "location": col("newData.location"), "age": col("newData.age")}) \
+    .whenNotMatchedInsert(
+    values={"firstname": col("newData.firstname"), "lastname": col("newData.lastname"), "house": col("newData.house"),
+            "location": col("newData.location"), "age": col("newData.age")}) \
+    .execute()
+
+deltaTable.toDF().show()
+
+# Delete Data
+print("Deleting data...!")
+
+# delta table path
+deltaTable = DeltaTable.forPath(spark, "data/delta-table")
+deltaTable.toDF().show()
+
+deltaTable.delete(condition=expr("firstname == 'Gendry'"))
+
+deltaTable.toDF().show()
+
+------------------------------------------------------------------------------------------------
+DIMENSION MODELING
+OLTP
+OLAP
+FACT - TRANSACTION,PERIODIC SNAPSHOT,ACCUMULATING SNAPSHOT
+DIMENSION - CONFORMED,ROLE-PLAYING ,SCD
+SCD TYPE1,TYPE2,TYPE3,TYPE4
+STRUCTURED,SEMI-STRUCTURED,UNSTRUCTED
+DATA OPERATIONS - DATAINTEGRATION,DATA TRANSORMATION,DATA CONSOLIDATION
+AZURE STORAGE - BLOB STORAGE,FILE STORAGE,QUEUE STORAGE, TABLE STORAGE, DISK STORAGE
+FILE FORMATS
+AZURE ACCESS TIRES - HOT,COOL,COLD,ARCHIVE
+DATABRICKS-UNITY CATALOG - ENABLE UNITY CATALOG,WORKSPACE ADMIN SETUP, PROVISION DATABRICKS COMPUTE, GRANT PERMISSION,CREATE A CATALOG
+DATA LINEAGE
+DATA GOVERNANACE
+METADATA MANAGEMENT
+METADATA CATALOG
+SPARK INTERNALS
+SPARK LINEAGE
+CACHE STATEMENT: CACHE TABLE,CLEAR CACHE,REFRESH CACHE,FRESH FUNCTION,REFRESH TABLE
+DESCRIBE STATEMENTS: CATALOG,CONNECTION,FUNCTION,EXTERNAL LOCATION,PROVIDER,RECIPIENT,SCHEMA,
+DATABASE,SHARE,TABLE,VOLUME
+SHOW STATEMENTS: LIST,CATALOGS,COLUMNS,CONNECTIONS
+FACT DIMENSION STAR SNOWFLAKE
+AQE
+
+------DELTA
+convert parquet to delta
+table:
+spark.sql("convert to delta my_database.my_table")
+path:
+DeltaTable.convertToDetla(spark,"parquet.`/path/to/table`")
+
+DML
+update:
+deltaTable.update(
+condition = "event ='clk'"
+set = {"event" : 'click'"})
+
+delete
+deltaTable.delete("date < '2020-01-01'")
+
+insert 
+spark.sql(""" """")
+
+merge
+
+deltaTable.alias("target").merge(updatesDF.alias("updates"), "target.id = updates.id").
+whenMatchedUpdateAll().whenNotMatchedInsertAll().execute()
+
+timetravel
+spark.sql("select * from my_table version 
+
+time travel
+spark.sql("select * from my_table version as of 5")
+
+cleanUp
+deltaTable.vaccum(100)
+
+perormance optimizations
+
+spark.sql("OPTIMIZE my_table ZORDER by (col1,col2)")
+
+spark.sql(""" ALTER TABLE my_table SET TBLPROPERITIES('delta.autoOptimize.optimizeWrite' = true """")
+
+read data
+df = spark.table("my_table")
+
+
+
+
+
+
+

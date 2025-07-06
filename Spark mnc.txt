@@ -1,0 +1,459 @@
+𝐄𝐘 𝐃𝐚𝐭𝐚 𝐄𝐧𝐠𝐢𝐧𝐞𝐞𝐫 𝐈𝐧𝐭𝐞𝐫𝐯𝐢𝐞𝐰 𝐐𝐮𝐞𝐬𝐭𝐢𝐨𝐧𝐬 :
+
+1.Explain your project architecture? 
+2. How much data u handled in day to day basis and what is the business case of your project? 
+3.What Cloud u used in your project? And questions then regarding aws services Like how u transmit the data from local path to aws S3 during extracting data from source 
+4. What is the cluster node for your EMR? 
+5. Write a sql query to join between dept emp sales to return sum and avg salary? 
+6.Write a spark code to evaluate dept wise 10th highest salary and top 6 salary using pyspark data frame? 
+7. What is scd and what is surrogate key why it is required? 
+8. What types of join in spark and why broadcast required? 
+9.What is the optimizations techniques you used in ur spark codes? 
+10.Some questions from pandas and what is the major difference between pandas and spark?
+
+𝐒𝐨𝐜𝐢𝐞𝐭𝐞 𝐠𝐞𝐧𝐞𝐫𝐚𝐥𝐞 𝐠𝐫𝐨𝐮𝐩 𝐃𝐚𝐭𝐚 𝐄𝐧𝐠𝐢𝐧𝐞𝐞𝐫 𝐈𝐧𝐭𝐞𝐫𝐯𝐢𝐞𝐰 𝐐𝐮𝐞𝐬𝐭𝐢𝐨𝐧𝐬 :
+
+1. Explain your Project Architecture? 
+2. Difference Between RDD vs data frame vs dataset in spark? 
+3. What is hive Data warehouse? 
+4. Explain what is dynamic partitioning and static partitioning? 
+5. What is external table in Hive? 
+6. Which spark version do you use in your Project? 
+7. What is S3 ? 
+8. Do you know streaming, Explain me about Kafka architecture? 
+9. Explain spark architecture? 
+10. What is airflow? have you worked on that? 
+11. Could you explain about CI/CD pipeline? 
+12. Collection of datatypes in Scala? 
+13. Case class, Abstract class, trait in Scala? 
+14. Read the data in csv from s3 and save in parquet format in HDFS? 
+15. What is Broadcast join?
+16. Optimization techniques- resource level? 
+17. SerDe property in hive? 
+18. What is Sqoop import? 
+
+𝐂𝐚𝐫𝐞𝐥𝐨𝐧 𝐃𝐚𝐭𝐚 𝐄𝐧𝐠𝐢𝐧𝐞𝐞𝐫 𝐈𝐧𝐭𝐞𝐫𝐯𝐢𝐞𝐰 𝐐𝐮𝐞𝐬𝐭𝐢𝐨𝐧𝐬 :
+
+1. Explain me about your Project Architecture? 
+2. Spark code Student_1,sub1,sub2,sub3 Add grade column based on condition If sub1+sub2+sub3 <=35 then fail If it is >=35 and <50 third class If >=50 and <60 second Else first Create spark session Read from csv Write to parquet. Also Write Spark submit command for that 
+3. What are the optimization techniques used in spark? 
+4. Difference between client and cluster mode? 
+5. Difference between groupbykey and reducebykey? 
+6. What are the day to day challenges you faced in spark code? 
+7. How to list files using Hdfs? 
+8. What are the modes you applied to create files in Linux? 
+
+
+𝐂𝐚𝐩𝐠𝐞𝐦𝐢𝐧𝐢 𝐃𝐚𝐭𝐚 𝐄𝐧𝐠𝐢𝐧𝐞𝐞𝐫 𝐈𝐧𝐭𝐞𝐫𝐯𝐢𝐞𝐰 𝐐𝐮𝐞𝐬𝐭𝐢𝐨𝐧𝐬 :
+
+1-Project architecture explain? 
+2-Data pipeline and day to day role in Handing Data pipeline? 
+3-In Data bricks what are the layers and their functionalities? 
+4-What are the file formats you used in projects? 
+5-How did u load and see the data if the file formats are parquet? 
+6-How would u maintain history during incremental load of the records during extraction from source?
+7-In sql what are the differences between coalesce and repartition? 
+8-What are the differences between check constraint and unique constraint? 
+9-What is the configuration of EMR and how would you use it for spark code?10-What are the data volumes and do you get this on daily basis or some quarterly and monthly basis? 
+11-Which scheduler did you use in your project and how do you set dependencies for jobs layer to layer? 
+12-How do you monitor spark jobs and what are the issues you faced and how did you resolve this? 
+
+𝐄𝐘 𝐃𝐚𝐭𝐚 𝐄𝐧𝐠𝐢𝐧𝐞𝐞𝐫 𝐈𝐧𝐭𝐞𝐫𝐯𝐢𝐞𝐰 𝐐𝐮𝐞𝐬𝐭𝐢𝐨𝐧𝐬 :
+
+1.Explain your project architecture? 
+2. How much data u handled in day to day basis and what is the business case of your project? 
+3.What Cloud u used in your project? And questions then regarding aws services Like how u transmit the data from local path to aws S3 during extracting data from source 
+4. What is the cluster node for your EMR? 
+5. Write a sql query to join between dept emp sales to return sum and avg sal? 6.Write a spark code to evaluate dept wise 10th highest salary and top 6 salary using pyspark data frame? 
+7. What is scd and what is surrogate key why it is required? 
+8. What types of join in spark and why broadcast required? 
+9.What is the optimizations techniques you used in ur spark codes? 
+10.Some questions from pandas and what is the major difference between pandas and spark?
+
+𝐃𝐞𝐮𝐭𝐬𝐜𝐡𝐞 𝐁𝐚𝐧𝐤 𝐃𝐚𝐭𝐚 𝐄𝐧𝐠𝐢𝐧𝐞𝐞𝐫 𝐈𝐧𝐭𝐞𝐫𝐯𝐢𝐞𝐰 𝐐𝐮𝐞𝐬𝐭𝐢𝐨𝐧𝐬 :
+
+1.Explain about your project architecture? 
+2.What is spark architecture? 
+3.Why spark RDD has lazy evaluation? 
+4. What is the difference between Client mode and Cluster mode? 
+5.What are the differences between wide and narrow transformations? 
+6.What is data skewness and how to resolve this? 
+7.What is the difference between repartition and coalesce? 
+8.What are the day to day challenges you faced in spark and what are the optimization techniques you used? 
+9. Spark code where flat map and map had been used? 
+10. From a data frame to remove duplicate rows and to find latest record date wise? 
+11. Write a code in spark with example where you can use collect list? 
+12. Word count problem using Scala?
+
+𝐂𝐚𝐩𝐠𝐞𝐦𝐢𝐧𝐢 𝐃𝐚𝐭𝐚 𝐄𝐧𝐠𝐢𝐧𝐞𝐞𝐫 𝐈𝐧𝐭𝐞𝐫𝐯𝐢𝐞𝐰 𝐐𝐮𝐞𝐬𝐭𝐢𝐨𝐧𝐬 𝐟𝐨𝐫 𝐂𝐚𝐧𝐝𝐢𝐝𝐚𝐭𝐞𝐬 𝐰𝐢𝐭𝐡 𝐎𝐯𝐞𝐫 𝟒 𝐘𝐞𝐚𝐫𝐬 𝐨𝐟 𝐄𝐱𝐩𝐞𝐫𝐢𝐞𝐧𝐜𝐞 :
+
+1) What is a Sqoop command and how is it used?
+2) How do you handle a situation in Sqoop when there is no primary key?
+3) Explain incremental imports in Sqoop.
+4) How are the number of reducers or mappers determined in Sqoop?
+5) What is a partial function in Scala?
+6) How does inheritance work in Scala?
+7) Can you explain broadcast join and accumulators in Spark?
+8) What is a Sqoop command and how is it used?
+ 9) How do you handle a situation in Sqoop when there is no primary key?
+10) Explain incremental imports in Sqoop.
+11) How are the number of reducers or mappers determined in Sqoop?
+12) What is a partial function in Scala?
+13) How does inheritance work in Scala?
+14) Can you explain broadcast join and accumulators in Spark?
+15) Swap the tuple elements in the list and retrun the tuple with max sum:
+val tupleList =List((23,42),(56,76),(78,65))
+
+𝐄𝐘 𝐃𝐚𝐭𝐚 𝐄𝐧𝐠𝐢𝐧𝐞𝐞𝐫 𝐈𝐧𝐭𝐞𝐫𝐯𝐢𝐞𝐰 𝐐𝐮𝐞𝐬𝐭𝐢𝐨𝐧𝐬 :
+
+1. What are the different ways to handle row duplication in a PySpark DataFrame? 
+data = [ (1, "Alice", 29), (2, "Bob", 24), (1, "Alice", 29), (3, "Cathy", 25), (2, "Bob", 24), (4, "David", 30) ]
++---+-----+---+
+| id| name|age|
++---+-----+---+
+| 1|Alice| 29|
+| 2| Bob| 24|
+| 3|Cathy| 25|
+| 4|David| 30|
++---+-----+---+
+2. What is checkpointing in Spark?
+3. What is the difference between MapReduce and Spark?
+4. What is the difference between an external table and an internal table?
+5. What is metadata?
+6. What is YARN?
+7. What is the Catalyst optimizer in Spark?
+8. What is the difference between cache and persist?
+9. Why do we use partitioning and bucketing?
+10. What are default parameters in Scala?
+11. By default, how many map and reduce tasks are there?
+12. Write a Sqoop command to import data.
+13. What issues do you face on a daily basis?
+
+𝐃𝐞𝐥𝐨𝐢𝐭𝐭𝐞 𝐃𝐚𝐭𝐚 𝐄𝐧𝐠𝐢𝐧𝐞𝐞𝐫 𝐈𝐧𝐭𝐞𝐫𝐯𝐢𝐞𝐰 𝐐𝐮𝐞𝐬𝐭𝐢𝐨𝐧𝐬 :
+
+1. Project Flow and Architecture. 
+2. Default file format in Spark. 
+3. Why Parquet? 
+4. Optimization techniques that you have used. 
+5. What is GroupByKey & ReduceByKey and which one is better? 
+6. What is Rack Awareness? 
+7. What file formats do you generally use? 
+8. What is fault tolerance? 
+9. While loading the data, there are some null values. How will you ignore the null values and load the data?
+
+𝐄𝐘 𝐃𝐚𝐭𝐚 𝐄𝐧𝐠𝐢𝐧𝐞𝐞𝐫 𝐈𝐧𝐭𝐞𝐫𝐯𝐢𝐞𝐰 𝐐𝐮𝐞𝐬𝐭𝐢𝐨𝐧𝐬 :
+
+1.  How Spark will work after submitting the Spark job to the cluster?
+2.  How to refresh Hive metadata?
+3.  What happens if we have duplicate rows while joining?
+4.  How to store Spark job results into a single file?
+5.  How to clean the special symbols from the raw data?
+6.  What are the currying functions in Scala?
+7.  How to run the spark jobs in the background using the bash terminal?
+8.  What are implicit parameters in Scala?
+9.  What is data modelling and explain about the snow schema?
+10. What is anti-join and how we can achieve it?
+11. When we can use Distinct and when we can use Row-number () function to avoid duplicates?
+12. Read a file and count the number of alphabets?
+
+𝗖𝗚𝗜 𝐃𝐚𝐭𝐚 𝐄𝐧𝐠𝐢𝐧𝐞𝐞𝐫 𝐈𝐧𝐭𝐞𝐫𝐯𝐢𝐞𝐰 𝐐𝐮𝐞𝐬𝐭𝐢𝐨𝐧𝐬 :
+
+1.Explain Project architecture? 
+2.What are services of cloud you used and some services? 
+3. Dept wise 4th,5th and 8th highest salary in a single table in a single query using sql? 
+4. How to check duplicates record from a data frame using spark? and how to create data frame from some seq if rows in spark and how to remove duplicates? 
+5. How to handle null in spark? 
+6. How to convert a date 31jan2023 to DD-MM format in spark? 
+7. There is a list and each list value you have to place to another data frame individual columns in a sequential way how will you do that? 
+8.What is EMR cluster size and what is the volume of data day to day used? 
+
+𝗔𝗶𝗿𝗯𝘂𝘀 𝐃𝐚𝐭𝐚 𝐄𝐧𝐠𝐢𝐧𝐞𝐞𝐫 𝐈𝐧𝐭𝐞𝐫𝐯𝐢𝐞𝐰 𝐐𝐮𝐞𝐬𝐭𝐢𝐨𝐧𝐬 :
+
+1. Project architecture 
+2. Handling huge volume of data 
+3. Complex challenges in the data pipeline and solutions 
+4. AWS services utilized and their integration in the pipeline 
+5. Number of teams from different domains involved in the project 
+6. Software Development Life Cycle (SDLC) and requirements gathering process 7. File formats used in the project 
+8. CI/CD pipeline implementation 
+9. Scrum management responsibilities and Jira utilization 
+10. Number of databases and additional tools/technologies utilized 
+11. Self-rating in SQL and Python
+
+𝗙𝗿𝗮𝗰𝘁𝗮𝗹 𝐃𝐚𝐭𝐚 𝐄𝐧𝐠𝐢𝐧𝐞𝐞𝐫 𝐈𝐧𝐭𝐞𝐫𝐯𝐢𝐞𝐰 𝐐𝐮𝐞𝐬𝐭𝐢𝐨𝐧𝐬 :
+
+
+1. Explain the project's architecture and the technologies used. 
+2. Describe the process for removing duplicates from a table. 
+3. Given Table 1 with m records and Table 2 with n records, perform inner join and left join and determine the maximum and minimum number of resulting records. 
+4. In PySpark, demonstrate how to create a Data Frame from a CSV file. 
+5. Discuss how partition counts are calculated in the provided PySpark code. 
+6. Explain how to navigate Spark UI to check jobs, stages, and the DAG. 
+7. Share the challenges encountered while working with Spark and the optimizations implemented. 
+8. Outline the steps to view the contents of a file in S3 and load it into a table. 9. Describe the functionality of Glue Crawler and Athena and how they work together. 
+10. Provide details on AWS EMR configurations. 
+
+𝗛𝗮𝗽𝗽𝗶𝗲𝘀𝘁 𝗠𝗶𝗻𝗱𝘀 𝐃𝐚𝐭𝐚 𝐄𝐧𝐠𝐢𝐧𝐞𝐞𝐫 𝐈𝐧𝐭𝐞𝐫𝐯𝐢𝐞𝐰 𝐐𝐮𝐞𝐬𝐭𝐢𝐨𝐧𝐬 :
+
+
+
+1.Explain me about your project architecture?
+2. Sql query to find join between 2 tables min ,max, avg city? 
+3. Then using full outer join I was told to do and what the results will come? 
+4. How to handle null in sql? 
+5. Dept wise 5th highest salary sql? 
+6. To generate unique records in sql without using distinct? 
+7. Spark data frame to place list to a data frame? 
+8. How to add list values to get merged with a data frame spark? 
+
+𝐂𝐚𝐩𝐠𝐞𝐦𝐢𝐧𝐢 𝐃𝐚𝐭𝐚 𝐄𝐧𝐠𝐢𝐧𝐞𝐞𝐫 𝐈𝐧𝐭𝐞𝐫𝐯𝐢𝐞𝐰 𝐐𝐮𝐞𝐬𝐭𝐢𝐨𝐧𝐬 :
+
+
+
+1-Project architecture explain? 
+2-Data pipeline and day to day role in Handing Data pipeline? 
+3-In Data bricks what are the layers and their functionalities? 
+4-What are the file formats you used in projects? 
+5-How did u load and see the data if the file formats are parquet? 
+6-How would u maintain history during incremental load of the records during extraction from source?
+7-In sql what are the differences between coalesce and repartition? 
+8-What are the differences between check constraint and unique constraint? 
+9-What is the configuration of EMR and how would you use it for spark code?10-What are the data volumes and do you get this on daily basis or some quarterly and monthly basis? 
+11-Which scheduler did you use in your project and how do you set dependencies for jobs layer to layer? 
+12-How do you monitor spark jobs and what are the issues you faced and how did you resolve this? 
+
+𝗔𝗹𝘁𝗶𝗺𝗲𝘁𝗿𝗶𝗸 𝐃𝐚𝐭𝐚 𝐄𝐧𝐠𝐢𝐧𝐞𝐞𝐫 𝐈𝐧𝐭𝐞𝐫𝐯𝐢𝐞𝐰 𝐐𝐮𝐞𝐬𝐭𝐢𝐨𝐧𝐬 :
+
+
+1. Truncate and delete in SQL? 
+2. Primary key vs unique key? 
+3. Why prefer Scala over Python with Spark? 
+4. Scala set? 
+5. Difference between having and group by? 
+6. Why Scala immutable? 
+7. Scala map? 
+8. Package for functional things in Scala? 
+9. Dataset vs data frame? 
+10. Subquery and its requirement in SQL? 
+11. Difference between joins and union? 
+12. Difference between union all and union? 
+13. Use of implicits in Scala? 
+14. Extracting date, month, and quarter from column in Spark? 
+15. Partition deciding in Spark? 
+16. Explode in JSON? 
+17. Duplicate records in Spark? 
+18. Difference between rank and dense rank in SQL? 
+19. CTE Expression in SQL? 
+
+𝐃𝐞𝐥𝐨𝐢𝐭𝐭𝐞 𝐃𝐚𝐭𝐚 𝐄𝐧𝐠𝐢𝐧𝐞𝐞𝐫 𝐈𝐧𝐭𝐞𝐫𝐯𝐢𝐞𝐰 𝐐𝐮𝐞𝐬𝐭𝐢𝐨𝐧𝐬 :
+
+1. Project Flow and Architecture. 
+2. Default file format in Spark. 
+3. Why Parquet? 
+4. Optimization techniques that you have used. 
+5. What is GroupByKey & ReduceByKey and which one is better? 
+6. What is Rack Awareness? 
+7. What file formats do you generally use? 
+8. What is fault tolerance? 
+9. While loading the data, there are some null values. How will you ignore the null values and load the data?
+
+𝐍𝐚𝐠𝐚𝐫𝐫𝐨 𝐃𝐚𝐭𝐚 𝐄𝐧𝐠𝐢𝐧𝐞𝐞𝐫 𝐈𝐧𝐭𝐞𝐫𝐯𝐢𝐞𝐰 𝐐𝐮𝐞𝐬𝐭𝐢𝐨𝐧𝐬 :
+
+
+1. Project architecture 
+2. How to upsert your data daily basis using spark? 
+3. How to perform scd2 using spark? 
+4. What is shuffle and how to handle this? 
+5. What is broadcast join and why it is required? 
+6. What is predicate pushdown and AQE.show with real time example? 
+7. From a student table based on student ID best of 3 marks using sql and avg of that for best of three? 
+8. Pyspark code to perform broadcast join and conditional aggregation based on location max(avg(salary))? 
+9. How to handle null in spark? 
+
+𝐃𝐞𝐥𝐨𝐢𝐭𝐭𝐞 𝐃𝐚𝐭𝐚 𝐄𝐧𝐠𝐢𝐧𝐞𝐞𝐫 𝐈𝐧𝐭𝐞𝐫𝐯𝐢𝐞𝐰 𝐐𝐮𝐞𝐬𝐭𝐢𝐨𝐧𝐬 :
+
+1. Project Flow and Architecture. 
+2. Default file format in Spark. 
+3. Why Parquet? 
+4. Optimization techniques that you have used. 
+5. What is GroupByKey & ReduceByKey and which one is better? 
+6. What is Rack Awareness? 
+7. What file formats do you generally use? 
+8. What is fault tolerance? 
+9. While loading the data, there are some null values. How will you ignore the null values and load the data?
+
+𝐅𝐫𝐚𝐜𝐭𝐚𝐥 𝐃𝐚𝐭𝐚 𝐄𝐧𝐠𝐢𝐧𝐞𝐞𝐫 𝐈𝐧𝐭𝐞𝐫𝐯𝐢𝐞𝐰 𝐐𝐮𝐞𝐬𝐭𝐢𝐨𝐧𝐬 :
+
+1.Tell me about architecture of your project? 
+2. Tell me about spark architecture? 
+3. How spark runs in standalone mode? 
+4. Tell me how spark divides the program in different Jobs, stages and tasks? 
+5. How spark decides where to launch the executor in cluster? 
+6. What are the roles and responsibility of driver in spark yarn Architecture? 
+7. On what basis yarn resource manager decides to allocate resources to spark? 
+
+𝐄𝐘 𝐃𝐚𝐭𝐚 𝐄𝐧𝐠𝐢𝐧𝐞𝐞𝐫 𝐈𝐧𝐭𝐞𝐫𝐯𝐢𝐞𝐰 𝐐𝐮𝐞𝐬𝐭𝐢𝐨𝐧𝐬 :
+
+1.Explain your project architecture? 
+2. How much data u handled in day to day basis and what is the business case of your project? 
+3.What Cloud u used in your project? And questions then regarding aws services Like how u transmit the data from local path to aws S3 during extracting data from source 
+4. What is the cluster node for your EMR? 
+5. Write a sql query to join between dept emp sales to return sum and avg salary? 
+6.Write a spark code to evaluate dept wise 10th highest salary and top 6 salary using pyspark data frame? 
+7. What is scd and what is surrogate key why it is required? 
+8. What types of join in spark and why broadcast required? 
+9.What is the optimizations techniques you used in ur spark codes? 
+10.Some questions from pandas and what is the major difference between pandas and spark?
+
+𝐇𝐂𝐋 𝐃𝐚𝐭𝐚 𝐄𝐧𝐠𝐢𝐧𝐞𝐞𝐫 𝐈𝐧𝐭𝐞𝐫𝐯𝐢𝐞𝐰 𝐐𝐮𝐞𝐬𝐭𝐢𝐨𝐧𝐬 :
+
+1. Project Architecture? 
+2. How to handle data using AWS S3? 
+3. What is the volume of data? 
+4. What is the cluster configuration for AWS EMR in your project? 
+5. What is fact table and star schema in DWH? 
+6. SQL query to find house from student table whose avg(score) > 70. 
+7. Difference between list and tuple. 
+8. What is Map Reduce architecture?
+9. How did you handle production deployment in your project? 
+10. Spark submit properties? 
+11. Asked about partition bucket in Hive? 
+12. What is the comparison between Spark SQL and Hive in terms of performance?
+
+𝐋𝐓𝐈𝐌𝐢𝐧𝐝𝐭𝐫𝐞𝐞 𝐃𝐚𝐭𝐚 𝐄𝐧𝐠𝐢𝐧𝐞𝐞𝐫 𝐈𝐧𝐭𝐞𝐫𝐯𝐢𝐞𝐰 𝐐𝐮𝐞𝐬𝐭𝐢𝐨𝐧𝐬 :
+
+1]What are the advantages of Spark?
+2]What are Transformation and Action?
+3]What is RDD?
+4]Can you explain Spark architecture?
+5]What is YARN?
+6]What different optimization techniques have you used in Spark?
+7]What optimizations have you used in Hive?
+8]Can you provide an example of a simple SQL query?
+9]Can you describe a typical project architecture using Spark?
+10If you claim to have knowledge of cloud computing, what are some basic questions you might be asked about it?
+
+𝐂𝐚𝐩𝐠𝐞𝐦𝐢𝐧𝐢 𝐃𝐚𝐭𝐚 𝐄𝐧𝐠𝐢𝐧𝐞𝐞𝐫 𝐈𝐧𝐭𝐞𝐫𝐯𝐢𝐞𝐰 𝐐𝐮𝐞𝐬𝐭𝐢𝐨𝐧𝐬 :
+
+ 𝐋𝟏 𝐑𝐨𝐮𝐧𝐝:-
+
+1-Project flow and Architecture of your project?
+2-AWS services that you used? 
+3-What optimization techniques used in hadoop (Hive) and spark? 
+4-Why you used these techniques? 
+5-What scheduling tool used in project? 
+6-Your roles & responsibilities? 7-Why HDFS you used?
+
+𝐇𝐞𝐱𝐚𝐰𝐚𝐫𝐞 𝐃𝐚𝐭𝐚 𝐄𝐧𝐠𝐢𝐧𝐞𝐞𝐫 𝐈𝐧𝐭𝐞𝐫𝐯𝐢𝐞𝐰 𝐐𝐮𝐞𝐬𝐭𝐢𝐨𝐧𝐬 :
+
+1. Explain me about your project architecture? 
+2. Emp table, dept table how join based on dept id where emp avg salary is greater than dept. avg salary for each dept using SQL? 
+3. Emp table and order table where order was not happened for the last 6 months using SQL. 
+4. How to remove duplicates from an unsorted array using Python.
+5. What are narrow and wide transformations? 
+6. What is StreamSets? 
+7. How to monitor Spark jobs and questions regarding transformations actions. 
+8. Difference between lineage and DAG?
+
+𝐌𝐚𝐯𝐞𝐫𝐢𝐜𝐤 𝐃𝐚𝐭𝐚 𝐄𝐧𝐠𝐢𝐧𝐞𝐞𝐫 𝐈𝐧𝐭𝐞𝐫𝐯𝐢𝐞𝐰 𝐐𝐮𝐞𝐬𝐭𝐢𝐨𝐧𝐬 :
+
+1. Explain me about your project architecture? 
+2. In Hive how to create Transactional tables? 
+3. Why hive does not support transactional system? 
+4. Select * from table limit 100 (How many mappers created)? 
+5. When csv files in hdfs location stored as ORC where file stored in hive and what is the process to load the data in tables from files? 
+6. How to refresh partition in hive? 
+7. What are the transformations and actions in hive and how to monitor daily spark jobs 
+8. What are the challenges and corresponding optimizations u did in spark job executions. 
+9. How to monitor DAG and what we can check from DAG 
+10. Tell about some actions you used in project? 
+11. Is read and write transformation or action? 
+12. How to handle EMR cluster in aws and cluster size along with executor driver memory configurations? 
+13. Where Athena records stored in aws 
+14. What is first order function, anonymous and pure functions in Scala.
+
+𝐇𝐂𝐋 𝐃𝐚𝐭𝐚 𝐄𝐧𝐠𝐢𝐧𝐞𝐞𝐫 𝐈𝐧𝐭𝐞𝐫𝐯𝐢𝐞𝐰 𝐐𝐮𝐞𝐬𝐭𝐢𝐨𝐧𝐬 :
+
+1. Project Architecture? 
+2. How to handle data using AWS S3? 
+3. What is the volume of data?
+4. What is the cluster configuration for AWS EMR in your project? 
+5. What is fact table and star schema in DWH? 
+6. SQL query to find house from student table whose avg(score) > 70. 
+7. Difference between list and tuple. 
+8. What is Map Reduce architecture? 
+9. How did you handle production deployment in your project? 
+10. Spark submit properties? 
+11. Asked about partition bucket in Hive? 
+12. What is the comparison between Spark SQL and Hive in terms of performance?
+
+𝐒𝐞𝐜𝐨𝐧𝐝 𝐫𝐨𝐮𝐧𝐝 𝐨𝐟 𝐂𝐚𝐩𝐠𝐞𝐦𝐢𝐧𝐢 𝐃𝐚𝐭𝐚 𝐄𝐧𝐠𝐢𝐧𝐞𝐞𝐫 𝐈𝐧𝐭𝐞𝐫𝐯𝐢𝐞𝐰 𝐐𝐮𝐞𝐬𝐭𝐢𝐨𝐧𝐬
+:
+:
+:
+1. Describe your work experience.
+2. Provide a detailed explanation of a project, including the data sources, file formats, and methods for file reading.
+3. Discuss the transformation techniques you have utilized, offering an example and explanation.
+4. Explain the process of reading web API data in Spark, including detailed code explanation.
+5. How do you convert lists into data frames?
+6. What is the method for reading JSON files in Spark?
+7. How do you handle complex data? When is it appropriate to use the "explode" function?
+8. How do you determine the continuation of a process and identify necessary transformations for complex data?
+9. What actions do you take if a Spark job fails? How do you troubleshoot and find a solution?
+10. How do you address performance issues? Explain a scenario where a job is slow and how you would diagnose and resolve it.
+11. Given a dataframe with a "department" column, explain how you would add a new employee to a department, specifying their salary and increment.
+12. Explain the scenario for finding the highest salary using SQL.
+13. If you have three data frames, write SQL queries to join them based on a common column.
+14. When is it appropriate to use partitioning or bucketing in Spark? How do you determine when to use each technique? How do you assess cardinality?
+15. How do you check for improper memory allocation?
+
+#LTIMindTree interview questions for hashtag#Dataengineer
+
+🎯 Hive
+Explain partitioning and bucketing in Hive.
+Can you write a Hive query to find the top 10 highest earning products from a sales table?
+
+🎯 Sqoop
+What is Sqoop? How does Sqoop import data into Hadoop from relational databases?
+How does Sqoop handle incremental imports?
+What are the challenges you have faced while using Sqoop, and how did you overcome them?
+
+🎯 Scala
+Why is Scala preferred for big data projects?
+Can you write a Scala function to calculate the factorial of a number?
+What are case classes in Scala? How are they used in pattern matching?
+
+🎯 SQL
+What are joins, and can you explain different types of joins?
+Write an SQL query to find the second highest salary from an employee table.
+How do you optimize SQL queries?
+
+🎯 Python
+How do you use Python for data manipulation and analysis?
+What libraries in Python are you familiar with for data engineering tasks?
+Can you show how to connect to a SQL database using Python?
+What is a lambda function in Python? Provide an example where you have used it.
+What are decorators, and how have you used them in your projects?
+
+🎯 Scala with Spark
+Why do you use Spark with Scala for processing large datasets?
+Explain RDDs, DataFrames, and Datasets in Spark.
+Can you provide an example of a Spark transformation and action?
+How does Spark achieve fault tolerance?
+Write a Spark SQL query to perform an aggregation operation on a dataset.
+
+🎯 AWS S3
+What is S3 and what are its benefits for data storage?
+How do you secure data in S3?
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,555 @@
+Find all employees whose salaries exceed the company's average salary
+
+SELECT e.*
+FROM Employee e
+WHERE e.salary > (SELECT AVG(salary) FROM Employee);
+
+Retrieve the names of employees who work in the same department as 'John Doe'
+
+SELECT e1.name
+FROM Employee e1
+JOIN Employee e2 ON e1.departmentId = e2.departmentId
+WHERE e2.name = 'John Doe';
+
+
+Display the second highest salary from the Employee table without using the MAX function twice
+
+SELECT MAX(salary) AS second_highest_salary
+FROM Employee
+WHERE salary < (SELECT MAX(salary) FROM Employee);
+
+Find all customers who have placed more than five orders
+
+SELECT customer_id
+FROM Orders
+GROUP BY customer_id
+HAVING COUNT(order_id) > 5;
+
+Count the total number of orders placed by each customer
+
+SELECT customer_id, COUNT(order_id) AS total_orders
+FROM Orders
+GROUP BY customer_id;
+
+List employees who joined the company within the last 6 months
+
+SELECT *
+FROM Employee
+WHERE join_date >= ADD_MONTHS(SYSDATE, -6);
+
+Calculate the total sales amount for each product
+
+SELECT product_id, SUM(amount) AS total_sales
+FROM Sales
+GROUP BY product_id;
+
+List all products that have never been sold
+
+SELECT p.product_id, p.product_name
+FROM Products p
+LEFT JOIN Sales s ON p.product_id = s.product_id
+WHERE s.product_id IS NULL;
+
+Remove duplicate rows from a table
+
+WITH CTE AS (
+    SELECT *,
+           ROW_NUMBER() OVER (PARTITION BY column1, column2 ORDER BY (SELECT NULL)) AS row_num
+    FROM table_name)
+DELETE FROM table_name
+WHERE id IN (SELECT id FROM CTE WHERE row_num > 1);
+
+Identify the top 10 customers who have not placed any orders in the past year
+
+SELECT c.customer_id, c.customer_name
+FROM Customers c
+LEFT JOIN Orders o ON c.customer_id = o.customer_id AND o.order_date >= ADD_MONTHS(SYSDATE, -12)
+WHERE o.order_id IS NULL
+ORDER BY c.customer_id
+FETCH FIRST 10 ROWS ONLY;
+
+Find the top 3 departments with the highest average salary
+
+SELECT d.name AS department_name, AVG(e.salary) AS average_salary
+FROM Employee e
+JOIN Department d ON e.departmentId = d.id
+GROUP BY d.name
+ORDER BY average_salary DESC
+FETCH FIRST 3 ROWS ONLY;
+
+Calculate a running total of orders for each customer
+
+SELECT 
+    customer_id, 
+    order_date, 
+    order_amount, 
+    SUM(order_amount) OVER (PARTITION BY customer_id ORDER BY order_date) AS running_total
+FROM Orders
+ORDER BY customer_id, order_date;
+
+Identify employees who have worked on all projects
+
+SELECT e.id, e.name
+FROM Employee e
+JOIN WorksOn w ON e.id = w.employee_id
+GROUP BY e.id, e.name
+HAVING COUNT(DISTINCT w.project_id) = (SELECT COUNT(*) FROM Projects);
+
+Write an SQL query to pivot a table without using PIVOT function
+
+SELECT 
+    product, 
+    SUM(CASE WHEN year = 2023 THEN amount ELSE 0 END) AS amount_2023,
+    SUM(CASE WHEN year = 2024 THEN amount ELSE 0 END) AS amount_2024
+FROM Sales
+GROUP BY product;
+
+Find the median salary for each department
+
+WITH RankedSalaries AS (
+    SELECT 
+        e.departmentId, 
+        e.salary,
+        ROW_NUMBER() OVER (PARTITION BY e.departmentId ORDER BY e.salary) AS rn,
+        COUNT(*) OVER (PARTITION BY e.departmentId) AS cnt
+    FROM Employee e
+)
+SELECT 
+    departmentId, 
+    AVG(salary) AS median_salary
+FROM RankedSalaries
+WHERE rn IN (FLOOR((cnt + 1) / 2), FLOOR((cnt + 2) / 2))
+GROUP BY departmentId;
+
+Compute the moving avg of how much the customer paid in a seven days window(i.e, current day + 6days befire). avergae_amount should be rounded to two decimal places.
+
+customer table : customer_id, name, visited_on, amount
+
+SELECT 
+    customer_id,
+    name,
+    visited_on,
+    amount,
+    ROUND(AVG(amount) OVER (
+        PARTITION BY customer_id
+        ORDER BY visited_on
+        ROWS BETWEEN 6 PRECEDING AND CURRENT ROW
+    ), 2) AS average_amount
+FROM 
+    customer
+ORDER BY 
+    customer_id, visited_on;
+---
+
+# Create DataFrame
+columns = ["customer_id", "name", "visited_on", "amount"]
+df = spark.createDataFrame(data, columns)
+
+# Define window specification
+windowSpec = Window.partitionBy("customer_id").orderBy("visited_on").rowsBetween(-6, 0)
+
+# Calculate moving average
+result_df = df.withColumn("average_amount", spark_round(avg(col("amount")).over(windowSpec), 2))
+
+# Show result
+result_df.orderBy("customer_id", "visited_on").show()
+
+Find the name of the user who has rated the greatest number of movies. in case of tie, return the lexicographically smaller user name.
+
+SELECT Name
+FROM Users
+WHERE User_id = (
+    SELECT User_id
+    FROM (
+        SELECT User_id, COUNT(*) AS rating_count
+        FROM Ratings
+        GROUP BY User_id
+        ORDER BY rating_count DESC, User_id ASC
+        LIMIT 1
+    ) AS top_user
+);
+
+
+Find the movie name with highest average rating in februrary 2020. In case of a tie, return the lexicographically smaller movie name.
+
+SELECT Title
+FROM Movies
+WHERE Movie_id = (
+    SELECT Movie_id
+    FROM (
+        SELECT Movie_id, AVG(Rating) AS avg_rating
+        FROM Ratings
+        WHERE Rating_date >= '2020-02-01' AND Rating_date < '2020-03-01'
+        GROUP BY Movie_id
+        ORDER BY avg_rating DESC, Movie_id ASC
+        LIMIT 1
+    ) AS top_movie
+);
+
+
+
+Movies table : Movie_id, Title
+Users table : User_id, Name
+
+select u.user_id, count(m.user_id) as cnt, u.name from users u left join movierating m on u.user_id = m.user_id group by m.user_id order by cnt desc, name asc limit 1),
+second as (
+with cte as (
+select avg(m.rating) over(partition by m.movie_id) as avg, mo.title from movierating m inner movies mo on m.movie_id = mo.movie_id where substring(created_at,1,7) = '2020-02')
+select title from cte order by avg desc, title asc limit 1)
+select name as result from first union all select title from second;
+
+----
+write a solution to swap the seat id of every two consecutive students. If the number of students is odd, the id of the last student is not swapped. Return the result table ordered by id in ascending order.
+
+Seat Input: Id, Student
+
+select case when id = (select max(id) from seat) and id % 2 = 1 then id 
+when id % 2 = 1 then id + 1 else id - 1 end as id , student from seat order by id;
+------------
+when the employee joins other departments they need to decide which department is their primary department.Note the when an employee belongs to only one department, their primary column is 'N'. Write a sol to report all the employees with their primary department. For employees who belong to one department, report their only department. Return the result table in any order.
+
+employee_table : employee_id, department_id, primary_flag
+
+select employee_id, department_id from employee e where primary_flag = 'y' or employee_id in (
+select employee_id from employee group by employee_id having count(employee_id) = 1);
+
+WITH EmployeeCount AS (
+    SELECT
+        employee_id,
+        COUNT(*) AS dept_count
+    FROM
+        employee_table
+    GROUP BY
+        employee_id
+),
+PrimaryDepartment AS (
+    SELECT
+        e.employee_id,
+        e.department_id,
+        CASE
+            WHEN ec.dept_count = 1 THEN 'N'
+            ELSE e.primary_flag
+        END AS primary_flag
+    FROM
+        employee_table e
+    JOIN
+        EmployeeCount ec ON e.employee_id = ec.employee_id
+)
+SELECT
+    employee_id,
+    department_id,
+    primary_flag
+FROM
+    PrimaryDepartment
+ORDER BY
+    employee_id, department_id;
+
+---
+
+write a solution to report the id's and names of all managers, the number of employees who report directly to them , and the average age of the reports rounded to the nearest integer. Return the result table ordered by employee_id;
+
+employees_table : employee_id, name,reports_to, age
+
+SELECT
+    e.employee_id AS manager_id,
+    e.name AS manager_name,
+    COUNT(r.employee_id) AS num_reports,
+    ROUND(AVG(r.age)) AS avg_age_reports
+FROM
+    employees_table e
+inner JOIN
+    employees_table r ON e.employee_id = r.reports_to
+GROUP BY
+    e.employee_id, e.name
+ORDER BY
+    e.employee_id;
+
+---
+
+write a solution to report the customer ids from the customer table that bought all the products in the product table. return the result table in any order.
+
+customer_table : customer_id, product_key
+product_key : product_key
+
+select customer_id from customer group by customer_id having count(distinct product_key) = (select count(*) from product);
+
+----------
+A single number is a number that appeared only once in the mynumber table.
+find the largest single number. If there is no single number, report null
+
+with cte as (
+select num, count(num) as Cnum from mynumbers group by num)
+select max(num) as num from cte where Cnum=1; 
+
+--------------------
+
+Find pairs of users with the maximum number of common followers
+
+Input/Relations table:
++---------+-------------+
+| user_id | follower_id |
++---------+-------------+
+| 1 | 3 |
+| 2 | 3 |
+| 7 | 3 |
+| 1 | 4 |
+| 2 | 4 |
+| 7 | 4 |
+| 1 | 5 |
+| 2 | 6 |
+| 7 | 5 |
++---------+-------------+
+
+spark = SparkSession.builder.appName("leetcode problem").getOrCreate()
+schema = "user_id INT, follower_id INT"
+relation_data = spark.createDataFrame([], schema)
+display(relations_data)
+data = []
+relations_data.show()
+relation_df = spark.createDataFrame(data,schema)
+display(relations_df)
+
+new_df = spark.sql(
+""" with cte as (
+select r1.user_id as r1_user_id,r2.user_id as r2_user_id, count(distinct r2.follwer_id) max_fol, rank() over(order by count(distinct r2.follower_id) desc) max_fol_rank from relation r1 left join relation r2 on r1.user_id < r2.user_id and r1.follower_id = r2.follower_id where r2.user_id is not null group by 1,2)
+select r1_user_id,r2_user_id from cte where max_fol_rnk = 1""")
+display(new_df)
+----
+
+from pyspark.sql.functions import col,countDistinct, rank
+from pyspark.sql.window import Window
+
+max_fol_rnk_df = relations_df.alias("r1").\
+     join(relations_df.alias("r2").(col("r1.user_id") < col("r2.user_id")) & (col("r1.follower_id") == col("r2.follwer_id")),"left").
+     where(col("r2.user_id").isNotNull()).groupBy("r1.user_id","r2.user_id").\
+       agg(countDistinct("r2.follower_id").alias("max_fol")).\
+          withColumn("max_fol_rank", rank().over(Window.orderBy(col("max_fol").desc()))).\
+              where(col("max_fol_rank") == 1).select(col("r1.user_id").alias("user_id),col("r2.user_id").alias("user2_id"))
+display(max_fol_rnk_df)
+
+----------
+
+Given two tables, Accounts and Transactions, where Accounts contains information about the maximum monthly income for each bank account, and Transactions contains details about individual transactions (including the transaction type and amount), we need to identify suspicious bank accounts. A bank account is considered suspicious if its total income exceeds the maximum income for two or more consecutive months.
+
+Here's how the tables look like:
+
+Accounts table:
++------------+------------+
+| account_id | max_income |
++------------+------------+
+| 3 | 21000 |
+| 4 | 10400 |
++------------+------------+
+
+Transactions table:
++----------------+------------+----------+--------+---------------------+
+| transaction_id | account_id |  type  | amount |     day     |
++----------------+------------+----------+--------+---------------------+
+|    2    |   3   | Creditor | 107100 | 2021-06-02 11:38:14 |
+|    4    |   4   | Creditor | 10400 | 2021-06-20 12:39:18 |
+|    11    |   4   | Debtor | 58800 | 2021-07-23 12:41:55 |
+|    1    |   4   | Creditor | 49300 | 2021-05-03 16:11:04 |
+|    15    |   3   | Debtor | 75500 | 2021-05-23 14:40:20 |
+|    10    |   3   | Creditor | 102100 | 2021-06-15 10:37:16 |
+|    14    |   4   | Creditor | 56300 | 2021-07-21 12:12:25 |
+|    19    |   4   | Debtor | 101100 | 2021-05-09 15:21:49 |
+|    8    |   3   | Creditor | 64900 | 2021-07-26 15:09:56 |
+|    7    |   3   | Creditor | 90900 | 2021-06-14 11:23:07 |
++----------------+------------+----------+--------+---------------------+
+
+
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import sum,col
+
+spark = SparkSession.builder.appName("accountTransaction").getOrCreate()
+account_data = []
+transaction_data = []
+
+account_df = spark.createDataFrame()
+transaction_df = spark.createDataFrame()
+display(transaction_df)
+display(account_df)
+account_df.createOrReplaceTempView("accounts")
+transactions_df.createOrReplaceTempView("transaction")
+
+display(spark.sql("""with cte as (
+select account_id,month(day) as mnth, sum(amount) as total_income from transactions where type = "Creditor" group by account_id, month(day)),
+cte2 as (
+select cte.account_id,mnth,total_income,max_income,row_number() over(partition by cte.account_id order by cte.account_id,mnth) as rnk,
+(mnth - row_number() over(partition by cte.account_id order by cte.account_id,mnth)) as find_consecutive_month from cte inner join accounts on accounts.account_id = cte.account_id where cte.total_income > accounts.max_income)
+select distinct account_id from cte2 group by account_id,find_consecutive_month having count(*) >1""")
+
+---pyspark
+
+from pyspark.sql.functions import substring,sum,when,lead,col
+
+monthly_income = spark.sql("""
+select t.account_id,substring(t.day,1,7) as month,sum(case when t.type = 'creditor' then t.amount else 0 end) as total_income from transaction t group by t.account_id, substring(t.day,1,7) """)
+
+suspicious_accounts = monthly_income.join(accounts, "account_id")\
+    .select(monthly_income["account_id"], monthly_income["month"], monthly_income["total_income"],
+         lead(monthly_income["total_income"]).over(Window.partitionBy(monthly_income["account_id"]).orderBy
+         (monthly_income["month"])).alias("next_month_income"),
+         accounts["max_income"]
+
+result = suspicious_accounts \
+             .where((col("total_income") > col("max_income")) & (col("next_month_income") > col("max_income")))\
+             .select("account_id").distinct()
+result.show()
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+Q1: You have two tables: 'response_times' with columns (request_id, response_time_ms, device_type_id) and 'device_types' with columns (device_type_id, device_name, manufacturer). Write a query to calculate the 95th percentile of response times for each device manufacturer.
+
+WITH response_ranks AS (
+    SELECT 
+        rt.device_type_id,
+        rt.response_time_ms,
+        dt.manufacturer,
+        NTILE(100) OVER (PARTITION BY dt.manufacturer ORDER BY rt.response_time_ms) AS percentile
+    FROM response_times rt
+    JOIN device_types dt ON rt.device_type_id = dt.device_type_id
+)
+SELECT 
+    manufacturer,
+    MAX(response_time_ms) AS response_time_95th_percentile
+FROM response_ranks
+WHERE percentile <= 95
+GROUP BY manufacturer;
+
+
+Q2: Given a table 'daily_visits' with columns (visit_date, visit_count), write a query to calculate the 7-day moving average of daily visits for each date.
+
+SELECT
+    visit_date,
+    AVG(visit_count) OVER (
+        ORDER BY visit_date
+        ROWS BETWEEN 6 PRECEDING AND CURRENT ROW) AS moving_avg_7_days FROM daily_visits;
+
+Q3: Given a table 'stock_prices' with columns (date, stock_symbol, closing_price). What's the cumulative change in stock price compared to the starting price of the year?
+
+WITH start_price AS (
+    SELECT
+        stock_symbol,
+        MIN(date) AS start_date,
+        FIRST_VALUE(closing_price) OVER (PARTITION BY stock_symbol ORDER BY date) AS start_price
+    FROM stock_prices
+    GROUP BY stock_symbol)
+SELECT
+    sp.date,
+    sp.stock_symbol,
+    sp.closing_price,
+    sp.closing_price - sp2.start_price AS cumulative_change
+FROM stock_prices sp
+JOIN start_price sp2 ON sp.stock_symbol = sp2.stock_symbol;
+
+Q4: You have two tables: 'products' with columns (product_id, product_name, category_id, price) and 'categories' with columns (category_id, category_name). What is the price difference between each product and the next most expensive product in that category?
+
+WITH ranked_products AS (
+    SELECT
+        product_id,
+        product_name,
+        category_id,
+        price,
+        LEAD(price) OVER (PARTITION BY category_id ORDER BY price DESC) AS next_price
+    FROM products)
+SELECT
+    product_id,
+    product_name,
+    category_id,
+    price,
+    price - next_price AS price_difference FROM ranked_products;
+
+Q5: Given a table 'customer_spending' with columns (customer_id, total_spend), how would you divide customers into 10 deciles based on their total spending?
+
+SELECT
+    customer_id,
+    total_spend,
+    NTILE(10) OVER (ORDER BY total_spend DESC) AS decile FROM customer_spending;
+
+Q6: Using a table 'daily_active_users' with columns (activity_date, user_count), write a query to calculate the day-over-day change in user count and the growth rate.
+
+WITH user_changes AS (
+    SELECT
+        activity_date,
+        user_count,
+        LAG(user_count) OVER (ORDER BY activity_date) AS previous_user_count FROM daily_active_users)
+SELECT
+    activity_date,
+    user_count,
+    user_count - previous_user_count AS day_over_day_change,
+    (user_count - previous_user_count) / previous_user_count * 100 AS growth_rate FROM user_changes;
+
+Q7: Given a table 'sales' with columns (sale_id, sale_date, amount), how would you calculate the total sales amount for each day of the current month, along with a running total of month-to-date sales?
+
+WITH current_month_sales AS (
+    SELECT
+        sale_date,
+        amount
+    FROM sales
+    WHERE sale_date >= DATE_TRUNC('month', CURRENT_DATE))
+SELECT
+    sale_date,
+    SUM(amount) AS daily_total,
+    SUM(SUM(amount)) OVER (ORDER BY sale_date) AS month_to_date_total FROM current_month_sales GROUP BY sale_date;
+
+Q8: You have two tables 'employee_sales' with columns (employee_id, department_id, sales_amount) and ‘employees’ with columns (employee_id, employee_name), write a query to identify the top 5 employees by sales amount in each department.
+
+WITH ranked_sales AS (
+    SELECT
+        es.employee_id,
+        es.department_id,
+        es.sales_amount,
+        ROW_NUMBER() OVER (PARTITION BY es.department_id ORDER BY es.sales_amount DESC) AS rank FROM employee_sales es)
+SELECT
+    rs.department_id,
+    rs.employee_id,
+    e.employee_name,
+    rs.sales_amount FROM ranked_sales rs JOIN employees e ON rs.employee_id = e.employee_id WHERE rs.rank <= 5;
+
+
+Q9: Using a table 'employee_positions' with columns (employee_id, position, start_date, end_date), write a query to find employees who have been promoted (i.e., changed to a different position) within 6 months of their initial hire.
+
+WITH employee_changes AS (
+    SELECT
+        employee_id,
+        position,
+        start_date,
+        LAG(position) OVER (PARTITION BY employee_id ORDER BY start_date) AS previous_position,
+        LAG(start_date) OVER (PARTITION BY employee_id ORDER BY start_date) AS previous_start_date FROM employee_positions)
+SELECT
+    employee_id,
+    previous_position,
+    position,
+    start_date,
+    previous_start_date
+FROM employee_changes
+WHERE previous_position IS NOT NULL
+AND position <> previous_position
+AND start_date <= previous_start_date + INTERVAL '6 months';
+
+
+Q10: You have two tables: 'customer_transactions' with columns (customer_id, transaction_date, transaction_amount), and 'customer_info' with columns (customer_id, customer_name, signup_date). Write a query to calculate the moving average of transaction amounts for each customer over their last 3 transactions, but only for customers who have been signed up for more than a year.
+
+WITH recent_transactions AS (
+    SELECT
+        ct.customer_id,
+        ct.transaction_date,
+        ct.transaction_amount,
+        ROW_NUMBER() OVER (PARTITION BY ct.customer_id ORDER BY ct.transaction_date DESC) AS txn_rank
+    FROM customer_transactions ct
+    JOIN customer_info ci ON ct.customer_id = ci.customer_id
+    WHERE ci.signup_date < CURRENT_DATE - INTERVAL '1 year'
+)
+SELECT
+    customer_id,
+    transaction_date,
+    transaction_amount,
+    AVG(transaction_amount) OVER (
+        PARTITION BY customer_id
+        ORDER BY transaction_date DESC
+        ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) AS moving_avg_last_3 FROM recent_transactions WHERE txn_rank <= 3;
+
+
+

@@ -1,0 +1,177 @@
+from pyspark.sql.function import *
+
+df = spark.read.text("/FileStore/myfiles/randomtext.txt")
+df_words = df.withColumn("words", split(col("value")," "))
+df_mod = df_words.select(explode(col("words")).alias("word"))
+res_df = df_mod.groupBy(col("word")).count().orderBy(col("count").desc().col("word"))
+display(res_df)
+
+--------
+Challenge: How to keep only the top 2 most frequent values as it is and replace everything else as ‘Other’ 
+
+My solution
+------------------
+from pyspark.sql import Row
+from pyspark.sql.functions import *
+from pyspark.sql import Window
+# Sample data
+data = [
+Row(name='John', job='Engineer'),
+Row(name='John', job='Engineer'),
+Row(name='Mary', job='Scientist'),
+Row(name='Bob', job='Engineer'),
+Row(name='Bob', job='Engineer'),
+Row(name='Bob', job='Scientist'),
+Row(name='Sam', job='Doctor'),
+]
+
+df = spark.creatDataFrame(data)
+spec = Window.partitionBy("job")
+df_grp = df.withColumn("cnt", count("*").over(spec))
+df_grp = df.withColumn("cnt",count("*").over(spec)) \
+ .withColumn("rank", dense_rank().over(Window.orderBy(col("cnt").desc()))\
+ .withColumn("job", when(col("rank") <= 2,col("job")).otherwise("other"))
+df_grp.select("name","job").show()
+
+-----------
+
+You are given a dataframe having columns "ID", "Name", "Sal". Your task is to add a new column "running_total_salary" as below.
+
+Pyspark solution
+--------------------
+from pyspark.sql import SparkSession
+from pyspark.sql.window import Window
+from pyspark.sql.functions import *
+
+# Create a SparkSession
+spark = SparkSession.builder \
+ .appName("DataFrameExample") \
+ .getOrCreate()
+
+# Sample data
+data = [(1, "A", 1000),
+ (2, "B", 2000),
+ (3, "C", 3000),
+ (4, "D", 4000)]
+schema = ["ID", "Name", "Sal"]
+
+# Create DataFrame
+df = spark.createDataFrame(data, schema)
+
+windowSpec = Window.orderBy("ID").rowBetween(Window.unboundedPreceding,Window.currentRow)
+df.withColumn("running_total_sal", sum("sal").over(windowSpec))
+df.show()
+
+----------------
+Write pyspark solution to get the total Sales in year 1998,1999 and 2000 for all the products as shown below.
+
+My solution
+------------------
+from pyspark.sql import SparkSession
+from pyspark.sql.types import StructType, StructField, IntegerType, StringType
+from pyspark.sql.functions import *
+spark = SparkSession.builder.appName("SalesTable").getOrCreate()
+
+# Define the schema for the DataFrame
+schema = StructType([
+ StructField("id", IntegerType(), False),
+ StructField("product", StringType(), False),
+ StructField("salesyear", IntegerType(), False),
+ StructField("QuantitySold", IntegerType(), False)
+])
+
+# Insert the provided data into the DataFrame
+data = [
+ (1, 'Laptop', 1998, 2500),
+ (2, 'Laptop', 1999, 3600),
+ (3, 'Laptop', 2000, 4200),
+ (4, 'Keyboard', 1998, 2300),
+ (5, 'Keyboard', 1999, 3600),
+ (6, 'Keyboard', 2000, 5000),
+ (7, 'Mouse', 1998, 6000),
+ (8, 'Mouse', 1999, 3400),
+ (9, 'Mouse', 2000, 4600)
+]
+
+# Create a DataFrame
+df = spark.createDataFrame(data, schema=schema)
+
+res = df.groupBy(col("salesyear")).agg(sum(col("quantitySold")).alias("total"))
+pivot_df = res.groupBy().pivot("salesyear").sum("total")
+pivot_df = pivot_df.withColumn("TotalSales", lit("TotalSales"))
+pivot_df = pivot_df.select("totalsales","1998","1999",2000")
+pivot_df.show()
+
+---------
+
+from pyspark.sql.function import *
+df = spark.read.text("dbfs:/FileStore/fixedlengthfile.txt")
+df.show(truncate=False)
+fieldList = {"Date" : (1,8), "Citycode":(9:3),"pincode":(12,8), "Temperature":(20,8)}
+for field,(start,length) in fieldList.items():
+  df = df.withColumn(field.substring(df["value"],start,length))
+  df = df.drop("value")
+  df.show()
+
+--------
+
+You are given a dataframe having columns order_id, shipping_method, order_date, ship_date. Your task is to find out average shipping time for each of the shipping method.
+
+My solution
+-----------------
+from pyspark.sql.types import *
+from pyspark.sql.functions import *
+from pyspark.sql import SparkSession
+
+# Initialize Spark session
+spark = SparkSession.builder.appName("average_shipping_time").getOrCreate()
+
+# Sample data as a list of tuples
+data = [
+ (1, "Standard", "2023-01-01", "2023-01-05"),
+ (2, "Express", "2023-01-02", "2023-01-03"),
+ (3, "Standard", "2023-01-03", "2023-01-08"),
+ (4, "Overnight", "2023-01-04", "2023-01-05"),
+ (5, "Express", "2023-01-05", "2023-01-06"),
+ (6, "Standard", "2023-01-06", "2023-01-10"),
+ (7, "Express", "2023-01-07", "2023-01-08"),
+ (8, "Standard", "2023-01-08", "2023-01-12"),
+ (9, "Overnight", "2023-01-09", "2023-01-10"),
+ (10, "Express", "2023-01-10", "2023-01-11"),
+ (11, "Standard", "2023-01-11", "2023-01-15"),
+ (12, "Express", "2023-01-12", "2023-01-13"),
+ (13, "Overnight", "2023-01-13", "2023-01-14"),
+ (14, "Standard", "2023-01-14", "2023-01-18"),
+ (15, "Express", "2023-01-15", "2023-01-16"),
+]
+schema = StructType([
+ StructField("order_id", IntegerType(), True),
+ StructField("shipping_method", StringType(), True),
+ StructField("order_date", StringType(), True),  # Temporarily using StringType
+ StructField("ship_date", StringType(), True),  # Temporarily using StringType
+])
+df = spark.createDataFrame(data, schema=schema)
+hashtag#converting the date columns from String to date type
+df = df.withColumn("order_date", to_date(df["order_date"], "yyyy-MM-dd"))
+df = df.withColumn("ship_date", to_date(df["ship_date"], "yyyy-MM-dd"))
+df=df.withColumn("shipping_time",datediff(col("ship_date"),col("order_date")))
+final_df = df.groupBy("shipping_method")\
+ .agg(avg("shipping_time").alias("average_shipping_time"))\
+ .select(
+ col("shipping_method"),
+ col("average_shipping_time").cast("int").alias("average_shipping_time")
+ )
+final_df.show()
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+SQL
+
+with cte as(
+select u.name,c.course_name from userstab u join course_enrollments c on u.user_id = c.user_id)
+select name,string_agg(course_name,',') as course_taken from cte group by name
+
+---
+
+select distinct employeeID, first_value(StartDate) over(partition by employeeID order by startdate) as startdate,
+first_value(end_date) over(partition by employeeID order by enddate desc) as enddate from employeeRecords;
+

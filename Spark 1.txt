@@ -1,0 +1,165 @@
+If each $1 spent equates to 10 points and sushi has a 2x points multiplier - how many points would each customer have?
+
+Explanation
+-----------------
+Points Calculation: The question states that for every $1 spent, a customer earns 10 points. This means if a customer spends $10, they would earn 10 * 10 = 100 points.
+
+Multiplier for Sushi: The question mentions that sushi has a 2x points multiplier. This means if a customer purchases sushi, they would earn points at twice the usual rate. So, for every $1 spent on sushi, the customer would earn 20 points instead of 10.
+
+Calculating Points for Each Customer: To calculate the total points for each customer, you need to sum up the points earned for all their purchases, taking into account the multiplier for sushi.
+
+Input
+------- 
+ sales_data = [('A', '2021-01-01', '1'),
+ ('A', '2021-01-01', '2'),
+ ('A', '2021-01-07', '2'),
+ ('A', '2021-01-10', '3'),
+ ('A', '2021-01-11', '3'),
+ ('A', '2021-01-11', '3'),
+ ('B', '2021-01-01', '2'),
+ ('B', '2021-01-02', '2'),
+ ('B', '2021-01-04', '1'),
+ ('B', '2021-01-11', '1'),
+ ('B', '2021-01-16', '3'),
+ ('B', '2021-02-01', '3'),
+ ('C', '2021-01-01', '3'),
+ ('C', '2021-01-01', '3'),
+ ('C', '2021-01-07', '3')]
+
+menu_data =[('1', 'sushi', '10'),
+ ('2', 'curry', '15'),
+ ('3', 'ramen', '12')]
+
+sales_schema = StructType([
+ StructField("customer_id", StringType()),
+ StructField("order_date", StringType()),
+ StructField("product_id", StringType())
+])
+
+menu_schema = StructType([
+ StructField("product_id", StringType()),
+ StructField("product_name", StringType()),
+ StructField("price", StringType())
+])
+
+sales_df = spark.createDataFrame(sales_data, schema=sales_schema)
+menu_df = spark.createDataFrame(menu_data, schema = menu_schema)
+
+sales_df = sales_df.withColumn("product_id", sales_df["product_id"].cast("int"))
+menu_df = menu_df.withColumn("product_id", menu_df["product_id"].cast("int"))
+menu_df = menu_df.withColumn("price", menu_df["price"].cast("int"))
+
+result_df = sales_df.join(menu_df, on = "product_id", how = "inner").groupBy("customer_id").agg(sum(
+                   when(menu_df["product_name"] == "sushi", menu_df["price"] * 10 * 2).otherwise(menu_df["price"] * 10)).alias("total_points")).orderBy("customer_id")
+result)df.show()
+
+--------------
+
+Given a table of purchases by date, calculate the month-over-month percentage change in revenue. The output should include the year-month date (YYYY-MM) and percentage change, rounded to the 2nd decimal point, and sorted from the beginning to the end of the year.¶
+The percentage change column will be populated from the 2nd month forward and calculated as ((this month's revenue - last month's revenue) / last month's revenue)*100.
+
+Input
+------
+data = [
+ (1, "2022-01-01 02:00:00", 500, 101),
+ (2, "2022-02-01 01:00:00", 400, 102),
+ (3, "2022-03-01 12:30:00", 570, 103),
+ (4, "2022-04-01 01:00:00", 200, 104),
+ (5, "2022-02-01 01:00:00", 100, 105),
+ (6, "2022-03-01 12:30:00", 570, 106),
+ (7, "2022-05-01 01:00:00", 470, 107),
+ (8, "2022-06-01 01:00:00", 500, 108),
+ (9, "2022-07-01 01:00:00", 600, 109)
+] 
+schema = "id int, created_at string, value int, purchase_id int"
+
+mywindow = Window.orderBy("created_at")
+new_df = df.withColumn("created_at", to_timestamp(col("created_at"), "yyyy-mm-dd hh:mm:ss"))
+df_1 = new_df.groupBy("created_at").sum("value").alias("tot")/
+           .withColumn("last_month", lag("sum(value)", 1).over(mywindow))
+res = ((col("sum(value)") - col("last_month"))/col("last_month"))
+df_1.withColumn("revenue", round((res*100),2))
+
+--------------------------------
+
+You are given a table of tennis players and their matches that they could either win (W) or lose (L). Find the longest streak of wins. A streak is a set of consecutive matches of one player. The streak ends once a player loses their next match. Output the ID of the player or players and the length of the streak.
+
+Input
+-------
+from pyspark.sql import Window
+from pyspark.sql import import *
+from pyspark.sql.functions import when,sum,col,lag,lead,dense_rank,count,desc
+tennis_data = [
+ {"player_id": 1, "match_date": "2023-01-01", "match_result": "W"},
+ {"player_id": 1, "match_date": "2023-01-02", "match_result": "W"},
+ {"player_id": 1, "match_date": "2023-01-03", "match_result": "W"},
+ {"player_id": 1, "match_date": "2023-01-04", "match_result": "L"},
+ {"player_id": 1, "match_date": "2023-01-05", "match_result": "W"},
+ {"player_id": 1, "match_date": "2023-01-06", "match_result": "W"},
+ {"player_id": 1, "match_date": "2023-01-07", "match_result": "W"},
+ {"player_id": 1, "match_date": "2023-01-08", "match_result": "W"},
+ {"player_id": 2, "match_date": "2023-01-01", "match_result": "W"},
+ {"player_id": 2, "match_date": "2023-01-02", "match_result": "L"},
+ {"player_id": 2, "match_date": "2023-01-03", "match_result": "W"},
+ {"player_id": 2, "match_date": "2023-01-04", "match_result": "W"},
+ {"player_id": 2, "match_date": "2023-01-05", "match_result": "W"},
+ {"player_id": 2, "match_date": "2023-01-06", "match_result": "L"},
+ {"player_id": 2, "match_date": "2023-01-07", "match_result": "W"},
+ {"player_id": 2, "match_date": "2023-01-08", "match_result": "W"},
+ {"player_id": 2, "match_date": "2023-01-09", "match_result": "W"},
+ {"player_id": 2, "match_date": "2023-01-10", "match_result": "W"},
+]
+schema=StructType([StructField("player_id",IntegerType()),
+ StructField("match_date",StringType()),
+ StructField("match_result",StringType())])
+
+tennis_df = spark.createDataFrame(tennis_data,schema)
+
+mywindow = Window.partitionBy("player_id").orderBy("match_date")
+tennis_df_2 = tennis_df.withColumn("streak", when(sum(col("match_result") == "W") & (lag("match_result",1).otherwise(0)).over(mywindow))
+tennis_df_2.show()
+
+------------------------
+You are tasked with developing a PySpark function to process data incrementally from a folder. The function should be scheduled to run every day, starting an hour after midnight, and process any new files that have arrived in the folder since the last run. The function should perform the following tasks:
+
+🌸 Read the data from the folder incrementally.
+
+🌸Check the schema of the data and ensure it matches the expected schema.
+
+🌸Prefix all column names with _ABH_123_.
+
+🌸Add a new column indicating the path location from which the data was read.
+
+🌸 Calculate the total number of columns in the dataset.
+
+🌸Add a new column for the running total based on a specified column.
+
+Write a PySpark function to accomplish these tasks. You can assume the data is stored in Parquet format.
+
+#Read the data from the folder incremently
+streaming_df = spark.readStream.format("csv").option("header","true").load(input_folder_path)
+
+#check the schema of the data and ensure it matches the expected schema
+df_schema = df.schema
+expected_schema = expected_df.fields
+if df_schema = expected_df.fields
+   print("DataFrame schema matches the expected schema.")
+else:
+   print("DataFrame schema does not match the expected schema.")
+
+#prefix all column names with _ABH_123_
+for column in columns:
+     df.withColumnRenamed(column, "_ABH_123_"+column)
+
+#Add a new column indicating the path location from which the data was read.
+from pyspark.sql.functions import input_file_name
+     df_with_path = data.withColumn("file_path", input_file_name())
+
+#calculate the total number of columns in the dataset
+df.len(df.columns)
+
+#Add a new column for the running total based on specificed column
+mywindow = Window.orderBy().rowBetween(Window.unboundedPreceding,0)
+df.withColumn("running_total", sum("value).over(mywindow))
+
+

@@ -1,0 +1,4003 @@
+𝐐𝐮𝐞𝐬𝐭𝐢𝐨𝐧:
+Your company wants to anticipate staffing needs by identifying the top two busiest times of the week. Each day should be segmented into different parts using the following criteria:
+
+Morning: Before 12 p.m. (not inclusive)
+Early Afternoon: 12 - 15 p.m.
+Late Afternoon: After 15 p.m. (not inclusive)
+
+Your output should include the day and time of day combination for the two busiest times with the most orders, along with the number of orders.
+  
+For example, the results might include:
+Friday Late Afternoon with 12 orders
+Sunday Morning with 10 orders
+
+df = spark.createDataFrame(data,columns)
+
+df = df.withColumn("timestamp", col("timestamp").cast("timestamp"))
+
+df = df.withColumn("day_of_week", date_format(col("timestamp"), "EEEE")) \
+            .withColumn("time_period",
+            .when(col("timestamp")) < 12, lit("Morning"))
+            .when(hour(col("timestamp")) >= 12) & (hour(col("timestamp")) < 15, lit("Early afternoon"))
+            .otherwise(lit("Late Afternoon"))
+
+time_period_orders = df.groupBy("day_of_week", "time_period") \
+                                         .agg(count("order_id").alias("order_count"))
+
+window_spec = Window.orderBy(col("order_count").desc())
+ranked_orders = time_period_orders.withColumn("rank", rank().over(window_spec))
+
+result = ranked_orders.filter(col("rank") <= 2).orderBy("rank", col("order_count").desc())
+
+result.show()
+---------------------------------------------------------------------------------------------------
+
+𝐐𝐮𝐞𝐬𝐭𝐢𝐨𝐧:
+You are given a dataset containing sales data for different stores across various months. Each row contains the store name, the month, and the sales amount. Your task is to calculate the cumulative sales for each store, considering the monthly sales, using PySpark.
+
+You should also:
+Filter out stores with sales lower than 1000 in any month.
+Calculate the total sales for each store over all months.
+Sort the results by the total sales in descending order.
+
+𝐬𝐜𝐡𝐞𝐦𝐚 𝐚𝐧𝐝 𝐝𝐚𝐭𝐚𝐬𝐞𝐭
+data = [ ("Store A", "2024-01", 800), ("Store A", "2024-02", 1200), ("Store A", "2024-03", 900), ("Store B", "2024-01", 1500), ("Store B", "2024-02", 1600), ("Store B", "2024-03", 1400), ("Store C", "2024-01", 700), ("Store C", "2024-02", 1000), ("Store C", "2024-03", 800) ] 
+
+Create DataFrame 
+df = spark.createDataFrame(data, ["Store", "Month", "Sales"]) 
+
+df_filtered = df.filter(df.sales >= 1000)
+
+windowSpec = Window.partitionBy("Store").orderBy("Month")
+
+df_cumulative = df_filtered.withColumn("CumulativeSales", F.sum("Sales").over(windowSpec))
+
+df_total_sales = df_cumulative.groupBy("Store").agg(F.sum("Sales").alias("TotalSales"))
+
+df_final = df_cumulative.join(df_total_sales, on = "Store").select("Store","TotalSales","CumulativeSales").distinct()
+
+df_result = df_final.orderBy(F.col("TotalSales").desc())
+
+df_result.show(truncate=False)
+---------------------------------------------------
+
+𝐐𝐮𝐞𝐬𝐭𝐢𝐨𝐧:
+You are given a dataset containing student grades for different subjects across multiple semesters. Each row contains the student's name, subject, semester, and grade.
+
+𝐬𝐜𝐡𝐞𝐦𝐚 𝐚𝐧𝐝 𝐝𝐚𝐭𝐚𝐬𝐞𝐭
+data = [
+ ("Alice", "Math", "Semester1", 85),
+ ("Alice", "Math", "Semester2", 90),
+ ("Alice", "English", "Semester1", 78),
+ ("Alice", "English", "Semester2", 82),
+ ("Bob", "Math", "Semester1", 65),
+ ("Bob", "Math", "Semester2", 70),
+ ("Bob", "English", "Semester1", 60),
+ ("Bob", "English", "Semester2", 65),
+ ("Charlie", "Math", "Semester1", 95),
+ ("Charlie", "Math", "Semester2", 98),
+ ("Charlie", "English", "Semester1", 88),
+ ("Charlie", "English", "Semester2", 90),
+ ("David", "Math", "Semester1", 78),
+ ("David", "Math", "Semester2", 80),
+ ("David", "English", "Semester1", 75),
+ ("David", "English", "Semester2", 72),
+ ("Eve", "Math", "Semester1", 88),
+ ("Eve", "Math", "Semester2", 85),
+ ("Eve", "English", "Semester1", 80),
+ ("Eve", "English", "Semester2", 83)]
+
+# Create DataFrame
+df = spark.createDataFrame(data, ["Student", "Subject", "Semester", "Grade"])
+
+Your tasks are:
+#Calculate the average grade for each student across all semesters.
+
+student_avg_df = df.groupBy("Student").agg(avg("Grade").alias("Avg_Grade")))
+
+#Filter out students with an average grade lower than 75.
+
+filtered_students_df = student_avg_df.filter(col('Avg_Grade") >= 75)
+
+#Find the top 3 students with the highest grades in each subject for the latest semester.
+
+latest_semseter_df = (df.groupBy("Subject").agg({"Semseter":"max"}).withColumnRenamed("max(Semseter)","Latest_Semseter"))
+
+latest_grades_df = (df.alias("main").join(latest_semseter_df.alias("latest"),
+                                 (col("main.Subject") == col("latest.Subject")) &
+                                 (col("main.Semseter") == col("latest.Latest_Semseter")),"inner").select(col("main.Student"),col("main.Subject"),col("main.Grade")))
+
+print("Average grades for students: ")
+student_avg_df.show()
+
+print("Filtered students with average grade >= 75: ")
+filtered_students_df.show()
+
+print("Top 3 students with highest grades in each subject (latest semseter) : ")
+final_result.show()
+
+------------------------
+
+Important Interview Question On Spark
+===================================
+1. Difference between RDD & Dataframes
+2. What are the challenges you face in spark?
+3. What is difference between reduceByKey & groupByKey?
+4. What is the difference between Persist and Cache?
+5. What is the Advantage of a Parquet File?
+6. What is a Broadcast Join ?
+7. What is Difference between Coalesce and Repartition?
+8. What are the roles and responsibility of driver in spark Architecture?
+9. What is meant by Data Skewness? How is it deal? 
+10. What are the optimisation techniques used in Spark?
+11. What is Difference Between Map and FlatMap?
+12. What are accumulator and BroadCast Variables?
+13. What is a OOM Issue, how to deal it?
+14. what are tranformation in spark? Type of Transformation?
+15. Tell me some action in spark that you used ?
+16. What is the role of Catalyst Optimizer ?
+17. what is the checkpointing?
+18. Cache and persist
+19. What do you understand by Lazy Evaluation ?
+20. How to convert Rdd to Dataframe?
+21. How to Dataframe to Dataset.
+22. What makes Spark better than Mapreduce?
+23. How can you read a CSV file without using an external schema?
+24. What is the difference between Narrow Transformation and Wide Transformation?
+25. What are the different parameters that can be passed while Spark-submit?
+26. What are Global Temp View and Temp View?
+27. How can you add two new columns to a Data frame with some calculated values?
+28. Avro Vs ORC, which one do you prefer?
+29. What are the different types of joins in Spark?
+30. Can you explain Anti join and Semi join?
+31. What is the difference between Order By, Sort By, and Cluster By?
+32. Data Frame vs Dataset in spark?
+33. 4.What are the join strategies in Spark
+34. What happens in Cluster deployment mode and Client deployment mode
+35. What are the parameters you have used in spark-submit
+36. How do you add a new column in Spark
+37. How do you drop a column in Spark
+38. What is difference between map and flatmap?
+39. What is skew partitions?
+40. What is DAG and Lineage in Spark?
+41. What is the difference between RDD and Dataframe?
+42. Where we can find the spark application logs.
+43. What is the difference between reduceByKey and groupByKey?
+44. what is spark optimization?
+45. What are shared variables in spark
+46. What is a broadcast variable
+47. Why spark instead of Hive
+48. what is cache
+49. Tell me the steps to read a file in spark
+50. How do you handle 10 GB file in spark, how do you optimize it?
+
+-----------------------
+
+𝐐𝐮𝐞𝐬𝐭𝐢𝐨𝐧:
+You have the following dataset containing sales information for different products and regions. Reshape the data using PySpark's pivot() method to calculate the total sales for each product across regions, and then optimize it further by applying specific transformations.
+
+Task 1: Use pivot() to create a table showing the total sales for each product by region.
+
+Task 2: Add a column calculating the percentage contribution of each region to the total sales for that product.
+
+Task 3: Sort the data in descending order by total sales for each product.
+
+𝐬𝐜𝐡𝐞𝐦𝐚 𝐚𝐧𝐝 𝐝𝐚𝐭𝐚𝐬𝐞𝐭
+data = [ ("North", "Laptop", 2000, "Q1"), ("South", "Laptop", 3000, "Q1"), ("East", "Laptop", 2500, "Q1"), ("North", "Phone", 1500, "Q1"), 
+("South", "Phone", 1000, "Q1"), ("East", "Phone", 2000, "Q1"), 
+("North", "Laptop", 3000, "Q2"), ("South", "Laptop", 4000, "Q2"), 
+("East", "Laptop", 3500, "Q2"), ("North", "Phone", 2500, "Q2"), 
+("South", "Phone", 1500, "Q2"), ("East", "Phone", 3000, "Q2"), ] 
+
+columns = ["Region", "Product", "Sales", "Quarter"] 
+
+df = spark.createDataFrame(data,columns)
+pivot_df = df.groupBy("Product").pivot("Region").sum("Sales")
+total_sales_df = pivot_df.withColumn("Total_Sales", col("North") + col("South") + col("East")) \ 
+                            .withColumn("North%", round(col("North") / col("Total_Sales") * 100, 2)) \
+                            .withColumn("South%", round(col("South") / col("Total_Sales") * 100,2)) \
+                            .withColumn("East%", round(col("East") / col("Total_Sales") * 100,2))
+sorted_df = total_sales_df.orderBy("Total_Sales").desc())
+sorted_df.show()
+
+------------------------
+
+𝐐𝐮𝐞𝐬𝐭𝐢𝐨𝐧
+You are given a nested JSON file named sample_data.json stored in an S3 bucket at s3://your-bucket/sample_data.json. The JSON file contains details about employees, including their names, departments, and address details (nested fields).
+Write a PySpark program to:
+Load the JSON file into a DataFrame.
+Flatten the nested structure to create a tabular format.
+Write the resulting DataFrame as a Parquet file to the output path s3://your-bucket/output/.
+
+𝐬𝐜𝐡𝐞𝐦𝐚 JSON Data (sample_data.json)
+[
+ {
+ "id": 1,
+ "name": "Alice",
+ "department": "HR",
+ "address": {
+ "city": "New York",
+ "state": "NY"
+ }
+ },
+ {
+ "id": 2,
+ "name": "Bob",
+ "department": "IT",
+ "address": {
+ "city": "San Francisco",
+ "state": "CA"
+ }
+ },
+ {
+ "id": 3,
+ "name": "Charlie",
+ "department": "Finance",
+ "address": {
+ "city": "Chicago",
+ "state": "IL"
+ }
+ }
+]
+
+from pyspark.sql import SparkSession
+
+spark = SparkSession.builder.appName("Flattern JSON").getOrCreate()
+
+input_path = "s3://your-bucket/sample_data.json"
+df = spark.read.json(input_path)
+
+flattened_df = df.select("id","name","department","address.city","address.state").withColumnRenamed("city","address_city").withColumnRenamed("state","address_state")
+
+output_path = "s3://your-bucket/output/"
+flattened_df.write.mode("overwrite").parquet(output_path)
+
+print("Parquet file written successfully to", output_path)
+
+spark.stop()
+
+---------------------------------------------------------------------------------
+
+Tricky PySpark Question asked in one of my Interviews
+
+Actually, Interviewer asked this as a Python question, later he asked to tell my approach by using PySpark (without using UDF, regex) if the input strings are in a Dataframe
+This question was only meant to see how I think and find approximate PySpark logic. I partially told my approach using Explode, Lead, Lag functions
+
+Q: Print all the Consecutive "a" characters in a string
+i/p: "taabaaacdaaaadfag"
+o/p: ["aa","aaa","aaaa","a"]
+
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import col, explode, split, lit, lag, when, collect_list
+from pyspark.sql.window import Window
+
+# Create SparkSession
+spark = SparkSession.builder.master("local").appName("ConsecutiveA").getOrCreate()
+
+# Input DataFrame
+data = [("taabaaacdaaaadfag",)]
+df = spark.createDataFrame(data, ["input_string"])
+
+# Step 1: Split the string into characters
+df_chars = df.withColumn("char_array", split(col("input_string"), ""))
+
+# Step 2: Explode the array to create individual rows for each character
+df_exploded = df_chars.select(explode(col("char_array")).alias("char"))
+
+# Step 3: Add a row index to preserve order
+df_indexed = df_exploded.withColumn("index", lit(range(1, df_exploded.count() + 1)))
+
+# Step 4: Use lag to identify start of a new "a" group
+window_spec = Window.orderBy("index")
+df_lagged = df_indexed.withColumn("is_group_start",when((col("char") == "a") & (lag("char").over(window_spec) != "a"), 1).otherwise(0))
+
+# Step 5: Assign a group ID using cumulative sum
+df_grouped = df_lagged.withColumn("group_id",sum(col("is_group_start")).over(window_spec))
+
+# Step 6: Filter only rows with "a" and aggregate by group
+df_result = df_grouped.filter(col("char") == "a").groupBy("group_id").agg(collect_list("char").alias("group_chars"))
+
+# Step 7: Convert array of characters back to string
+df_final = df_result.withColumn("a_group", concat_ws("", col("group_chars"))).select("a_group")
+
+# Show Result
+df_final.show()
+---------------------------------------------------------
+
+𝐐𝐮𝐞𝐬𝐭𝐢𝐨𝐧
+You are given a dataset of stock prices with the following columns:
+
+- stock_id: Unique identifier for the stock.
+- date: The date of the stock price.
+- price: The price of the stock on the given date.
+
+Your task is to calculate the 3-day rolling average of the stock price (rolling_avg) for each stock (stock_id) using a sliding window, ensuring the results are partitioned by stock_id and ordered by date.
+
+from pyspark.sql import SparkSession
+from pyspark.sql.window import Window
+from pyspark.sql.functions import avg,col
+
+#𝐬𝐜𝐡𝐞𝐦𝐚 
+data = [ ("A", "2023-01-01", 100), ("A", "2023-01-02", 105), 
+("A", "2023-01-03", 110), ("A", "2023-01-04", 120), 
+("B", "2023-01-01", 50), ("B", "2023-01-02", 55), 
+("B", "2023-01-03", 60), ("B", "2023-01-04", 65), ] 
+
+# Define schema 
+columns = ["stock_id", "date", "p
+rice"] 
+
+df = spark.createDataFrame(data,columns)
+
+window_spec = Window.partitionBy("stock_id").orderBy("date").rowBetween(-2,0)
+
+result_df = df.withColumn("rolling_avg", avg(col("price")).over(window_spec)
+
+result_df.show()
+
+-------------------------------
+
+𝐐𝐮𝐞𝐬𝐭𝐢𝐨𝐧
+You are given a dataset containing sales data for an e-commerce platform. The dataset includes the following columns:
+
+Category (String): The product category.
+Product (String): The product name.
+Sales (Float): The total sales amount for the product.
+Quantity (Integer): The number of items sold.
+
+Perform the following tasks using PySpark:
+Group the data by Category.
+Calculate the total sales (sum of Sales) for each category.
+Calculate the average quantity (avg of Quantity) sold for each category.
+Find the maximum sales (max of Sales) for each category.
+
+𝐬𝐜𝐡𝐞𝐦𝐚 
+data = [ ("Electronics", "Laptop", 800.0, 5), 
+("Electronics", "Smartphone", 500.0, 8), 
+("Electronics", "Tablet", 300.0, 4), 
+("Furniture", "Chair", 150.0, 10), 
+("Furniture", "Desk", 400.0, 2), 
+("Furniture", "Shelf", 200.0, 3), 
+("Clothing", "T-Shirt", 50.0, 20), 
+("Clothing", "Jeans", 100.0, 15), ] 
+
+columns = ["Category", "Product", "Sales", "Quantity"]
+
+df = spark.createDataFrame(data, columns)
+
+result = df.groupBy("Catagory").agg(sum("Sales").alias("Total_Sales"),avg("Quantity").alias("Average_Quantity"),max("Sales").alias("Max_Sales"))
+
+result.show()
+
+----------------------------------
+
+𝐐𝐮𝐞𝐬𝐭𝐢𝐨𝐧
+You are given a dataset of sales transactions for multiple stores and products. Your task is to calculate the percentage contribution of each product's sales to the total sales of its store.
+
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import col,sum,round
+
+# 𝐬𝐜𝐡𝐞𝐦𝐚 
+data = [ ("S1", "P1", 100), ("S1", "P2", 200), 
+("S1", "P3", 300), ("S2", "P1", 400), 
+("S2", "P2", 100), ("S2", "P3", 500) ]
+
+# Define the schema and create the DataFrame 
+columns = ["StoreID", "Product", "Sales"] 
+
+transactions_df = spark.createDataFrame(data, schema = columns)
+
+store_total_df = transaction_df.groupBy("StoreID").agg(sum("Sales").alias(TotalSales"))
+
+joined_df = transactions_df.join(store_totals_df, on="StoreID")
+
+result_df = joined_df.withColumn("PercentageContribution", round(("Sales")/col("TotalSales")) * 100, 2))
+
+result_df.show()
+-----------------------------------
+In Apache Spark, shared variables allow tasks to share data across multiple nodes. There are two types of shared variables:
+
+Broadcast Variables: Used to efficiently share large, read-only data across all workers.
+
+Accumulator Variables: Used to accumulate values across tasks in a distributed manner (typically for debugging or counting operations).
+
+𝟏. 𝐁𝐫𝐨𝐚𝐝𝐜𝐚𝐬𝐭 𝐕𝐚𝐫𝐢𝐚𝐛𝐥𝐞𝐬
+
+Broadcast variables allow you to distribute large, read-only data efficiently to all worker nodes. Instead of sending a copy of the data with each task, Spark sends the data once and then uses it in all the tasks.
+
+𝟐. 𝐀𝐜𝐜𝐮𝐦𝐮𝐥𝐚𝐭𝐨𝐫 𝐕𝐚𝐫𝐢𝐚𝐛𝐥𝐞𝐬
+
+Accumulator variables are used for aggregating information across tasks, typically for counters or summations. They are write-only in tasks and can be read by the driver.
+
+sc = spark.sparkContext
+
+# broadcasted across all workers
+vip_customers = ['customer1', 'customer2','customer3']
+broadcast = sc.broadcast(vip_customers)
+
+#accumulator to count the number of transaction made by VIP Customers
+vip_transaction_count = sc.accumulator(0)
+
+transactions = [
+('customer1',100.0),
+('customer2',200.0),
+('customer4',150.0),
+('customer3',50.0),
+('customer5',75.0),
+('customer1',300.0)]
+
+#Function to process each transaction and check if the customer is VIP
+def process_transaction(transaction):
+       global vip_transaction_count
+       customer, amount = transaction
+       if customer in broadcast_vip.value:
+          vip_transaction_count += 1
+       return transaction
+
+#create an RDD from transaction list
+rdd = sc.parallelize(transactions)
+
+#process the transactions and collect the results
+rdd.foreach(process_transaction)
+
+#output the result
+print(f"VIP Transaction Count: {vip_transaction_count.value}")
+
+#VIP Transaction Count : 4
+--------------------------------
+
+𝐇𝐨𝐰 𝐭𝐨 𝐫𝐞𝐚𝐝 𝐝𝐚𝐭𝐚 𝐟𝐫𝐨𝐦 𝐚𝐧 𝐒𝟑 𝐛𝐮𝐜𝐤𝐞𝐭 𝐮𝐬𝐢𝐧𝐠 𝐏𝐲𝐒𝐩𝐚𝐫𝐤? 𝐇𝐨𝐰 𝐭𝐨 𝐫𝐚𝐢𝐬𝐞 𝐚𝐧 𝐞𝐫𝐫𝐨𝐫 𝐢𝐟 𝐧𝐨 𝐝𝐚𝐭𝐚 𝐢𝐬 𝐟𝐨𝐮𝐧𝐝 𝐢𝐧 𝐭𝐡𝐞 𝐛𝐮𝐜𝐤𝐞𝐭?
+
+from pyspark.sql import SparkSession
+from pyspark.sql.utils import AnalysisException
+
+def read_from_s3(bucket_name: str, file_path: str):
+    #Initialize Spark Session with AWS S3 access configuration
+    spark = SparkSession.builder \
+                 .appName("ReadFrow=ms3") \
+                 .config("spark.hadoop.fs.s3a.access.key", "<AWS_ACCESS_KEY>") \
+                 .config("spark.hadoop.fs.s3a.secret.key", "<AWS_SECRET_KEY>") \
+                 .config("spark.hadoop.fs.s3a.endpoint", "s3.amazonaws.com") \
+                 .getOrCreate()
+
+    try: 
+          #try to read the data from the specified s3 bucket and file path
+          s3_data = spark.read.format("parquet").load(f"s3a://{bucket_name}/{file_path}")
+ 
+          #check if the dataframe is empty
+          if s3_data.count() == 0:
+             raise ValueError(f"No data found in the S3 bucket '{bucket_name}' at '{file_path}'")
+
+          print("Data successfully read from S3!")
+          return s3_data
+
+     except AnalysisException as e:
+          print(f"Error reading from S3: {e}")
+
+     except ValueError as e:
+          print(e)
+          raise
+
+usage example:
+Replace 'ac' with your actual s3 bucket name and the file path accordingly
+data = read_from_s3("ac", "path/to/your/file.parquet")
+---------------------------------------------------------------------------------------
+
+#WEBAPI spark building ETL pipeline end-to-end
+
+spark = SparkSession.builder().appName("API_ETL").getOrCreate()
+api_url = "https://lnkd.in/gTm_TTKA"
+respone = request.get(api_url)
+
+if response.status_code == 200:
+   data = response.json()
+else:
+   raise Exception(f"API call failed with status code {response.status_code}")
+
+schema = StructType([
+    StructField("id", IntegerType(), True),
+    StructField("name", StringType(), True),
+    StructField("value", FloatType(), True)])
+
+rdd = spark.sparkContect.paralleize(data)
+df = spark.read.json(rdd, schema = schema)
+filtered_df = df.filtered(df["value"] > 50)
+
+transformed_df = filtered_df.withColumn("value_squared",filtered_df["value"] ** 2)
+aggregated_df = transformed_df.groupBy("name").agg({"value" : "avg", "value_squared" : "sum"})
+
+output_path = "s3://your-bucket-name/output.csv"
+aggregated_df.write.csv(output_path, header=True)
+
+-------------------------------------------------------------------------------------------------------
+
+𝐐𝐮𝐞𝐬𝐭𝐢𝐨𝐧
+You are working as a Data Engineer at a company that processes customer transactions. You have two DataFrames:
+
+Customer Data (customers_df) - Contains customer information.
+Transaction Data (transactions_df) - Contains transaction details linked to customers.
+Both DataFrames have a common column, customer_id, but they also have conflicting column names:
+
+- customers_df has a column named email and location.
+- transactions_df also has a column named email and location, but with different data.
+- Your task is to perform an inner join on customer_id and handle the conflicting column names to avoid ambiguity.
+
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import col
+
+spark = SparkSession.builder.appName("MergedDataFrame").getOrCreate()
+
+𝐬𝐜𝐡𝐞𝐦𝐚 
+
+# Sample Customer DataFrame
+customers_data = [ (101, "Alice", "alia@example.com", "New York"), (102, "Bheem", "bheem@example.com", "San Francisco"), (103, "Charan", "charan@example.com", "Los Angeles"), ] 
+
+customers_df = spark.createDataFrame(customers_data, ["customer_id", "name", "email", "location"]) 
+
+# Sample Transaction DataFrame 
+
+transactions_data = [ (101, "T001", 250.75, "alia@shop.com", "NYC"), (102, "T002", 500.00, "bheem@shop.com", "SF"), (104, "T003", 100.50, "danish@shop.com", "Chicago"), ] 
+
+transactions_df = spark.createDataFrame(transactions_data, ["customer_id", "transaction_id", "amount", "email", "location"]) 
+
+customers_df.show()
+transactions_df.show()
+
+merged_df = customer_df.alias("c").join(
+       transactions_df.alias("t"), on = "customer_id", how = "inner").select("c.customer_id"), col("name"), col("c.email").alias("customer_email"),col("t.email").alias("transaction_email"),col("c.location").alias("customer_location"),col("t.location").alias("transaction_location"),col("transaction_id"),col("amount"))
+
+#show mergeed DataFrame
+merged_df.show()
+------------------------------------------------------------------------------------------------------------------------------------
+
+𝐏𝐫𝐨𝐛𝐥𝐞𝐦 𝐒𝐭𝐚𝐭𝐞𝐦𝐞𝐧𝐭 𝐒𝐜𝐞𝐧𝐞𝐫𝐢𝐨:
+
+Write a SQL Query to find each month and country, the number of transactions and their total amount, the number of approved transactions and their amount.
+
+𝙀𝙭𝙥𝙚𝙘𝙩𝙚𝙙 𝙊𝙪𝙩𝙥𝙪𝙩:
++-------+-------+---+------------------+--------+------+
+| month|country|cnt|trans_total_amount|approved|amount|
++-------+-------+---+------------------+--------+------+
+|2023-12|   US | 2|       3000|    1| 1000|
+|2023-01| India | 1|       2000|    1| 2000|
+|2024-01|   US | 1|       2000|    1| 2000|
++-------+-------+---+------------------+--------+------+
+
+write a sql query to find each month and country, the number of transactions and their amout, the number of approved transactions and their amount.
+
+transactions_df = spark.createDataFrame(data, schema)
+transactions_df.display()
+
+from pyspark.sql.types import *
+from datetime import datetime
+from pyspark.sql.functions import date_format,col,count,sum as _sum
+from pyspark.sql import functions as F
+
+cte = transaction_df.groupBy(
+          F.date_format("trans_date", "yyyy-mm").alias("month"),"country").agg(F.count("*").alias("cnt"), F.sum("amount").alias("trans_total_amount"))
+
+cte2 = (transaction_df.filter(F.col("state") == "approved").groupBy(F.date_format("trans_date","yyyy-mm").alias("month2"), "amount).agg(F.count("*").alias("approved"))
+
+result = (cte.alias("c1").join(cte2.alias("c2"), cte["month"] == cte2["month2"]).select("c1.*", "c2.approved","c2.amount"))
+
+result.display()
+
+----%SQL
+
+with cte as (
+select date_format(trans_date,'yyyy-mm') as month, country, count(*) as cnt, sum(amount) as trans_total_amount from transactions group by date_format(trans_date,'yyyy-mm'), country),
+cte2 as (
+select date_format(trans_date,'yyyy-mm') as month2,count(*) as approved, amount from transactions where state = 'approved' group by amount, date_format(trans_date,'yyyy-mm'))
+select c1.*,c2.approved,c2.amount from cte c1 inner join cte2 c2 on c1.amount = c2.amount2;
+
+------------------------------------------------------------
+
+Here are tasked with analyzing cricket match data stored in a PySpark DataFrame. Each row in the dataset represents a match with the following details:
+
+The goal is to compute the following statistics for each team:
+
+Team Name: 
+The name of the cricket team.
+Number of Matches Played: 
+The total number of matches in which the team participated.
+Number of Matches Won: 
+The number of matches the team won (when the team's name matches the result column).
+Number of Matches Lost: 
+The number of matches the team lost (when the result column does not match the team name and is not "DRAW").
+
+from pyspark.sql.types import *
+from pyspark.sql.functions import col,when,count,sum as _sum
+
+schema = StructType([
+     StructField("match_id", IntegerType(), True),
+     SturctField("team1", StringType(), True)
+     StructField("team2", StringType(), True)
+     StructField("result", StringType(), True)])
+
+data = [ (1,'ENG','NZ','NZ'),
+(2,'PAK','NED','PAK'),
+(3,'AFG','BAN','BAN'),
+(4,'SA','SL','SA'),
+(5,'AUS','IND','AUS'),
+(6,'NZ','NED','NZ'),
+(7,'ENG','BAN','ENG'),
+(8,'SL','PAK','PAK'),
+(9,'AFG','IND','IND'),
+(10,'SA','AUS','SA'),
+(11,'BAN','NZ','BAN'),
+(12,'PAK','IND','IND'),
+(13,'SA','IND','DRAW') ]
+
+df = spark.createDataFrame(data, schema)
+
+df.display()
+
+all_matches = df.select(col("match_id"), col("team1").alias("team"),col("result").union(df.select(col("match_id"),col("team2").alias("team"),col("result")))
+
+team_stats = all_matches.groupBy("team").agg(count("match_id").alias("matches_played"), _sum(when(col("result") == col("team"),1).otherwise(0)).alias("matches_won"), _sum(when((col("result") ! = col("team")) & (col("result") != "DRAW"), 1).otherwise(0)).alias("matches_lost"))
+
+team_stats.orderBy("team").display()
+
+df.createOrReplaceTempView("cricket_match")
+
+%sql
+with all_matches as (
+select match_id, team1 as team, result from cricket_match union all select match_id, team2 as team, result from cricket_match),
+team_stats as (
+select team as team_name, count(match_id) as matches_played, sum(case when result = team 1 else 0 end) as matches_won, sum(case when when result != team and result != 'DRAW' then 1 else 0 end) as matches_lost from all_matches group by team)
+select * from team_stats order by team_name;
+
+-----------------------------------------------------------------------------------------------------
+
+𝐒𝐜𝐞𝐧𝐞𝐫𝐢𝐨:
+We have two datasets: Tickets_DF and holiday_DF
+Contains records of support tickets with their issue and resolution dates. Contains a list of holidays that fall within the ticket issue and resolution dates.
+The goal is to calculate the final working days required to resolve each ticket. The calculation considers the following:
+Exclude weekends (Saturday and Sunday) from the total days between issue_date and resolve_date. Subtract any holidays listed in the holiday_df that fall between the issue_date and resolve_date.
+
+from pyspark.sql.types import *
+from datetime import date
+from pyspark.sql import functions as F
+from pyspark.sql import Window
+
+# Define schema for ticket table
+ticket_schema = StructType(
+[StructField("ticket_id", IntegerType(), True),
+StructField("issue_date", DateType(), True),
+StructField("resolve_date", DateType(), True)])
+
+# Define schema for holiday_cal table
+holiday_schema = StructType([
+StructField("holiday_date", DateType(), True),
+StructField("occasion", StringType(), True)])
+
+# Data for ticket table
+ticket_data = [ (1, date(2024, 12, 18), date(2025, 1,7)), (2, date(2024, 12, 20), date(2025, 1, 10)),
+(3, date(2024, 12, 22), date(2025, 1, 11)),
+(4, date(2025, 1, 2), date(2025, 1, 13)),]
+
+# Data for holiday_cal table
+holiday_data = [(date(2024, 12, 25),"christmas"),(date(2025, 1, 1),"new_year")]
+
+# Create DataFrames
+ticket_df = spark.createDataFrame(ticket_data,schema=ticket_schema)
+holiday_df = spark.createDataFrame(holiday_data,schema=holiday_schema)
+
+# Show the DataFrames
+ticket_df.display()
+holiday_df.display()
+
+ticket_df.createOrReplaceTempView("ticket")
+holiday_df.createOrReplaceTempView("holiday_cal")
+
+queried_ticket_df = spark.sql("select * from ticket")
+queried_holiday_df = spark.sql("select * from holiday_cal")
+
+queried_ticket_df.display()
+queried_holiday_df.display()
+
+ticket_cte = ticket_df.withColumn("actual_days", F.datediff(F.col("resolve_date")) - (F.floor(F.datediff(F.col("resolve_date"), F.col("issue_date"))/ 7 * 2))
+
+joined_df = ticket_cte.join(holiday_df, (holiday_df["holiday_date"] >= ticket_cte["issue_date"]) & (holiday_df["holiday_date"] <= ticket_cte["resolve_date"]), "left")
+
+result_df = joined_df.groupBy("ticket_id", issue_date", "resolve_date", "actual_days").agg(F.col("actual_days") - F.count("occasioin")).alias("final_working_days"))
+
+result_df.select("ticket_id","issue_date","resolve_date","final_working_days").display()
+
+%sql
+with ticket_cte as (
+select *, datediff(resolve_date, issue_date) - Floor(datediff(resolve_date,issue_date)/7) * 2 as actual_days from ticket)
+select tc.ticket_id, tc.issue_date,tc.resolve_date,tc.actual_days - count(hc.occasion) as final_working_days from ticket_cte as tc left join holiday_cal as hc on hc.holiday_date between tc.issue_date and tc.resolve_date group by tc.ticket_id, tc.issue_date,tc.resolve_date, tc.actual_days;
+-------------------------------------------------------------------
+
+𝐒𝐜𝐞𝐧𝐞𝐫𝐢𝐨:
+Visit_date is the column with unique values for this table. Each row of this table contains the visit date and visit id to the stadium with the number of people during the visit. As the id increases, the date increases as well.
+Write a solution to display the records with three or more rows with consecutive id's, and the number of people is greater than or equal to 100 for each.
+Return the result table ordered by visit_date in ascending order.
+
+from pyspark.sql.functions import col, rank, count, expr
+from pyspark.sql.window import Window
+
+# Sample data
+data = [
+ (1, "2017-01-01", 10),
+ (2, "2017-01-02", 109),
+ (3, "2017-01-03", 150),
+ (4, "2017-01-04", 99),
+ (5, "2017-01-05", 145),
+ (6, "2017-01-06", 1455),
+ (7, "2017-01-07", 199),
+ (8, "2017-01-09", 188)]
+
+# Define the schema
+columns = ["id", "visit_date", "people"]
+
+# Create DataFrame
+stadium_df = spark.createDataFrame(data, schema=columns)
+
+# dispaly the result
+stadium_df.display()
+
+stadium_df.createOrReplaceTempView('Stadium')
+
+filtered_df = stadium_df.filter(col("people") >= 100)
+
+window_spec = Window.orderBy("id")
+ranked_df = filtered_df.withColumn("rnk", rank().over(window_spec))
+ranked_df = ranked_df.withColumn("island", col("id") - col("rnk"))
+island_counts = (ranked_df.groupBy("island").agg(count("*").alias("island_count")).filter(col("island_count") >= 3))
+result_df = ranked_df.join(island_counts, on="island", how = "inner").select("id","visit_date","people"))
+final_result = result_df.orderBy(col("id").asc(), col("people").desc())
+final_result.display()
+
+%sql
+with stadium_with_rnk as (
+select id, visit_date, people, rnk,(id-rnk) as island from (
+select id, visit_date, people, rank() over(order by id) as rnk from stadium where people >= 100) as t0) 
+select id, visit_date, people from stadium_with_rank where island in (
+select island from stadium_with_rnk group by island having count(*) >= 3) order by visit_date;
+-------------------------------------------------------------------------------------------
+𝐒𝐐𝐋 𝐪𝐮𝐞𝐬𝐭𝐢𝐨𝐧𝐬
+
+Q.1. Write a SQL query for cumulative sum of salary of each employee from Jan to July. (Column name – Emp_id, Month, Salary). 
+-- Solution:
+select emp_id,name,month, sum(salary) over(partition by emp_id order by month) as cumulative_sum from table where month between 1 and 7 order by emp_id, month;
+
+Q.2. Write a SQL query to display year on year growth for each product. (Column name – transaction_id, Product_id, transaction_date, spend). Output will have year, product_id & yoy_growth. 
+-- Solution:
+with yearly_spend as (
+select year(transaction_date) as year, product_id, sum(spend) as total_spend from table group by year(transaction_date), product_id),
+yoy_growth as (
+select year, product_id, total_spend, cast(lag(total_spend) over (partition by product_id order by year) as decimal(10,2)) as previous_year_spend from yearly_spend)
+select year, product_id, case  when previous_year_spend is null then 0 else cast(((total_spend - previous_year_spend) / previous_year_spend) * 100 as decimal(10,2)) end as yoy_growth from yoy_growth order by product_id, year;
+
+Q.3. Write a SQL query to find the numbers which consecutively occurs atleast 3 times. (Column name – id, numbers) 
+--Solution:
+with cte as(
+select number,lag(number) over(order by id) as Previous_number, lead(number) over(order by id) as next_number from table)
+select number from cte where where number = previous_number and number = next_number;
+
+Q.4. Write a SQL query to find the days when temperature was higher than its previous dates. (Column name – Days, Temp) 
+
+--Approach 1
+with cte as(
+select  days,temp, lag(temp) over(order by days) as PreviousTemp from table)
+select  days from cte where temp > PreviousTemp
+
+--Approach2:
+SELECT T1.Days FROM table T1 JOIN table T2 ON T1.Days = dateadd(day,1,T2.Days) WHERE T1.Temp > T2.Temp;
+
+
+Q.5. Write a SQL query to find the nth(5th) highest salary from the table emp. (Column name – id, salary)
+-- Solution:
+select id,salary from(
+select id,salary,dense_rank() over(order by salary desc) as drnk from table) as a where a.drnk = 5;
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Objective: Identify and retrieve all employees who have the same salary within the same department.
+Input: A dataset containing employee information with the following fields:
+emp_id (Employee ID)
+name (Employee Name)
+salary (Employee Salary)
+dept_id (Department ID)
+Output: A list of employees who share the same salary with at least one other employee in the same department. The results should be ordered by dept_id and salary.
+Input Data:
+A dataset (data_table) with the following columns:
+name: The name of the individual or entity.
+item: The item associated with the name.
+weight: The numeric weight associated with the name-item pair.
+
+# Define schema for the DataFrame
+data = [
+(102,"sohan", 3000, 11),
+(102,"rohan", 4000, 12),
+(103,"mohan", 5000, 13),
+(104,"cat", 3000, 11),
+(105,"suresh", 4000, 12),
+(109,"mahesh", 7000, 12),
+(108,"kamal", 8000, 11)]
+
+# Define the schema
+columns = ["emp_id","name","salary","dept_id"]
+
+# Create DataFrame
+df = spark.createDataFrame(data, schema=columns)
+
+# display the DataFrame
+df.display()
+
+df.createOrReplaceTempView("emp_salary")
+
+result_sql = spark.sql(
+" " " Select emp_id,name,salary,dept_id from (
+select emp_id,name,salary,dept_id,count(*) over(partition by dept_id, salary) as employee_count from emp_salary) subquery where employee_count > 1 order by dept_id, salary " " ")
+
+result_sql.display()
+
+from pyspark.sql import functions as F
+from pyspark.sql.window import Window
+
+window_spec = Window.partitionBy("dept_id","salary")
+df_with_counts = df.withColumn("employee_count",  F.count("emp_id").over(window_spec))
+result_df = df_with_counts.filter(F.col("employee_count") > 1).drop("employee_count")
+result_df.display()
+
+----------------------------------------------------------
+
+Here is tasked with transforming and summarizing a dataset that contains information about individuals, items, and their associated weights. The goal is to group
+the data by the name column, aggregate the weights for each item per name, and present the results in a compact, readable format.
+
+# Define schema for the DataFrame
+data =
+[ ("john","tomato", 2), ("𝚋𝚒𝚕𝚕","𝚊𝚙𝚙𝚕𝚎", 2), ("john","𝚋𝚊𝚗𝚊𝚗𝚊", 2), ("john","tomato", 3), ("𝚋𝚒𝚕𝚕","𝚝𝚊𝚌𝚘", 2), ("𝚋𝚒𝚕𝚕","𝚊𝚙𝚙𝚕𝚎", 2)]
+schema = "name string,item string,weight int"
+df = spark.createDataFrame(data, schema)
+
+df.display()
+
+from pyspark.sql import functions as F
+
+result_df = df.groupBy("name","item").agg(F.sum("weight").alias("weight")).
+withColumn("tuple",F.concat(F.lit("("), F.col("item"), F.lit(","), F.col("weight"), F.lit(")")))
+.groupBy("name").agg(F.concat_ws(',', F.collect_list("tuple")).alias("tuple")))
+result_df.display()
+
+df.createOrReplaceTempView("data_table")
+
+result_df = spark.sql(" " "
+with summedweights as (
+select name,item,sum(weight) as weight from data_table group by name,item),
+tuples as (
+select name,concat('(', item, ',' weight, ')') as tuple from summedweights),
+groupedtuples as (
+select name,concat_ws(' , ' , collect_list(tuple)) as tuple from tuples group by name)
+select * from groupedtuples " " ")
+result_df.display()
+
+----------------------------------------------------------------------------------------------------------
+df_dept - department_id, department_name, location_id
+df_employees - employee_id, first_name,last_name,email,phone_number,hire_date,job_id,salary,commission_pct,manager_id,department_id
+
+Select employee’s first name, last name, job_id, and salary whose first name starts with alphabet ‘S’
+
+result = (df_employees.filter(F.col('first_name').like('S%')).select('first_name','last_name','job_id','salary').show()
+
+Find the employees who joined the company after 15th of the month
+
+result = df_employees.filter(F.dayofmonth('hire_date') >= 15).select('first_name','last_name','hire_date')).show()
+
+Display the employee’s first name and first name in reverse order
+
+result = (df_employees.select('first_name', F.reverse('first_name').alias('name reversed')).show(10)
+
+5 least earning employees
+
+result = (df_employees.select('first_name','last_name','salary').orderBy(F.asc('salary')).limit(5)).show()
+
+employees hired in the 80's
+
+result = (df_employees.select('first_name','last_name','hire_date').filter(F.year('hire_date').between(1980,1989))).show()
+
+maximum salary from each department
+
+joined_df = df_employees.join(df_dept, df_employees.department_id == df_dept.department_id,'left')
+result = (joined_df.groupBy('department_name').agg(F.max('salary').alias('dept max salary')).show()
+
+employees who earn more than the average salary in that company
+
+average_salary = df_employees.select(F.avg("avg_salary")).first()["avg_salary"]
+result = (df_employees.filter(F.col('salary') > average_salary).select('first_name','last_name','salary')).show()
+
+employees who joined in august 1994
+
+result = (
+df_employees.filter((F.year(hire_date') == 1994) & (F.month('hire_date') == 8)).
+select(F.concat('first_name',F.lit(' '), 'last_name').alias('emp_name'), 'hire_date')).show()
+
+employee firstname and the corresponding phone number in the format (__) - (_) - (___)
+
+result = (
+df_employees.select(F.concat(('first_name'), F.lit(' '), 'last_name').alias('emp name'),
+F.regexp_replace('phone_number', '\.', '-').alias('phn_number'))).show(10)
+
+divide people into three based on their salaries
+
+thresholds = [2000,5000,10000]
+
+def categorize_salary(salary):
+       if salary >= threshold[0] and salary < threshold[1]:
+          return 'low'
+       elif salary >= threshold[1] and salary < threshold[2]:
+          return 'mid'
+       else:
+          return 'high'
+
+categorie_salary_udf = F.udf(categorize_salary, StringType())
+
+df_employees = df_employees.withColumn("salary_group", categorize_salary_udf(F.col('salary')))
+
+df_employees.select('first_name','last_name','salary_group','salary_group).orderBy('salary').show()
+
+--------------------------------------------------------------------------------------------------------------
+
+𝐐𝐮𝐞𝐬𝐭𝐢𝐨𝐧
+You are working with large datasets in PySpark and need to join two DataFrames. However, one of the tables has highly skewed data, causing performance issues due to data shuffling. How would you optimize this join using salting techniques?
+You are given the following sample datasets:
+sales_df (Fact Table - Large Dataset, Highly Skewed on store_id)
+Your task is to perform an optimized join between sales_df and store_df on store_id, ensuring that the skewness does not degrade performance.
+
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import col,concat_ws,lit,rand,floor
+
+spark = SparkSession.builder.appName("SkewedJoinOptimization").getOrCreate()
+
+𝐬𝐜𝐡𝐞𝐦𝐚 
+sales_data = [ (101, "P001", 100), (101, "P002", 200), (101, "P003", 150), (102, "P004", 300), (103, "P005", 400), (101, "P006", 500), (104, "P007", 250) ] 
+
+sales_df = spark.createDataFrame(sales_data, ["store_id", "product_id", "amount"]) 
+
+# Sample Data (Small Dimension Table) 
+
+store_data = [(101, "Walmart"), (102, "Target"), (103, "Costco"), (104, "BestBuy")] 
+
+store_df = spark.createDataFrame(store_data, ["store_id", "store_name"]) 
+
+num_salt_keys = 3
+sales_df_salted = sales_df.withColumn("salt", floor(rand() * num_salt_keys))\
+                                            .withColumn("salted_store_id", concat_ws("_", col("store_id"),col("salt")))
+
+expanded_store_df = store_df.crossJoin(spark.range(0,num_salt_keys).toDF("salt"))\
+                                                    .withColumn("salted_store_id", concat_ws("_",col("store_id"),col("salt")))
+
+joined_df = sales_df_salted.join(expanded_store_df, "salted_store_id", "inner")\
+                                              .drop("salted_store_id","salt")
+
+joined_df.show()
+
+------------------------------------------------------------------------------------------------------------------------------------
+
+𝐐𝐮𝐞𝐬𝐭𝐢𝐨𝐧
+You are working as a Data Engineer, and the company has a log system where timestamps are recorded for every user action (e.g., when the user logs in and logs out). Your manager wants to know how much time each user spends between log in and log out.
+
+The system generates logs with login_timestamp and logout_timestamp columns. You need to calculate the difference between the logout_timestamp and login_timestamp in hours, minutes, and seconds. The result should be formatted like "HH:mm:ss".
+
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import unix_timestamp,col,expr,floor
+
+spark = SparkSession.builder.appName("TimeStampDifference").getOrCreate()
+
+# 𝐬𝐜𝐡𝐞𝐦𝐚
+data = [ (1, "2025-01-31 08:00:00", "2025-01-31 10:30:45"),
+(2, "2025-01-31 09:00:30", "2025-01-31 12:15:10"),
+(3, "2025-01-31 07:45:00", "2025-01-31 09:00:15") ]
+
+# Define schema 
+columns = ["user_id", "login_timestamp", "logout_timestamp"] 
+
+df = spark.CreateDataFrame(date,columns)
+
+df = df.withColumn("login_time", unix_timestamp("login_timestamp"))
+df = df.withColumn("logout_time", unix_timestamp("logout_timestamp"))
+
+df = df.withColumn("duration_seconds", col("logout_time") - col("login_time"))
+
+df = df.withColumn("hours", (col("duration_seconds")/3600).cast("int"))
+df = df.withColumn("minutes", ((col("duration_seconds") % 3600) / 60).cast("int"))
+df = df.withColumn("sceonds", (col("duration_seconds") % 60).cast("int"))
+
+df = df.withColumn("formatted_duration", expr("lpad(hours,2,'0') || ':' || lpad(minutes,2,'0') || ':' || lpad(seconds,2,'0')"))
+
+df.select("user_id", "formatted_duration").show(truncate = False)
+---------------------------------------------------------------------------------------
+
+Write a Python code to print the lower_caase and upper_case letter from the given string
+
+def lower_upper(input_string):
+       lower_str = []
+       upper_str = []
+       for char in input_string:
+             if char.islower():
+                lower_str.append(char)
+             elif char.isupper():
+                upper_str.append(char)
+       return lower_str,upper_str
+if __name__=="__main__":
+       input_stirng = """Lorem ipsum dolor sit amet,
+       consectetur adipiscing elit,
+       sed do eiumsod tempor incididunt,
+       ut labore et dolore magna aliqua. and Lorem tell lorem"""
+       lower_str,upper_str = lower_upper(input_string)
+       print("Lower_case", ' '.join(lower_str))
+       print("Upper_case", ' '.join(upper_str))
+----------------------------------------------------------------------------------------------------------------------------
+
+𝐐𝐮𝐞𝐬𝐭𝐢𝐨𝐧
+You have a dataset of user activities in an e-commerce application, where each row represents an activity performed by a user. The dataset contains duplicate activity entries (based on user and activity type) and you need to remove the duplicates. Furthermore, you want to keep only the most recent record for each user, based on a timestamp column.
+
+Problem
+Remove duplicates based on user_id and activity_type.
+Keep only the most recent activity_timestamp for each user and activity type combination.
+
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import col,row_number
+from pyspark.sql.window import Window
+
+spark = SparkSession.builder.master("local").appName("Remove_Duplicated").getOrCreate()
+
+# Data 
+data = [ (1, 'login', '2025-02-01 10:00:00'), 
+(1, 'view_product', '2025-02-01 10:05:00'), (1, 'login', '2025-02-01 10:30:00'), (2, 'purchase', '2025-02-01 11:00:00'), (2, 'login', '2025-02-01 11:15:00'), 
+(2, 'view_product', '2025-02-01 11:30:00'), (3, 'login', '2025-02-01 12:00:00'), (3, 'login', '2025-02-01 12:05:00') ]
+ 
+# Create DataFrame 
+df = spark.createDataFrame(data, ["user_id", "activity_type", "activity_timestamp"])
+
+df =df.withColumn("activity_tiimestamp", col("activity_timestamp").cast("timestamp"))
+window_spec= Window.partitionBy("user_id","activity_type").orderBy(col("activity_timestamp").desc())
+df_with_row_number = df.withColumn("row_num", row_number().over(window_spec))
+df_filtered = df_with_row_number.filter(col("row_number") == 1).drop("row_num")
+df_filtered.show(truncated=False)
+
+------------------------------------------------------------------------------------
+You have a dataset of transactions that contains the following fields:
+transaction_id (integer): Unique ID for each transaction.
+user_id (integer): ID of the user performing the transaction.
+transaction_amount (float): Amount of the transaction.
+transaction_date (string): Date of the transaction in yyyy-MM-dd format.
+From this dataset, perform the following operations:
+1. Find the top 3 users with the highest total transaction amounts.
+2. Among these top 3 users, for each, identify the most recent transaction date.
+
+from pyspark.sql.types import *
+from pyspark.sql.functions import *
+from pyspark.sql.window import Window
+from pyspark.sql.functions import rank,dense_rank,row_number
+
+Data = [ 
+(1, 101, 500.0, "2024-01-01"), 
+(2, 102, 200.0, "2024-01-02"), 
+(3, 101, 300.0, "2024-01-03"), 
+(4, 103, 100.0, "2024-01-04"), 
+(5, 102, 400.0, "2024-01-05"), 
+(6, 103, 600.0, "2024-01-06"), 
+(7, 101, 200.0, "2024-01-07")
+] 
+ 
+data_schema=('Transaction_id int,User_id int,Transaction_amount float, Transaction_date string')
+df=spark.createDataFrame(data=Data,schema=data_schema)
+df.display()
+
+df = df.withColumn('Transaction_date', to_date('Transaction_date'))
+
+#Find the top 3 users with the highest total transaction amounts
+windowSpec = Window.partitionBy('user_id')
+total_amount = df.withColumn('total_amount', sum('Transaction_amount').over(windowSpec))
+df_total_3 = total_amount.withColumn('Rank',row_number().over(Window.partitionBy('user_id'0.orderBy(col('Total_amount').desc()))).withColumn('Recent_transaction_Date', max('Transaction_date').over(windowSpec)).filter(col('Rank')==1)
+df_total_amount_top_3.display()
+
+----------------------------------------------------------------------------------------------------------------
+
+You are given a dataset of user activity logs. Each log entry contains a user_id, timestamp, and activity_type. The dataset has duplicate entries, and some entries are missing values.
+1. Drop Duplicate the dataset.
+2 Handle any missing values appropriately.
+3 Determine the top 3 most frequent activity_type for each user_id.
+4 Calculate the time spent by each user on each activity_type
+
+from pyspark.sql.functions import *
+from pyspark.sql.types import *
+from pyspark.sql.window import Window
+
+data = [ 
+ ("U1", "2024-12-30 10:00:00", "LOGIN"), 
+ ("U1", "2024-12-30 10:05:00", "BROWSE"),
+ ("U1", "2024-12-30 10:20:00", "LOGOUT"),
+ ("U2", "2024-12-30 11:00:00", "LOGIN"),
+ ("U2", "2024-12-30 11:15:00", "BROWSE"),
+ ("U2", "2024-12-30 11:30:00", "LOGOUT"),
+ ("U1", "2024-12-30 10:20:00", "LOGOUT"),          # Duplicate entry 
+ (None, "2024-12-30 12:00:00", "LOGIN"),           # Missing user_id 
+ ("U3", None, "LOGOUT")]                                    # Missing timestamp 
+
+# Define schema
+schema = StructType([
+                  StructField('User_id', StringType(), True),
+                  StructField('Timestamp', StringType(), True),
+                  StructField('Activity', StringType(), True)])
+
+df = spark.createDataFrame(date = data, schema = schema)
+df.display()
+
+# convert the timestamp to TimeStampType
+df1 = df.withColumn('TimeStamp', (col('Timestamp').cast(TimestampType())))
+df1.display()
+
+# Drop Duplicate value
+df_duplicate = df1.DropDuplicates()
+df_duplicate.display()
+
+# Handling any missing values appropriately (dropping the rows with the missing critical fields)
+df_cleaned = df1.dropna(subset=['user_id','TimeStamp','Activity'])
+df_cleaned.display()
+
+# Determine top 3 most frequent activity_type for each user_id.
+grouped_data = df_cleaned.groupBy('User_id','Activity').count().withColumn('Rank', row_number().over(Window.partitionBy('User_id').orderBy(desc('count'))))
+grouped_date.show()
+
+# now top 3 user of each user_id and activity
+activity_df = grouped_data.filter(col('Rank') <= 3).select('User_id',"activity","count")
+activity_df.display()
+
+# Calculate the time spent by each user on each activity_type
+windowSpec = Window.partitionBy('User_id').orderBy('TimeStamp')
+df_with_lag = df_cleaned.withColumn('next_timestamp', lag('TimeStamp').over(windowSpec))
+
+df_with_time_spent = df_with_lag.withColumn("time_Spent", (col('next_timeStamp').cast('long') - col('TimeStamp').cast('long')).cast('double')/60
+
+time_spent_per_activity = df_with_time_spent.groupBy('User_id','Activity').sum('time_Spent')
+time_spent_per_activity.show()
+
+---------------------------------------------------------------------
+
+implement real time CDC for an Azure SQL Database ->  Data lake pipeline
+
+# ingest CDC data using auto loader
+df  = (spark.readStream.format("cloudFiles").option("cloudFiles.format","parquet").load("abfss://cdc@datalake.dfs.core.windows.net/sql_changes/"))
+
+apply changes to delta table using merge
+
+from delta.tables import DeltaTable
+
+deltaTable = DeltaTable.forPath(spark, "abfss://delta@datalake.dfs.core.windows.net/customer/")
+
+deltaTable.alias("target").merge(df.alias("source"), "target.id = source.id")
+.whenMatchUpdate(set={"target.name" : "source.name"}) \
+.whenNotMatchInsert(values = {"id" : "source.id", "name" : "source.name"}) \
+.excute()
+
+RABC - Role based access control to restrict data access
+
+#create catalog
+
+create catlog finance;
+create catalog marketing;
+
+#Assign access controls
+
+GRANT USAGE ON CATALOG finance TO ROLE finance_team;
+GRANT SELECT ON TABLE  finance.transactions TO ROLE finance_analyst;
+
+Injest Real-time transaction from Event-hubs
+
+from pyspark.sql.types import StructType, StringType, DoubleType
+from pyspark.sql.functions import from_json
+
+schema = StructType().add("transaction_id",StringType())]\
+                                        .add("user_id", StringType())\
+                                        .add("amount", DoubleType()) \
+                                        .add("timestamp", StringType())
+
+df = spark.readStream.format("eventhubs").option("connectionString",<EVENT_HUB_CONNECTOR>").load()
+
+#parse json
+df_parse = df.select(from_json(df["body"].cast("string"), schema).alias("data")).select("data.*")
+
+store result in azure synapse analytics
+
+df_fraud.writeStream.format("delta").outputMode("append").option("checkpointLocation","abfss://delta@datalake.dfs.core.windows.net/checkpoints/fraud/")
+.start("abfss://delta@deltalake.dfs.core.windows.net/fraud_transactions/"))
+
+# Load incremental data ADF to Azure Synapse Analytics
+
+You need to load incremental data from an Azure Data Lake (Parquet files) into an Azure Synapse Analytics table efficiently
+
+from delta.tables import DeltaTable
+from pyspark.sql.functions import col
+
+#read new incremental data
+incremental_df = spark.read.format("parquet").load("abfss://raw@datalake.dfs.core.window.net/incremental/")
+
+#load target delta table
+deltaTable = DeltaTable.forPath(spark, "abfss://delta@datalake.dfs.core.windows.net/synapse_table/")
+
+#Merge new records with existing data
+deltaTable.alias("target").merge(incremental_df.alias("source"),"target.id = source")
+.whenMatchedUpdated(set={"target.value":col("source.value")}) \
+.whenNotMatchedInsert(values={"id":col("source.id"), "value" : col("source.value")}) \
+.execute()
+
+------------------------------------------------------------------
+
+You are given a stream of IoT sensor data with columns: sensor_id, timestamp, and value. Detect sensors with values exceeding a threshold (e.g., 100) in real-time
+
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import col
+
+spark = SparkSession.builder.appName("IoTStreaming").getOrCreate()
+
+stream_df = spark.readStream.format("kafka.bootstrap.servers","localhost:9092").load()
+
+parsed_df = stream_df.selectExpr("cast(value as String)").selectExpr("split(value,' , ') as data") \
+.selectExpr("cast(data[0] as int) as senor_id, "cast(data[1] as timestamp) as timestamp", "cast(data[2] as float) as value")
+
+result_df = parsed_df.filter(col("value") > 100)
+
+query = result_df.writeStream.format("console").start()
+query.awaitTermination()
+
+You are given a stream of log data with columns: timestamp, user_id, and action. Calculate the count of actions per user in real-time.
+
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import col
+
+spark = SparkSession.builder.appName("IoTStreaming").getOrCreate()
+
+stream_df = spark.readStream.format("kafka.bootstrap.servers","localhost:9092").load()
+
+parsed_df = stream_df.selectExpr("cast(value as String)").selectExpr("split(value,' , ') as data") \
+.selectExpr("cast(data[0] as int) as senor_id, "cast(data[1] as timestamp) as timestamp", "cast(data[2] as float) as value")
+
+result_df = parsed_df.groupBy("user_id", window("timestamp","1 minute")).count()
+
+query = result_df.writeStream.format("console").start()
+query.awaitTermination()
+-------------
+
+You are given a dataset of user transactions with columns: user_id, transaction_id, and amount. The dataset is heavily skewed on the user_id column. Calculate the total transaction amount per user while handling the skew.
+
+from pyspark.sql import SparkSession
+form pyspark.sql.functions import col
+
+spark = SparkSession.builder.appName("skewedaggregation").getOrCreate()
+transaction_df = spark.read.csv("transaction.csv", header=True, inferSchema=True)
+transaction_df = transactions_df.withColumn("salted_user_id",col("user_id") % 10)
+result_df = transactions_df.groupBy("salted_user_id","user_id").agg(sum("amount").alias("total_amount"))
+final_result_df = result_df.groupBy("user_id").agg(sum("total_amount").alias("total_amount"))
+final_result_df.show()
+-------------
+
+You need to build a real-time ingestion pipeline that automatically processes new files arriving in an Azure Data Lake Storage (ADLS) container.
+
+from pyspark.sql.functions import input_file_name
+
+df = spark.readStream.format("cloudFiles").option("cloudFiles.format","csv").option("cloudFiles.schemaLocation","dbfs:/mnt/schema/auto_loader/")
+.load("dbfs:/mnt/adls/raw_sales_data/").withColumn("source_file", input_file_name())
+
+df.withStream.format("checkpointLocation","dbfs:/mnt/checkpoints/sales_data/") \
+.option("mergeSchema","true") \
+.trigger(avaliableNow = True) \
+.toTable("sales_data")
+
+--------------------------------
+You need to automate table refreshes in Databricks whenever new data arrives in ADLS. How will you trigger Databricks notebooks from Azure Data Factory (ADF)?
+
+# Refresh Table with New Data
+spark.sql("REFRESH TABLE sales_data")
+
+# Process Data
+df = spark.sql("SELECT * FROM sales_data WHERE date >= current_date() - 7")
+df.write.mode("overwrite").saveAsTable("processed_sales")
+
+---------------------------
+Scenario: A PySpark job requires appending and overwriting different partitions in Delta Lake. How would you manage this?
+
+# Append new data to specific partitions
+new_data.write \
+    .format("delta") \
+    .mode("append") \
+    .partitionBy("partition_column") \
+    .save("/path/to/delta-table")
+
+# Overwrite specific partitions with updated data
+updated_data.write \
+    .format("delta") \
+    .mode("overwrite") \
+    .option("replaceWhere", "partition_column = 'specific_partition_value'") \
+    .partitionBy("partition_column") \
+    .save("/path/to/delta-table")
+
+Handling Schema Evolution:
+new_data.write \
+    .format("delta") \
+    .mode("append") \
+    .option("mergeSchema", "true") \
+    .partitionBy("partition_column") \
+    .save("/path/to/delta-table")
+
+Optimizing Performance:
+from delta.tables import DeltaTable
+
+delta_table = DeltaTable.forPath(spark, "/path/to/delta-table")
+delta_table.optimize().executeZOrderBy("column_to_zorder")
+
+Scenario: A PySpark pipeline processes multiple sources, and one source intermittently becomes unavailable. How would you handle this?
+
+
+Scenario: Explain how to implement a sliding window join between two datasets with time-based keys.
+
+
+Scenario: Write PySpark code to train a decision tree model and evaluate it using a custom metric.
+
+
+Scenario: A PySpark application must write to a Postgres database in parallel. Write the code for this.
+
+
+Scenario: A streaming pipeline must emit alerts when certain thresholds are breached. Write PySpark code to implement this.
+
+
+Scenario: A pipeline must use PySpark to process data across multi-cloud environments. How would you set this up?
+
+
+Scenario: A job processes a Delta Lake table with millions of small files. How would you optimize this?
+
+
+Scenario: A streaming application processes data from a Kafka topic with high throughput. How would you tune the PySpark job?
+
+
+Scenario: A PySpark pipeline writes output to Parquet files, but querying the files is slow. How would you optimize the Parquet file storage (e.g., partitioning, compression)?
+
+
+Scenario: A large dataset needs to be joined with a small dataset frequently. Write PySpark code to broadcast the small dataset.
+
+
+Scenario: Write PySpark code to calculate the clustering coefficient of nodes in a distributed graph dataset.
+
+
+Scenario: A real-time event stream must detect anomalies using PySpark Structured Streaming. How would you design this?
+
+
+Scenario: Explain how to handle out-of-order events in a PySpark Structured Streaming application.
+
+
+Scenario: A PySpark application requires retry logic for writing data to an unreliable sink. How would you implement this?
+
+
+Scenario: A pipeline needs to log sensitive transformations but redact sensitive information from the logs. How would you implement this?
+
+
+Scenario: Explain how to handle timezones effectively in PySpark when processing timestamped datasets.
+
+
+Scenario: A hybrid architecture requires combining Apache Spark with Apache Beam. How would you integrate them?
+
+
+Scenario: A PySpark application requires comparing two large datasets for near-duplicates (e.g., fuzzy matching). How would you approach this?
+
+
+Scenario: A pipeline involves multiple actions, but only the last action triggers execution. Describe how Spark’s lazy evaluation impacts performance.
+
+
+Scenario: Write PySpark code to handle a job that must scale down gracefully when cluster resources are reduced dynamically.
+
+
+Scenario: Explain how to join a high-throughput streaming dataset with a slowly updating reference table in PySpark.
+
+
+Scenario: A pipeline requires calculating percentile values for large datasets. Explain how to implement this efficiently in PySpark.
+
+
+Scenario: A pipeline must read and write data to a REST API in batches. How would you implement this in PySpark?
+
+
+Scenario: A pipeline trains and evaluates multiple machine learning models in parallel. How would you scale this process?
+
+
+Scenario: Explain how to debug a PySpark application using logs and visualizations from Spark History Server.
+
+
+Scenario: A new version of a PySpark job must be deployed without interrupting ongoing processes. Describe your approach to achieving a seamless rollout.
+
+
+Scenario: A dataset is distributed across hundreds of files in a cloud storage bucket. How would you optimize the reading process to avoid small-file overhead?
+
+
+Scenario: Write PySpark code to implement a custom partitioner for unevenly distributed keys in a dataset.
+
+
+Scenario: Write PySpark code to implement a distributed PageRank algorithm for a graph dataset.
+
+
+Scenario: Describe how to process a dataset with overlapping time windows and aggregate metrics for each window.
+
+
+Scenario: A dataset must comply with regulations requiring the masking of sensitive information before processing. How would you enforce this in PySpark?
+
+
+Scenario: A PySpark job must enforce unique constraints across multiple datasets. How would you design the pipeline to validate and deduplicate the data?
+
+
+Scenario: A PySpark application requires generating synthetic data for testing purposes. Write a pipeline to create synthetic datasets with configurable parameters.
+
+
+---------------------------------------------------------
+Data Engineer Interview Question
+
+from pyspark.sql import SparkSession
+from pyspark.sql.functions col,coalesce
+
+spark = SparkSession.builder.appName("HandleNullValues").getOrCreate()
+
+data = [ 
+             (1, "Allice", None),
+             (2, "Bob", "2023-02-01"),
+             (3, None, "2023-02-02"),
+             (4, "David", None),
+             (None, "Eve", "2023-02-03")]
+
+columns = ["id","name","date"]
+
+df = spark.createDataFrame(data, columns)
+
+print("Original DataFrame : ")
+
+✅ 𝐇𝐨𝐰 𝐭𝐨 𝐟𝐢𝐥𝐭𝐞𝐫 𝐨𝐮𝐭 𝐫𝐨𝐰𝐬 𝐜𝐨𝐧𝐭𝐚𝐢𝐧𝐢𝐧𝐠 𝐧𝐮𝐥𝐥 𝐯𝐚𝐥𝐮𝐞𝐬 𝐢𝐧 𝐬𝐩𝐞𝐜𝐢𝐟𝐢𝐜 𝐜𝐨𝐥𝐮𝐦𝐧𝐬?
+
+filtered_df = df.filter(col("date").isNotNull()
+print("After Filtering null 'date' values: ")
+filtered_df.show()
+
+✅ 𝐇𝐨𝐰 𝐭𝐨 𝐫𝐞𝐩𝐥𝐚𝐜𝐞 𝐧𝐮𝐥𝐥 𝐯𝐚𝐥𝐮𝐞𝐬 𝐢𝐧 𝐚 𝐜𝐨𝐥𝐮𝐦𝐧 𝐰𝐢𝐭𝐡 𝐚 𝐝𝐞𝐟𝐚𝐮𝐥𝐭 𝐯𝐚𝐥𝐮𝐞?
+
+replaced_df = df.fillna({"name" : "Unknown"})
+print("After Replacing null 'name' values: ")
+replaced_df.show()
+
+✅ 𝐇𝐨𝐰 𝐭𝐨 𝐝𝐫𝐨𝐩 𝐫𝐨𝐰𝐬 𝐰𝐡𝐞𝐫𝐞 𝐚𝐧𝐲 𝐨𝐫 𝐬𝐩𝐞𝐜𝐢𝐟𝐢𝐜 𝐜𝐨𝐥𝐮𝐦𝐧𝐬 𝐜𝐨𝐧𝐭𝐚𝐢𝐧 𝐧𝐮𝐥𝐥 𝐯𝐚𝐥𝐮𝐞𝐬?
+
+#Drop rows any column has null value
+
+dropped_df = df.na.drop()
+print("After Dropping Rows with any null values: ")
+dropped_df.show()
+
+#Drop the rows where the 'names' column is null
+
+dropped_name_df = df.na.drop(subset=["name"])
+print("After Dropping Rows where 'name' is null: ")
+dropped_name_df.show()
+
+✅ 𝐇𝐨𝐰 𝐭𝐨 𝐮𝐬𝐞 𝐭𝐡𝐞 𝐜𝐨𝐚𝐥𝐞𝐬𝐜𝐞 𝐟𝐮𝐧𝐜𝐭𝐢𝐨𝐧 𝐭𝐨 𝐫𝐞𝐩𝐥𝐚𝐜𝐞 𝐧𝐮𝐥𝐥 𝐯𝐚𝐥𝐮𝐞𝐬 𝐰𝐢𝐭𝐡 𝐚𝐧 𝐚𝐥𝐭𝐞𝐫𝐧𝐚𝐭𝐢𝐯𝐞 𝐯𝐚𝐥𝐮𝐞?
+
+coalesced_df = df.withColumn("date", coalesce(col("date"), lit("2023-01-01")))
+print("After coalescing null 'date' value with fallback:")
+coalesced_df.show()
+
+
+-----------------------------------------------------------------------------------------------
+
+𝐐𝐮𝐞𝐬𝐭𝐢𝐨𝐧
+You have been given a large dataset containing employee salary details. Your goal is to optimize a PySpark job that performs a groupBy operation while minimizing the shuffle.
+Task:
+Write a PySpark job to calculate the total salary per department.
+Optimize the job to reduce shuffle while performing the groupBy operation.
+Explain why your optimization reduces shuffle and improves performance.
+Approach:
+To minimize shuffle during a groupBy operation, we should:
+Use repartition() efficiently to avoid unnecessary partitions.
+Use reduceByKey() instead of groupByKey(), as it performs local aggregation before shuffling.
+If working with a DataFrame, use partitionBy() while writing output.
+
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import col,sum
+
+𝐬𝐜𝐡𝐞𝐦𝐚 
+data = [ (101, "Rahul", "IT", 90000), (102, "Sita", "HR", 75000), 
+(103, "Vikram", "IT", 85000), (104, "Priya", "HR", 72000), 
+(105, "Anjali", "IT", 88000), (106, "Manish", "Sales", 67000), 
+(107, "Neha", "Sales", 70000) ] 
+
+columns = ["emp_id", "name", "dept", "salary"]
+
+df = spark.createDataFrame(data,columns)
+rdd = df.rdd.map(lambda x : (x[2], x[3]))
+optimized_result = rdd.reduceByKey(lambda x,y : x+y)
+optimized_df = optimized_result.toDF(["dept","total_salary"])
+optimized_df.show()
+df_optimized = df.repartiiton("dept").groupBy("dept").agg(sum("salary").alias("total_salary))
+df_optimized.show()
+
+-------------------------------------------------------------
+
+Question: You are given a database of Netflix’s user viewing history and their current subscription status. Write pyspark code to find all active customers who watched more than 10 episodes of a show called “Stranger Things” in the last 30 days.
+
+Dataframes:
+• users : user_id (integer), active (boolean)
+• viewing_history : user_id (integer), show_id (integer), episode_id (integer), watch_date (date)
+• shows show_id (integer), show_name (text)
+
+My solution
+--------------
+
+from pyspark.sql import functions as F
+from pyspark.sql.window import Window
+
+users = [(1, True), (2, True), (3, True), (4, True)]
+viewing_history = [
+ (1, 101, 1, "2025-01-15"), (1, 101, 2, "2025-01-17"), (1, 101, 3, "2025-01-18"),
+ (2, 101, 1, "2025-01-10"), (2, 101, 2, "2025-01-12"), (2, 101, 3, "2025-01-15"),
+ (2, 101, 4, "2025-01-18"), (2, 101, 5, "2025-01-19"), (2, 101, 6, "2025-01-20"),
+ (2, 101, 7, "2025-01-21"), (2, 101, 8, "2025-01-22"), (2, 101, 9, "2025-01-23"),
+ (2, 101, 10, "2025-01-24"), (2, 101, 11, "2025-01-25"), (3, 101, 1, "2025-01-20"),
+ (4, 101, 1, "2025-01-21")
+]
+shows = [(101, "Stranger Things")]
+
+users_df = spark.createDataFrame(users, ["user_id", "active"])
+viewing_history_df = spark.createDataFrame(viewing_history, ["user_id", "show_id", "episode_id", "watch_date"])
+shows_df = spark.createDataFrame(shows, ["show_id", "show_name"])
+viewing_history_df = viewing_history_df.withColumn("watch_date", F.to_date("watch_date"))
+
+current_date = F.current_date()
+filtered_df = users_df.join(viewing_history_df, "user_id").join(shows_df, "show_id") \.filter((F.col("show_name") == "Stranger Things") & (F.datediff(current_date, F.col("watch_date")) <= 30))
+
+#count distinct episode count per user and filter
+result_df = filtered_df.groupBy("user_id", "show_id").agg(F.countDistinct("episode_id").alias("episode_count")).filter(F.col("episode_count") >= 10)
+
+
+result_df.select
+("user_id").show()
+
+----------------
+modern databricks
+
+managed catalog - managed schema - managed table
+
+---managed catalog
+%sql
+CREATE CATALOG man_cata
+
+---managed schema
+%sql
+CREATE SCHEMA man_cata.man_schema
+
+---managed table
+%sql
+create table man_cata.man_schema.man_table
+( id INT, name STRING) USING DELTA
+
+---------------
+
+EXTERNAL CATALOG  -- MANAGED SCHEMA -- MANAGED TABLE
+
+%sql
+CREATE CATALOG ext_cata
+MANAGED LOCATION "abfss://mycontainer@storageaccount.dfs.core.window.net/myfolder"
+
+%sql
+CREATE SCHEMA ext_cata.man_schema
+
+%sql
+CREATE TABLE ext_cata.man_schema.man_table
+( id INT, name STRING) using DELTA
+
+-------------
+
+EXTERNAL CATALOG --- EXTERNAL SCHEMA --- MANAGED TABLE
+
+%sql
+CREATE SCHEMA ext_cata.ext_schema
+MANAGED LOCATION "abfss://mycontainer@storagemoderndb.dfs.core.windows.net/ext_db"
+
+%sql
+CREATE TABLE ext_cata.ext_schema.man_table
+( id INT, name STRING) USING DELTA
+
+---------
+EXTERNAL TABLE
+
+%sql
+CREATE TABLE man_cata.man_schema.ext_table
+( id INT, name STRING) USING DELTA LOCATION "abfss://mycontainer@storagemoderndb.dfs.core.windows.net/ext_db;
+----------
+DROP MANAGED TABLE
+
+%sql
+DROP TABLE man_cata.man_schema.man_table;
+
+UNDROP MANAGED TABLE
+
+%sql
+UNDROP TABLE  man_cata.man_schema.man_table;
+-------------
+
+PERMENANT VIEW
+%sql
+CREATE VIEW man_cat.man_schema.view1 AS
+SELECT * FROM delta."abfss://mycontainer@storagemoderndb.dfs.core.windows.net/ext_db/"
+
+------------
+TEMP VIEWS
+CREATE OR REPLACE TEMP VIEW temp_view AS
+SELECT * FROM delta."abfss://mycontainer@storagemoderndb.dfs.core.windows.net/ext_db"
+
+--------------
+VOLUMES
+
+dbutils.fs.mkdir('abfss://mycontainer@storagemoderndb.dfs.core.windows.net/volumes/'
+
+creating a volume
+%sql
+CREATE EXTERNAL VOLUME  man.cata.man_schema.extvolume
+LOCATION "abfss://mycontainer@storagemoderndb.dfs.core.windows.net/ext_volumes/'
+
+copy--
+dubutils.fs.cp('abfss://mycontainer@storagemoderndb.dfs.core.windows.net/sales','abfss://mycontainer@storagemoderndb.dfs.core.windows.net/volumes/sales')
+
+QUERY VOLUMES
+SELECT * FROM CSV.'/volumes/man_cata/man_schema/extvolume/sales'
+
+DELTA TABLE
+
+%sql
+CREATE TABLE man_cata.man_schema.detlatbl
+(id INT, name STRING, city STRING) USING DELTA LOCATION 'abfss://detlalake@storagemoderndb.dfs.core.windows.net/detlatbl/'
+
+%sql
+ALTER TABLE man_cata.man_schema.deltatbl SET TBLPROPERTIES ('delta.enableDeletionvectors' = false);
+
+%sql
+INSERT INTO man_cata.man_schema.deltatbl VALUES ()
+
+DESCRIBE EXTENDED man_cata.man_schema.deltatbl
+
+UPDATES in delta tables
+
+%sql
+UPDATE man_cata.man_schema.deltatbl SET city = 'tornoto' where id = 1;
+
+DESCRIBE HISTORY man_cata.man_schema.deltatbl
+
+TIME TRAVEL
+
+%sql
+RESTORE man_cata.man_schema.deltatbl TO VERSION AS OF 2
+
+Deletion vector--------
+\\\\
+
+AUTOLOADER
+
+df = spark.readStream.format('cloudFiles').option('cloudFiles.format','parquet').option('cloudFiles.schemaLocation','abfss://mycontainer@storagemoderndb.dfs.core.windows.net/autoSink/check/')
+.load(abfss://mycontainer@storagemoderndb.dfs.core.windows.net/autosources')
+
+df.writeStream.format('parquet').option('checkpointLocation','abfss://mycontainer@storagemoderndb.dfs.core.windows.net/autoSink/check')
+.trigger(processingtime = '10 seconds')
+.start('abfss://mycontainer@storagemoderndb.dfs.core.windows.net/data')
+-----------------------------------------------------------------------------------------------------------------------
+
+𝐐𝐮𝐞𝐬𝐭𝐢𝐨𝐧
+In PySpark, StructType and StructField are used for defining schema in DataFrames. Consider a scenario where you have employee data stored in a CSV file with the following structure:
+Define an explicit schema for this dataset using StructType and StructField.
+Load this data into a PySpark DataFrame using the defined schema.
+Extract the employees who belong to the "IT" department and have a salary greater than 70000.
+Split the Address column into two separate columns: City and State.
+Save the transformed data into a Parquet file.
+
+from pyspark.sql import SparkSession
+from pyspark.sql.types import StructType, StructField, IntegerType, StringType
+from pyspark.sql.functions import col,split
+
+𝐬𝐜𝐡𝐞𝐦𝐚 
+schema = StructType([ StructField("Emp_ID", IntegerType(), True), StructField("Name", StringType(), True), 
+StructField("Age", IntegerType(), True), 
+StructField("Salary", IntegerType(), True), 
+StructField("Department", StringType(), True), 
+StructField("Address", StringType(), True) ]) 
+
+data = [ (101, "Rajesh", 30, 60000, "IT", "Mumbai, Maharashtra"), 
+(102, "Priya", 28, 75000, "HR", "Bengaluru, Karnataka"), 
+(103, "Suresh", 35, 50000, "Finance", "Chennai, Tamil Nadu"), 
+(104, "Anjali", 25, 80000, "IT", "Pune, Maharashtra"), (105, "Arjun", 40, 90000, "Management", "Hyderabad, Telangana") ]
+
+df = spark.createDataFrame(data,schema)
+filtered_df = df.filtered_df.withColumn("City",split(col("Address"), ",")[0])
+                                           .withColumn("State",split(col("Address"), ",")[1]).drop("Address")
+df_transformed.show()
+df_transformed.write.mode("overwrite").parquet("/tmp/filtered_employee.parquet")
+spark.stop()
+
+----------------------------------------------------------------------------------------
+
+
+In the context of artificial intelligence, "AGI" stands for "Artificial General Intelligence," representing a hypothetical AI system that can perform intellectual tasks across a broad range of domains, similar to human intelligence, while "ASI" stands for "Artificial Superintelligence," which refers to an AI that surpasses human intelligence in all aspects, going beyond what AGI can achieve; essentially, AGI aims to match human intelligence, while ASI aims to exceed it. 
+
+Key points to remember:
+
+AGI:
+Can learn, adapt, and solve problems across diverse fields like a human. 
+Considered a major goal in AI research. 
+May still be limited to specific tasks within its broad capabilities. 
+
+ASI:
+Hypothetical AI with intelligence significantly exceeding human capabilities in all areas. 
+Could solve problems that are currently beyond human comprehension. 
+Often discussed in the context of potential existential risks due to its vast intelligence. 
+
+---------------------------------------------------------------------------------------------------------------------------------------------------
+
+You need to process real-time transaction data from Azure Event Hub into Delta Lake for analytics. How do you implement this?
+
+from pyspark.sql.functions import from_json
+from pyspark.sql.types import SturctType, StringType, DoubleType
+
+# Define Schema
+schema = StructType().add("customer_id",StringType()).add("amount",DoubleType())
+
+#Read  stream from event hub
+df = spark.readStream.format("eventhubs").option("connectionString","<eventhub-connection>").load()
+
+#parse json message
+df_parsed = df.selectExpr("CAST(body as STRING) as json_data").select(from_json("json_data",schema).alias("data").select("data.*")
+
+#write to delta table
+df_parsed.writeStream.format("delta").outputMode("append").option("checkpointLocation","dbfs:/mnt/delta/checkpoints").start("dbfs:/mnt/delta/transaction")
+
+---------------
+
+Your company must comply with GDPR regulations by masking Personally Identifiable Information (PII) in Databricks Delta Lake.
+How do you mask customer data so that only authorized users can see full details?
+
+Logic & Solution:
+Use Dynamic Data Masking (DDM)
+create or replace view masked_customer as 
+select customer_id, case when current_user() IN ('admin', 'complinace_team') THEN email ELSE '*******@********.com' END AS email,
+CASE WHEN current_user() IN ('admin','compliance_team') THEN phone_number ELSE '*****' END AS phone_number FROM customers;
+
+Use Unity Catalog from Row_Level Security (RLS)
+GRANT SELECT ON TABLE customers TO 'compliance_team'
+GRANT SELECT ON VIEW masked_customers TO 'customer_support_team';
+---------------
+
+Your company must comply with GDPR regulations by masking Personally Identifiable Information (PII) in Databricks Delta Lake.
+How do you mask customer data so that only authorized users can see full details?
+
+Logic & Solution:
+Use Dynamic Data Masking (DDM)
+
+from delta.tables import DeltaTable
+from pyspark.sql.functions import current_date,lit
+
+#Load the existing delta table
+delta_table = DeltaTable.forPath(spark, "dbfs:/mnt/delta/customer_scd2")
+
+#Prepare Incoming Data
+df_new = spark.read.format("delta").load("dbfs:/mnt/delta/customers_new").withColumn("valid_from", current_date()).withColumn("valid_to",lit(None))
+
+#Merge new data with historical records
+delta_table.alias("old").merge(df_new.alias("new"), "old.customer_id = new.customer_id and old.valid_to is NULL")
+.whenMatchedUpdate(set = {"valid_to" : current_date()})
+.whenNotMatchedInsert(
+values = {
+"customer_id" : "new.customer_id",
+"name" : "new.name",
+"email" : "new.email"
+"valid_from" : "new.valid_from",
+"valid_to" : "new.valid_to"}).execute()
+
+----------------------------------
+Your Databricks jobs sometimes fail due to transient errors. How do you handle failures and implement job monitoring?
+
+Logic & Solution:
+Enable Auto-Retry for Jobs
+
+job_settings = {
+"name": "ETL Job",
+"new_cluster": {
+"spark_version": "11.3.x-scala2.12",
+"node_type_id": "Standard_D3_v2",
+"num_workers": 4},
+"spark_jar_task": {
+"main_class_name": "com.company.ETLJob"},
+"max_retries": 3}
+
+Implement Logging & Alerts Using Databricks REST API
+
+import requests
+def send_alert(job_id, message):
+url = "https://<databricks-instance>/api/2.0/jobs/runs/submit"
+headers = {"Authorization": f"Bearer {TOKEN}"}
+data = {"job_id": job_id, "message": message}
+requests.post(url, headers=headers, json=data)
+
+-----------------------------------------
+You are working with two large datasets (~500M rows each) and need to perform efficient joins in PySpark. How do you optimize the performance of large-scale joins?
+
+Logic & Solution:
+
+Use Broadcast Join for Small Lookup Tables:
+from pyspark.sql.functions import broadcast
+df_large = spark.read.parquet("dbfs:/mnt/delta/transactions")
+df_small = spark.read.parquet("dbfs:/mnt/delta/customers")
+df_joined = df_large.join(broadcast(df_small), "customer_id","inner")
+
+Use Partition Pruning & ZORDER Indexing for Large Joins
+df_large.write.format("delta").mode("overwrite").partitionBy("customer_id").save("/mnt/delta/transactions")
+
+Optimize Delta Table
+spark.sql("OPTIMIZE delta.`/mnt/delta/transactions` ZORDER BY(customer_id)")
+
+Enable AQE (Adaptive Query Execution) for Auto-Optimization
+spark.conf.set("spark.sql.adaptive.enabled", "true")
+
+------------------------------------------------------
+
+Your company has several Databricks clusters running 24/7, leading to high costs.
+How do you automate cluster shutdown for idle clusters to reduce costs?
+
+Logic & Solution:
+
+Enable Auto-Termination for Idle Clusters
+python
+databricks clusters edit --json '{
+"cluster_id": "1234-567890-abcdef",
+"autotermination_minutes": 30
+}'
+
+Use a Scheduled Job to Stop Idle Clusters
+python
+from databricks_api import DatabricksAPI
+dbx = DatabricksAPI("https://databricks-instance",token="DATABRICKS_TOKEN")
+clusters = dbx.cluster.list_clusters()
+for cluster in clusters['clusters']:
+        if cluster['state'] == 'RUNNING' and
+cluster['auto_termination_minutes'] > 0:
+             dbx.cluster.delete_cluster(cluster['cluster_id'])
+
+Monitor Cost Savings with Cluster Utilization Reports
+sql
+SELECT cluster_id, avg(cpu_usage), avg(memory_usage)FROM system.cluster_utilization WHERE state = 'RUNNING' GROUP BY cluster_id;
+
+-------------------------------------------------------------
+
+Write a query to find PersonID, Name, Number of friends, sum of marks of person who have friends with total score greater than 100.
+
+Use this below data to create table:-
+CREATE TABLE person1
+(PersonID INT, Name VARCHAR(10), Email VARCHAR(50), Score INT);
+
+INSERT INTO person1 
+VALUES (1, 'Alice', 'alice2018@hotmail.com', 88),
+(2, 'Bob', 'bob2018@hotmail.com', 11),
+(3, 'Davis', 'davis2018@hotmail.com', 27),
+(4, 'Tara', 'tara2018@hotmail.com', 45),
+(5, 'John', 'john2018@hotmail.com', 63);
+
+CREATE TABLE friend1
+(PersonID INT, FriendID INT);
+
+INSERT INTO friend1 
+VALUES (1, 2), (1, 3), (2, 1), (2, 3), (3, 5), (4, 2), (4, 3), (4, 5);
+
+from pyspark.sql.functions import col,sum,count
+
+friendship_score_df = person_df.alias("p").join(friend_df.alias("f"), col("p.PersonID") == col("f.FriendID"), "inner")\
+ .groupBy(col("f.PersonID")) \
+ .agg(sum(col("Score")).alias("friendship_score"),
+ count(col("f.PersonID")).alias("no_of_friends")).filter(col("friendship_score") > 100)
+
+final_df = person_df.alias("p").join(friendship_score_df.alias("f"),"PersonID","inner")\
+ .select(col("p.PersonID"), "Name","no_of_friends","friendship_score")
+final_df.show()
+
+%sql
+WITH friendship_score_cte AS (
+select f.PersonID,sum(score) as friendship_score, count(*) as no_of_friends from person1 p join friend1 on p.PersonID = f.FriendID group by f.PersonID having sum(score) > 100)
+select fs.personID,name,no_of_friends,friendship_score from friendship_score_cte fs join person1 p on PersonID = p.PersonID
+--------------------------------------------
+
+Imagine a company's visitor portal where each guest must use a new email ID for every visit. They can never reuse an old one!
+This loophole presents an interesting data challenge.
+
+hashtag#Task: 
+For each guest:
+✅Count how many times they visited 
+✅ Identify their most visited floor 
+✅ Track the resources they used
+
+Use this below data to create table:-
+create table entries ( 
+name varchar(20),
+address varchar(20),
+email varchar(20),
+floor int,
+resources varchar(10));
+
+insert into entries 
+values ('A','Bangalore','A@gmail.com',1,'CPU'),('A','Bangalore','A1@gmail.com',1,'CPU'),('A','Bangalore','A2@gmail.com',2,'DESKTOP')
+,('B','Bangalore','B@gmail.com',2,'DESKTOP'),('B','Bangalore','B1@gmail.com',2,'DESKTOP'),('B','Bangalore','B2@gmail.com',1,'MONITOR');
+
+from pyspark.sql.functions import *
+from pyspark.sql import Window
+
+# Finding the total visits per user
+total_visit = (entries_df.groupBy("name").agg(count("floor").alias("total_visits")))
+
+# Counting the number of visits per floor per user
+floor_visit_count_df = (entries_df.groupBy("name","floor").agg(count("floor").alias("count_floor_visits")))
+
+# Defining the window specification for ranking floor visits
+visit_rank_window = Window.partitionBy("name").orderBy(col("count_floor_visit").desc())
+
+# Ranking floor based on the number of visits per user
+floor_visit_rank_df = floor_visit_count_df.withColumn("rank",rank().over(visit_rank_window)))
+
+# Aggregating the resource used for each visitor
+resources_used_df = enteries_df.groupBy("name").agg(concat_ws(",", collect_set("resources")).alias("resources_used")))
+
+# Joining dataframes and filtering to get the most visited floor per user
+result_df = (total_visit.alias("tv")
+ .join(floor_visit_rank_df.alias("fv"), col("tv_name") == col("fv.name"), "inner")
+ .join(resources_used_df.alias("fv"), col("tv_name") == col("ru.name"), "inner")
+ .filter(col("fv.rank") == 1)
+ .select(col("tv.name"),col("tv.total_visits"),col("fv.floor").alias("most_visited_floor"), resources_used").orderBy("tv.name"))
+result_df.show()
+
+%sql------
+with total_visits_cte as (
+select name,count(*) as total_visits from entries group by name),
+visited_floor_cte as (
+select name,floor,count(*) as visited_floor from entries group by name, floor),
+maximum_visits_cte as (
+select name,floor,rank() over(parititon by name order by visited_floor desc) as rnk from visited_floor_cte),
+resources_used_cte as (
+select name,string_agg(resources,',') as resources_used from (
+select distinct name,resources from entries ) as distinct_resources group by name)
+select tv.name,tv.total_visits, mv.floor as most_visited_floor, ru.resources_used from total_visits_cts tv
+join maximum_visits_cts mv on tv.name = mv.name
+join resources_used_cte ru on tv.name = ru.name where mv.rnk = 1; 
+----------------------------------
+
+Write a SQL query to find the cancellation rate of requests with unbanned users (both client and driver must not be banned) each day between "2013-10-01" and "2013-10-03". Round the cancellation rate to two decimal points.
+CancellationRateFormula:
+Cancellation rate = (Number of cancelled requests with unbanned users) / (Total number of requests)
+
+Use this below data to create table:-
+Create table Trips (id int, client_id int, driver_id int, city_id int, status varchar(50), request_at varchar(50));
+Create table Users (users_id int, banned varchar(50), role varchar(50));
+
+Use this below data to create table:-
+
+Create table Trips (id int, client_id int, driver_id int, city_id int, status varchar(50), request_at varchar(50));
+Create table Users (users_id int, banned varchar(50), role varchar(50));
+
+insert into Users (users_id, banned, role) values ('1', 'No', 'client');
+insert into Users (users_id, banned, role) values ('2', 'Yes', 'client');
+insert into Users (users_id, banned, role) values ('3', 'No', 'client');
+insert into Users (users_id, banned, role) values ('4', 'No', 'client');
+insert into Users (users_id, banned, role) values ('10', 'No', 'driver');
+insert into Users (users_id, banned, role) values ('11', 'No', 'driver');
+insert into Users (users_id, banned, role) values ('12', 'No', 'driver');
+insert into Users (users_id, banned, role) values ('13', 'No', 'driver');
+
+insert into Trips (id, client_id, driver_id, city_id, status, request_at) values ('1', '1', '10', '1', 'completed', '2013-10-01');
+insert into Trips (id, client_id, driver_id, city_id, status, request_at) values ('2', '2', '11', '1', 'cancelled_by_driver', '2013-10-01');
+insert into Trips (id, client_id, driver_id, city_id, status, request_at) values ('3', '3', '12', '6', 'completed', '2013-10-01');
+insert into Trips (id, client_id, driver_id, city_id, status, request_at) values ('4', '4', '13', '6', 'cancelled_by_client', '2013-10-01');
+insert into Trips (id, client_id, driver_id, city_id, status, request_at) values ('5', '1', '10', '1', 'completed', '2013-10-02');
+insert into Trips (id, client_id, driver_id, city_id, status, request_at) values ('6', '2', '11', '6', 'completed', '2013-10-02');
+insert into Trips (id, client_id, driver_id, city_id, status, request_at) values ('7', '3', '12', '6', 'completed', '2013-10-02');
+insert into Trips (id, client_id, driver_id, city_id, status, request_at) values ('8', '2', '12', '12', 'completed', '2013-10-03');
+insert into Trips (id, client_id, driver_id, city_id, status, request_at) values ('9', '3', '10', '12', 'completed', '2013-10-03');
+insert into Trips (id, client_id, driver_id, city_id, status, request_at) values ('10', '4', '13', '12', 'cancelled_by_driver', '2013-10-03');
+
+from pyspark.sql.functions import *
+
+# joinng the tables
+join_df = (trips_df.alias("t").join(users_df.alias("u1"),col("t_client_id") == col("u1.users_id"), "inner").join(users_df.alias("u2"), col("t.client_id") == col("u2.user_id"), "inner"))
+
+# Finding the cancellation rate
+cancellation_rate_df = (join_df.filter((col("request_at") >= "2013-10-01") & (col("request_at") <= "2013-10-03") & (col("u1.banned") == "No") & (col("u2.banned") == "No"))
+.groupBy("request_at")
+.agg(sum(when(col("status") != 'completed', lit(1), lit(1)).otherwise(lit(0))).alias("cancelled_trip_count"), count(col("status")).alias("total_trips"),round(100.00 * (sum(when(col("status") != 'completed', lit(1)).otherwise(lit(0)))/count(col("status"))),2).alias("cancellation_rate")).sort(col("requested_at")))
+
+cancellation_rate_df.show()
+
+%sql
+select request_at, sum(case when status <> 'completed' then 1 else 0 end) as 'cancelled_trip_count', count(*) as total_trips,
+case(100.00*sum(case when status <> 'completed' then 1 else 0 end)/count(*) as decimal(10,2)) as cancellation_rate from users u1 join Trip t on t.client_id = u1.user_id join Users u2 on t.driver_id = u2.user_id where (u1.banned = 'No' and u2.banned = 'No') and (request_at between '2013-10-01' and '2013-10-03') group by request_at;
+----------------------------
+𝐐𝐮𝐞𝐬𝐭𝐢𝐨𝐧
+You are working as a Data Engineer for a company. The sales team has provided you with a dataset containing sales information. However, the data has some missing values that need to be addressed before processing. You are required to perform the following tasks:
+1. Load the following sample dataset into a PySpark DataFrame:
+
+2. Perform the following operations:
+a. Replace all NULL values in the Quantity column with 0.
+b. Replace all NULL values in the Price column with the average price of the existing data.
+c. Drop rows where the Product column is NULL.
+d. Fill missing Sales_Date with a default value of '2025-01-01'.
+e. Drop rows where all columns are NULL.
+
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import col,lit,mean
+
+spark = SparkSession.builder.appName("Handle_Missing_Data").getOrCreate()
+
+𝐬𝐜𝐡𝐞𝐦𝐚 
+data = [ (1, "Laptop", 10, 50000, "North", "2025-01-01"), (2, "Mobile", None, 15000, "South", None), (3, "Tablet", 20, None, "West", "2025-01-03"), (4, "Desktop", 15, 30000, None, "2025-01-04"), (5, None, None, None, "East", "2025-01-05") ] columns = ["Sales_ID", "Product", "Quantity", "Price", "Region", "Sales_Date"]
+
+columns = ["Sales_ID", "Product","Quantity", "Price", "Region", "Sales_Date"]
+
+df = spark.createDataFrame(data,column)
+
+df = df.fillna({"Quantity" : 0})
+
+avg_price = df.select(mean(col("Price"))).collect()[0][0]
+
+df = df.filter(col("Product").isNotNull())
+
+df = df.fillna({"Sales_Date" : "2025-01-01"})
+
+df = df.na.drop(how="all")
+
+df.show()
+
+--------------------------------------------------------------------------------------
+
+Find out the total winning count of each team
+
+data = [('ind','pak','ind'), ('ind','sl','ind'),('sl','pak','sl')]
+schema = ['team_a','team_b','win']
+
+df = spark.createDataFrame(data, schema)
+
+from pyspark.sql.functions import col,count
+df1 = df1.select(col('team_b').alias('team_a'), col('team_a').alias('team_b'),alias('team_b'),col('win'))
+newdf = df.union(df1)
+newdf.show()
+
+final_df1 = newdf.groupBy('team_a').agg(coun('*').alias('played')f
+final_df2 = newdf.groupBy('win').agg(coun('*')/2)
+final_df = final_df1.join(final_df2, col('team_a") == col('win'), 'left').
+select(col('team_a').alias('team'), col('played'),col("count(1)/2)').cast('int').alias('win')).na.fill(0)
+final_df.show()
+
+How to Find Returning Active Users Using PySpark
+
+data = 
+[(100,'bread','06-03-2024',410),
+ (100,'banana','14-03-2024',175),
+ (100,'banana','29-03-2024',599),
+ (101,'milk','27-03-2024',449),
+ (101,'milk',26-03-2024',740),
+ (114,'bread','29-03-2024,200),
+ (114,'cookies','26-03-2024',300)]
+
+schema = ['user_id','item','created_at,'cost']
+df = spark.createDataFrame(data,schema)
+
+from pyspark.sql.functions import col,to_date
+df = df.select("*", to_date(col("created_at"),"dd-mm-yyyy").alias("created_date")).drop("created_at")
+df = createOrReplaceTempView("tpl")
+
+from pyspark.sql.window import Window
+from pyspark.sql.functions import lag,rank,current_date,datediff
+
+w_df = window.partitionBy("user_id").orderBy("created_date")
+win_df = df.withColumn("last_created_date", lag("created_date").over(w_df)).withColumn("date_diff", datediff(col('created_date'),col('last_created_date')))
+
+final_df = win_df.select("user_id").filter(col("date_diff") <= 7)
+final_df.show()
+
+List of Airlines Operating Flights to all destinations:
+
+air_data = [(1,"Airline A"), (2,"Airline B"), (3, "Airline C")]
+air_schema = ["airline_id", "airline_name"]
+air_df = spark.createDataFrame(air_data,air_schema)
+
+flight_data = [(1,1,101),(2,1,102),(3,2,101),(4,2,103),(5,3,101),(6,3,102),(7,3,103)]
+flight_schema = ["flight_id","airline_id","airport_id"]
+flight_id = spark.createDataFrame(flight_data,flight_schema)
+
+count_airport = flight_df.select('airport_id).distinct().count()
+
+from pyspark.sql.functions import countDistinct,col
+flight_filter_airport = flight_df.groupBy('airline_id').agg(countDistinct('airport_id').alias('distinct_airport')).
+filter(col('distinct_airport') == count_airport)
+
+final_df = flight_airport.join(air_df, ['airline_id'])
+final_df.show()
+
+How to identify products with increasing yearly sales:
+
+product_data = [(1,'laptop','Electronics'),(2,'Jeans','Clothing'),(3,'Chairs','Home Appliances')]
+product_df = spark.createDataFrame(product_data,product_schema)
+
+sales_data =
+[(1,2019,10000),
+ (1,2020,12000),
+ (1,2021,11000),
+ (2,2019,500),
+ (2,2020,600),
+ (2,2021,900),
+ (3,2019,300),
+ (3,2020,450),
+ (3,2021,400)]
+
+sales_schema = ['product_id','year','total_sales_revenue']
+sales_df = spark.createDataFrame(sales_data,sales_schema)
+
+from pyspark.sql.window import Window
+from pyspark.sql.functions import col,min,lag
+
+w_df = window.partitionBy(sales_df.product_id).orderBy(sales_df.year)
+new_df = sales_df.withColumn('previous_year_revenue', lag(sales_df.total_sales_revenue).over(w_df))
+new_df.show()
+new_df = new_df.withColumn('diff',new_df.total_sales_revenue-new_df.previous_year_revenue)
+display(new_df)
+
+new_df1 = new_df.groupBy('product_id')).agg(min(col('diff')).alias('min_diff')).filter(col('min_diff') > 0)
+display(new_df1)
+
+How to hide mobile number digits in Pyspark :
+
+import pyspark
+from pyspark.sql import functions as F
+
+spark = sparkSession.builder.master("Local[1]").appName("masking_mobile").getOrCreate()
+
+data = (
+[1,'avinash',22,'avinash@gmail.com','1223456789'],
+[2,'raju',29,'raju302@gmail.com','7896541230'],
+[3,'ramana',25,'ramana34@gmail.com,'3214569870']
+[4,'rakesh',23,'rakesh31@gmail.com','7412589630']
+[5,'amal',27,abhiram53@gmail.com'.'7891236540'])
+
+schema =StructType([
+StructField('customer_number',IntergerType(), True),
+StructField('customer_name',StringType(), True),
+StructField('customer_age', IntegerType(), True),
+StructField('Email', StringType(), True),
+StructField('Mobile', StringType(), True)])
+
+df = spark.createDataFrame(data,schema)
+df.show()
+
+df = df.withColumn('Email', F.regexp_replace('Email',(?<!^).(?=.+@)','*'))
+.withColumn('Mobile', F.regexp_replace('Mobile','(?<!^).(?!$)','*'))
+
+df.show()
+
+How to Swap Seat Ids in PySpark:
+
+from pyspark.sql.functions import lag,lead,when,coalsce
+from pyspark.sql.window import Window
+
+data = [(1,'Alice'), (2,'Bob'), (3,'Charlie'), (4,'David'), (5,'Eve')]
+schema1 = StructType([
+StructField("ID", IntegerType(), True),
+SturctField("student", StringType(), True)])
+
+df = spark.createDataFrame(data, schema1)
+
+exchangedDF = df.withColumn('prev_student', lag('student').over(window.orderBy('id')))
+exchangedDF = exchangedDF.withColumn('next_student', lead('student').over(Window.orderBy('id')))
+
+exchangedDF = exchangedDF.withColumn('Exchanged_seating',
+when(exchangedDF['id'] % 2 == 1, coalsce(exchangedDF['next_student'],exchangedDF['student']))
+.when(exchangedDF['id'] % 2 == 0, coalsce(exchangedDF['prev_student'],exchangedDF['student'])).otherwise(exchangedDF['student'])
+
+exchangedDF = exchangedDF.withColumnRenamed("student","originalSeating")
+exchangedDF.show()
+
+Cumulative Salary of Employee in Pyspark:
+from pyspark.sql.types import StructType,StructField, StringType, IntegerType
+from pyspark.sql.functions import col,sum
+from pyspark.sql.window import Window
+
+data = [(1,"A",10000),
+        (1,"A",20000),
+        (2,"B",30000),
+        (3,"C",60000),
+        (4,"D",80000)]
+schema1 = StructType([
+    StructField("ID",IntegerType(),True),
+    StructField("Name", StringType(), True),
+    StructField("salary", IntegerType(),True)
+])
+
+df = spark.createDataFrame(data,schema1)
+df.display()
+
+df2 = df.withColumn("total_salary",sum(col("salary")).over(Window.partitionBy(col("ID"))))
+df2.show()
+
+
+PySpark program to find customers who purchased all products from product table:
+
+from pyspark.sql.functions import countDistinct,col
+data = [(1,5),(2,6),(3,5),(3,6),(1,6)]
+schema = ["customer_ID","Product_Key"]
+
+customer_df = spark.createDataFrame(data,schema)
+customer_df.show()
+
+data1 = [(5,),(6,)]
+schema1 = ["product_Key"]
+product_df = spark.createDataFrame(data1, schema1)
+product_df.show()
+
+df_customer=customer_df.groupBy(col("customer_ID")).agg(countDistinct(col("Product_Key"))).alias("cnt_products")
+df.show()
+
+df_product = product_df.agg(countDistinct(col("Product_Key")).alias("cnt_products"))
+df_product.show()
+
+df = df_product.join(df_customer,df_customer.cnt_products==df_product.cnt_products,"inner").show()
+
+
+How to find the customer who not placed any order in order table in PySpark:
+
+data = [(1,"abhiram"), (2,"raju"), (3,"anusha"), (4,"bindu")]
+schema = ["Customer_ID", "Customer_Name"]
+df_customer = spark.createDataFrame(data,schema)
+df_customer.show()
+
+data1 = [(1,"biriyani",4),(2,"IceCream",2)]
+schema1 = ["Order_ID,"Item_Name","Customer_ID"]
+df_order = spark.createDataFrame(data1,schema1)
+df_order.show()
+
+df = df_customer(df_order,df_customer.Customer_ID == df_order.Customer_ID,"left").filter(df_order.Customer)ID.isNUull())
+df.show()
+
+How to handle Multi Delimiters in PySpark:
+
+Count rows in each column where nulls present in Data Frame:
+
+data = [
+("avinash","d","dabbiru",78996,"M",7896),
+("cherry","N","chubby",5565,"M",6985),
+("rakesh","D","chitii",12364,"M",7895),
+("akash"," ","jhan",6541,"M",9658),
+("sugana"," ","kumari",5478,"F",6523)]
+
+schema = StructField([
+StructField("firstname",StringType(),True),
+StructField("middlename",StringType(),True),
+StructField("lastname",StringType(),True),
+StructField("id",IntegerType(), True),
+StructField("gender",StringType(), True),
+StructField("salary",IntegerType(), True)])
+
+spark = SparkSession.builder.master("local[1]").appName("project").getOrCreate()
+df = spark.createDataFrame(data,schema)
+
+df1 = df.select([count(when(col(i).isNull,i)).alias(i) for i in df.columns])
+df1.show()
+
+Remove duplicates in pyspark
+import pyspark
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import expr
+
+spark = SparkSession.builder.appName('removing_duplicates').getOrCreate()
+
+data = [ ]
+column = [ ]
+df = spark.createDataFrame(data,column)
+
+df = spark.createDataFrame(data,schema)
+distinctDF =df.distinct()
+print(str(distinctDF.count()))
+
+dropDF = dropDuplicates(["employe_name","department","salary"])
+
+-----------------------------------------------------------------------------------------
+
+MARKET ANALYSIS: Write a SQL query to find for each seller, whether the brand of the second item (by date) they sold is their favorite brand or not.
+ If a seller sold less than two items, report the answer for that seller as no.
+ seller id  2nd_item_fav_brand
+ 1        yes/no
+ 2        yes/no
+
+Use this below data to create table:-
+create table users (
+user_id     int   ,
+ join_date    date  ,
+ favorite_brand varchar(50));
+
+ create table orders (
+ order_id    int   ,
+ order_date   date  ,
+ item_id    int   ,
+ buyer_id    int   ,
+ seller_id   int );
+
+ create table items (
+ item_id    int   ,
+ item_brand   varchar(50));
+
+ insert into users values (1,'2019-01-01','Lenovo'),(2,'2019-02-09','Samsung'),(3,'2019-01-19','LG'),(4,'2019-05-21','HP');
+
+ insert into items values (1,'Samsung'),(2,'Lenovo'),(3,'LG'),(4,'HP');
+
+ insert into orders values (1,'2019-08-01',4,1,2),(2,'2019-08-02',2,1,3),(3,'2019-08-03',3,2,3),(4,'2019-08-04',1,4,2)
+ ,(5,'2019-08-04',1,3,4),(6,'2019-08-05',2,2,4);
+
+
+from pyspark.sql.functions import *
+from pyspark.sql import Window
+
+join_user_items_df = (
+user_df.alias("s").join(orders_df.alias("o"), col("s.user_id") == col("o.seller_id"), "left")
+.join(items_df.alias("i"), col("i.item_id") == col("o.item_id"), "left"))
+
+#finding the row number and total users with partition
+row_num_df = (
+join_user_items_df.select(
+col("user_id").alias("seller_id"), "favorite_brand", "item_brand",row_number().over(Window.partitionBy(col("user_id")).orderBy(col("order_date"))).alias("row_num"),count(col("user_id")).over(Window.partitionBy(col("user_id"))).alias("total")
+
+#finding the item_fav_brand
+item_fav_brand_df = (
+row_num_df.filter(col("row_num") == 2).select("seller_id", when(col("favorite_brand") == col("item_brand"), "Yes").otherwise("No").alias("item_fav_brand")).union(row_num_df.filter(col("total") == 1).select("seller_id",lit("No").alias("item_fav_brand"))).sort("seller_id"))
+
+item_fav_brand_df.show()
+
+%sql
+
+with fav_brand_cte as (
+select user_id as seller_id, favorite_brand, item_brand, row_number() over(partition by seller_id order by order_date) as row_num,count(*) over(partition by user_id) as total from users s left join o on s.user_id = o.seller_id left join items i on i.item_id = o.item_id)
+select seller_id, case when favorite_brand = item_brand then 'Yes' else 'No' end as item_fav_brand from fav_brand_cte where row_num = 2 union select seller_id, 'No' as item_fav_brand from fav_brand_cte where total = 1;
+
+----------------
+Write a SQL query to find the start and end dates with the state of those tasks where the state is consecutively the same until it changes.
+
+Use this below data to create table:-
+create table tasks (
+date_value date,
+state varchar(10));
+
+insert into tasks values ('2019-01-01','success'),('2019-01-02','success'),('2019-01-03','success'),('2019-01-04','fail'),('2019-01-05','fail'),('2019-01-06','success');
+
+from pyspark.sql.functions import *
+from pyspark.sql import Window
+
+#setting the window for row number
+row_num_windows = (Window.partitionBy(col("state")).orderBy(col("date_value")))
+
+#finding the row numbers
+row_num_df = (task_df.withColumn("row_num", row_number().over(row_num_windows)))
+
+#finding the grp_date which is the same for the same state
+grp_date_df = (row_num_df.withColumn("grp_date", expr("date_add(date_value, -row_num)")))
+
+#grouping to find the final output
+start_end_date_df = (grp_date_df.groupBy("state","grp_date").agg(min("date_value").alias("start_date"),max("date_value").alias("end_date")).select("start_date","end_date","state").sort("start_date"))
+
+start_end_date_df.show()
+
+%sql
+
+with grp_date_cte as (
+select *, dateadd(day, -1*row_number() over(partition by state order by date_value), date_value) as grp_date from task)
+select min(date_value) as start_date, max(date_value) as end_date, state from grp_date_cte group by state, grp_date order by state_date;
+-------------------------
+
+customers : Names,country ----split and explode function
+
+from pyspark.sql.functions import split
+df = df.withColumn("Names", split(df.Name,","))
+df.display()
+
+from pyspark.sql.functions import explode
+df = df.select(explode(df.Name).alias('Name'), df.Country)
+df.display()
+
+find total numbers of 50s and 100s for players:
+
+from pyspark.sql.types import StructType, StructField, StringType, IntegerType
+
+Define the schema
+schema = StructType([
+    StructField("player", StringType(), True),
+    StructField("runs", IntegerType(), True),
+    StructField("50s/100s", StringType(), True)])
+
+Create a DataFrame with the defined schema
+data = [("Sachin-IND", 18694, "93/49"), ("Ricky-AUS", 11274, "66/31"),("Lara-WI", 10222, "45/21"),("Rahul-IND", 10355, "95/11"),("Jhonty-SA", 7051, "43/5"),("Hayden-AUS", 8722, "67/19")]
+players_df = spark.createDataFrame(data, schema)
+
+data1 = [("IND", "India"), ("AUS", "Australia"), ("WI", "WestIndies"), ("SA", "SouthAfrica")]
+countries_df = spark.createDataFrame(data1,["SRT","country"])
+
+players_df = players_df.withColumn('playername', split(players_df('player'),'-').getItem(0))
+.withColumn('SRT', split(players_df('player'),'-').getItem(1))\
+.withColumn('50s', split(players_df['50s/100s'],'/').getItem(0))\
+.withColumn('100s', split(players_df['50s/100s'],'/').getItem(1))
+.select("playername","runs","SRT","50s","100s")
+players_df.show()
+
+players_dfnew = players_dfnew.withColumn('sum',col('50s')+col('100s')).filter('sum >= 90')
+players_dfnew.display()
+
+players_diffinal = players_dfnew.join(countries_df, players_dfnew.SRT == countries_df.SRT,'inner')
+players_dffinal.display()
+
+--
+handle the courrpt records in file
+empid,empname,address
+101,ashish,delhi
+102,ram,bangalore
+103,nikitha,mumbai,india
+104,david,chennai
+105,waston,pune
+
+df1 = spark.read.option("inferSchema",True).option("header",True).option("mode","FAILFAST").csv("dbfs:/FileStore/tables/employees.csv")
+df1.display()
+
+df1 = spark.read.option("inferSchema",True).option("header",True).option("mode","DROPMALFORMED").csv("dbfs:/FileStore/tables/employees.csv")
+df1.display()
+
+df1 = spark.read.option("mode","PERMISSIVE")\
+          .schema(schema)\
+          .option("header",True)\
+          .option("columnNameOfCorruptRecord","corrupt_record")\
+          .csv("dbfs:/FileStore/tables/employees.csv")
+df1.display()
+
+Get Top3 pickup locations:
+
+Define the schema
+schema = StructType([
+    StructField("reqid", IntegerType(), True),
+    StructField("pickup_location", StringType(), True)])
+
+Create a DataFrame with the defined schema
+data = [(48, "Airport"), (49, "Office"),(50, "Hospital"),(51, "Airport"),(52, "Hospital"),(53, "Shoppingmall"),(54, "Office"),(55, "Hospital"),(56, "Hospital")]
+pickup_df = spark.createDataFrame(data, schema)
+pickup_df.display()
+
+from pyspark.sql.functions import desc
+pickup_counts = pickup_df.groupBy("pickup_location").count().orderBy(desc('count')).limit(3)
+pickup_counts.display()
+
+from pyspark.sql.functions import desc, row_number
+from pyspark.sql.window import Window
+
+pickup_counts = pickup_df.groupBy("pickup_location").count()
+pickup_counts_rank = pickup_counts.withColumn('rnum', row_number().over(Window.orderBy(desc('count')))).filter('rnum <= 3')
+pickup_counts_rank.show()
+------------------------------------------------------------------
+
+We need to Get non repeated employee details.
+
+Mentioning the dataframe details here
+Sample data
+data = [
+    (100, 'IT', 100, '2024-05-12'),
+    (200, 'IT', 100, '2024-06-12'),
+    (100, 'FIN', 400, '2024-07-12'),
+    (300, 'FIN', 500, '2024-07-12'),
+    (300, 'FIN', 1543, '2024-07-12'),
+    (300, 'FIN', 1500, '2024-07-12')]
+
+Create DataFrame
+columns = ["empid", "dept", "salary", "date"]
+
+from pyspark.sql.window import Window
+df_with_counts = df.withColumn('cnt', count('*').over(Window.partitionBy('empid')))
+df_with_counts.display()
+
+from pyspark.sql.functions import col
+df_final = df_with_counts.filter(col('cnt') == 1).drop('cnt')
+df_final.display()
+
+---------------------
+Get only integer values in the output.
+
+Lets see how we can solve this by using try_cast() in SQL and Pyspark.
+
+Create table and insert data
+CREATE TABLE emp_new (employee_id VARCHAR(50) )
+INSERT INTO emp_new (employee_id) VALUES ('72657'),('1234'),('Tom'),('8792'),('Sam'),('19998'),('Philip')
+
+%sql
+select *, try_cast(employee_id as int) from emp_new where try_cast(employee_id as int) is not null;
+
+df.filter(df('employee_id').cast('int').isNotNull())
+-------------------
+
+calculate the percentage of null values in each column
+
+total_rows = df.count()
+total_percentage = [(col_name,df.where(col(col_name).isNull()).count()/total_rows * 100) for col_name in df.columns]
+
+columns_to_drop = [col_name for col_name, null_percentage is null_percetages if null_percentage > 90]
+
+df_filtered = df.drop(*columns_to_drop)
+
+-----------------
+-- The table logs the spendings history of users that make purchases from an online shopping website which has a desktop 
+and a mobile application.
+-- Write an pyspark & SQL query to find the total number of users and the total amount spent using mobile only, desktop only 
+and both mobile and desktop together for each date
+
+create table spending (
+user_id int,
+spend_date date,
+platform varchar(10),
+amount int);
+
+insert into spending values(1,'2019-07-01','mobile',100),(1,'2019-07-01','desktop',100),(2,'2019-07-01','mobile',100),(2,'2019-07-02','mobile',100),(3,'2019-07-01','desktop',100),(3,'2019-07-02','desktop',100);
+
+#finding the platform distinct count
+spending_grouping_df = (
+spending_df.groupBy("user_id","spend_date").agg(max(col("platform")).alias("platform"),sum(col("amount")).alias("amount"),countDistinct("platform").alias("platform_distinct_count")))
+
+# filtering and union as per their platform distinct count
+spending_union_df = (
+spending_grouping_df.filter(col("platform_distinct_count") == 1).select("user_id","spend_date","platform","amount").union(spending_grouping_df).filter(col("platform_distinct_count") == 2).select("user_id","spend_date",lit("both").alias("platform"),"amount")))
+
+# union for "both" platform which is not there for some users
+union_null_users = (
+spending_union_df.union(spending_union_df.select(lit(None).alias("user_id"),"spend_date", lit("both").alias("platform"),lit(0).alias("amount")).distinct()))
+
+# finding the total amount and total users
+final_output_df = (
+union_null_users.groupBy("spend_date","platform").agg(sum(col("amount")).alias("total_amount"),count(col("user_id")).alias("total_users")).sort(col("spend_date"),col("total_amount").desc()))
+
+# Displaying the final output
+final_output_df.show()
+
+%sql
+with spending_cte as (
+select user_id,spend_date,max(platform) as platform, sum(amount) as amount from spending group by user_id, spend_date having count(distinct platform) = 1
+union all
+select user_id, spend_date,'both' as platform,sum(amount) as amount from spending group by user_id, spend_date having count(distinct platform) = 2
+union all
+select distinct null as user_id, spend_date,'both' as platform, 0 as amount from spending )
+
+select spend_date, platform,sum(amount) as total_amount, count(*) as total_users from spending_cte group by spend_date, platform order by spend_date, total_amount desc
+
+-------------------------
+
+Get null count of all columns in dataframe.
+
+data = [(1, None, 'ab'), (2, 10, None),(None, None, 'cd')]
+columns = ['col1', 'col2', 'col3']
+df = spark.createDataFrame(data, columns)
+ 
+df.select([sum(col(c).isNull().cast('int')).alias(c) for c in df.columns]).display()
+
+-------------------------
+
+add prefix to all the columns in the given dataframe
+
+data = [(101, 'IT', 1000), (102, 'HR', 900)
+columns = ["empid", "dept", "salary"]
+df = spark.createDataFrame(data, columns)]
+
+from pyspark.sql.functions import col
+prefix = 'de_'
+df_withprefix = df.select([col(c).alias(prefix+c) for c in df.columns])
+df_withprefix.display()
+
+prefix = 'ds_'
+for old_col in df.columns:
+      new_col = prefix+old_col
+      df = df.withColumnRenamed(old_col, new_col)
+df.display()
+
+-------------------
+input - name, hobbies 
+
+flatten the data
+
+data = [ ]
+columns = [ ]
+df = spark.createDataFrame(data,columns)
+display(df)
+
+from pyspark.sql.functions import split,explode
+display(df.select(df.select(df.Name,explode(split(df.Hobbies,',')).alias('Hobbies')))
+
+----
+we can simply use coalesce and pass the columns names, it will give the first non-null value as result.
+data=[('Goa', ' ', 'AP'),('', 'AP', None), (None, ' ', 'Bglr')]
+columns=["city1", "city2", "city3"]
+df=spark.createDataFrame(data, columns)
+display(df)
+
+df = df1.withColumn("Result",(coalesce(col("city1"),col("city2"),col("city3))))
+df1.select("Result").display()
+
+---
+
+calculate the % marks for each student . create a result column distinct,firstclass,secondclass,thirdclass,fail
+
+Create dataframe:
+======================================================
+data1=[(1,"Steve"),(2,"David"),(3,"John"),(4,"Shree"),(5,"Helen")]
+data2=[(1,"SQL",90),(1,"PySpark",100),(2,"SQL",70),(2,"PySpark",60),(3,"SQL",30),(3,"PySpark",20),(4,"SQL",50),(4,"PySpark",50),(5,"SQL",45),(5,"PySpark",45)]
+
+schema1=["Id","Name"]
+schema2=["Id","Subject","Mark"]
+
+df1=spark.createDataFrame(data1,schema1)
+df2=spark.createDataFrame(data2,schema2)
+display(df1)
+display(df2)
+
+df_join = df1.join(df2, df1.Id == df2.Id).drop(df2.Id)
+display(df_join)
+
+from pyspark.sql.functions import *
+df_per = df_join.groupBy('Id','Name').agg(sum('Mark')/count('*')).alias('Percentage'))
+display(df_per)
+
+df_final = df_per.select('*',
+when(df.
+when(df.Percentage >= 70, 'Distinction')
+.when((df.Percentage < 70 & (df.Percentage >= 60), 'First Class')
+.when((df.Percentage < 60 & (df.Percentage >= 50), 'second Class')
+.when((df.Percentage < 50 & (df.Percentage >= 40), 'third Class')
+.when((df.Percentage < 40, 'Fail Class')
+display(df_final)
+
+----
+
+Department wise nth highest salary employees
+
+Create dataframe:
+======================================================
+data1=[(1,"A",1000,"IT"),(2,"B",1500,"IT"),(3,"C",2500,"IT"),(4,"D",3000,"HR"),(5,"E",2000,"HR"),(6,"F",1000,"HR")
+       ,(7,"G",4000,"Sales"),(8,"H",4000,"Sales"),(9,"I",1000,"Sales"),(10,"J",2000,"Sales")]
+schema1=["EmpId","EmpName","Salary","DeptName"]
+df=spark.createDataFrame(data1,schema1)
+display(df)
+
+from pyspark.sql.functions import *
+from pyspark.sql.window import *
+
+df_rank = df.select('*', dense_rank().over(Window.partitionBy(df.DeptName).orderBy(df.Salary.desc())).alias('rank'))
+display(df_rank)
+display(df_rank.filter(df_rank.rank == 2))
+
+-------
+output:
+deptname,mgrname,empname,sal-year,sal-month,total_salary_sal
+7th highest salary and show empname
+
+data1=[(100,"Raj",None,1,"01-04-23",50000),
+       (200,"Joanne",100,1,"01-04-23",4000),(200,"Joanne",100,1,"13-04-23",4500),(200,"Joanne",100,1,"14-04-23",4020)]
+schema1=["EmpId","EmpName","Mgrid","deptid","salarydt","salary"]
+df_salary=spark.createDataFrame(data1,schema1)
+display(df_salary)
+#department dataframe
+data2=[(1,"IT"),
+       (2,"HR")]
+schema2=["deptid","deptname"]
+df_dept=spark.createDataFrame(data2,schema2)
+display(df_dept)
+
+df=df_salary.withColumn('Newsaldt',to_date('salarydt','dd-MM-yy'))
+display(df)
+
+df = df_salary.withColumn('Newsaldt',to_date('salarydt','dd-mm-yy'))
+display(df)
+
+from pyspark.sql.functions import col
+df1 = df.join(df_dept,['deptid'])
+display(df1)
+df2 = df1.alias('a').join(df1.alias('b'),col('a.Mgrid') == col('b.empid'),'left').select(
+col('a.deptname'),
+col('b.empname').alias('ManagerName'),
+col('a.empname'),
+col('a.newsaldt'),
+col('a.salary'))
+display(df2)
+
+from pyspark.sql.functions import year,month
+df3 = df2.groupBy('deptname','managername','empname',year('newsaldt').alias('year'),date_format('newsaldt','mm').alias('month')).sum(salary)
+display(df3)
+------------------
+
+how to check data skew issue & how to solve
+
+df = spark.read.option('header',True).csv('dbfs:/mnt/input/Sales.csv')
+display(df)
+
+df.rdd.getNumPartitions()
+
+df = df.repartition(10)
+df.rdd.getNumPartitions()
+
+df1 = df.select(spark_partition_id().alias('partid')).groupBy('partid').count()
+df1.display()
+------------
+how to process files those are received before/after specified time?
+
+# Read only files modified after 2023-01-01
+
+df = spark.read.parquet("/path/to/data") \
+
+    .option("modifiedAfter", "2023-01-01T00:00:00") \
+
+    .load() 
+
+
+
+# Read only files modified before 2023-06-01
+
+df = spark.read.parquet("/path/to/data") \
+
+    .option("modifiedBefore", "2023-06-01T00:00:00") \
+
+    .load()
+
+Incremental data processing: If you only want to process new data added to a directory since the last run, use "modified after" to filter for recently updated files.
+Historical data analysis: If you need to analyze data from a specific point in time or before, use "modified before" to select relevant files. 
+
+-----------
+1.schema comparison in pyspark
+2. How to make same schema for different dataframe in pyspark
+
+Create dataframe:
+======================================================
+data1=[(1,"Ram","Male",100),(2,"Radhe","Female",200),(3,"John","Male",250)]
+data2=[(101,"John","Male",100),(102,"Joanne","Female",250),(103,"Smith","Male",250)]
+data3=[(1001,"Maxwell","IT",200),(2,"MSD","HR",350),(3,"Virat","IT",300)]
+schema1=["Id","Name","Gender","Salary"]
+schema2=["Id","Name","Gender","Salary"]
+schema3=["Id","Name","DeptName","Salary"]
+df1=spark.createDataFrame(data1,schema1)
+df2=spark.createDataFrame(data2,schema2)
+df3=spark.createDataFrame(data3,schema3)
+display(df1)
+display(df2)
+display(df3)
+
+if df1.schema == df3.schema:
+  print("schema matched")
+else:
+  print("schema not matched")
+
+print(list(set(df1.schema)-set(df3.schema)))
+print(list(set(df3.schema)-set(df1.schema)))
+---------------------------------------------------------------------------------------------------------------------
+#collect all the columns
+allcol=df1.columns+df3.columns
+uniquecol=list(set(allcol))
+print(uniquecol)
+-------------------------------------------------------------------------------------------------------------------
+#add missing Columns
+from pyspark.sql.functions import lit
+for i in uniquecol:
+   if i not in df1.columns:
+    df1 = df1.withColumn(i,lit(None))
+   if not in df3.columns:
+    df3 = df3.withColumn(i,lit(None))
+
+------------
+1.Struct Type function in pyspark
+2. Map Type function in pyspark
+3. Struct Type vs Map type in pyspark
+
+Create dataframe:
+======================================================
+from pyspark.sql.types import *
+data=[(1,('A-424','Noida','India')),(2,('M.15','Unnao','India'))]
+schema = StructType([
+     StructField('AddId', IntegerType(), True),
+     StructField('Address', StructType([
+         StructField('Add1', StringType(), True),
+         StructField('City', StringType(), True),
+         StructField('Country', StringType(), True)
+         ]))
+     ])
+dfST=spark.createDataFrame(data,schema)
+display(dfST)
+-----------------------------------------------------------------------------------------------------------------------
+df1=dfST.select('*',dfST.Address.Country.alias('Address1'))
+display(df1)
+---------------------------------------------------------------------------------------------------------------------
+data1=[(1,{'Laptop':'Apple',"Mobile":"OnePlus","HeadPhones":"boat"}),(2,{'Laptop':'Apple',"Mobile":"OnePlus"})]
+from pyspark.sql.types import StructField, StructType, StringType, MapType
+schema1 = StructType([
+    StructField('EmpId', IntegerType(), True),
+    StructField('Items', MapType(StringType(),StringType()),True)
+])
+
+dfMT=spark.createDataFrame(data1,schema1)
+display(dfMT)
+-------------------------------------------------------------------------------------------------------------------
+from pyspark.sql.functions import explode
+display(dfMT.select('*',explode(dfMT.Items)))
+============================================================
+
+---------
+1. exceptall function in pyspark
+2. subtract function in pyspark
+3. exceptall vs subtract in pyspark
+
+Create dataframe:
+======================================================
+data = [(1,"Mike","2018","10",30000), 
+    (2,"John","2010","20",40000), 
+    (2,"John","2010","20",40000), 
+    (3,"Jack","2010","10",40000), 
+    (4,"Charlee","2005","60",35000), 
+    (5,"Guo","2010","40",38000)]
+schema = ["empid","empname","doj", "deptid","salary"]
+
+data1 = [(1,"Mike","2018","10",30000), 
+           (4,"Charlee","2005","60",35000), 
+           (5,"Guo","2010","40",38000)] 
+schema1 = ["empid","empname","doj", "deptid","salary"]
+df = spark.createDataFrame(data, schema)
+df1 = spark.createDataFrame(data1,schema1) 
+display(df)
+display(df1)
+-----------------------------------------------------------------------------------------------------------------------
+display(df.exceptAll(df1))
+---------------------------------------------------------------------------------------------------------------------
+display(df.subtract(df1))
+--------
+
+how to read files from subfolders in pyspark?
+how to create zip file in pyspark?
+how to read data from a zip file in pyspark?
+
+Why do you need compression on any data processing system ? Can we live without Compression ?
+So Yes, if you are thinking around the efficiency gain , better storage management and network and processing time reduction.
+
+There are several different compression codecs available as:
+
+Gzip — A widely used codec that provides good compression ratios and is compatible with most systems.
+Snappy — A fast codec that provides moderate compression ratios and is commonly used in Hadoop systems.
+LZ4 — A fast codec that provides low compression ratios but is ideal for real-time systems.
+LZO — A fast codec that provides moderate compression ratios and is commonly used in real-time systems.
+Bzip2 — A slower codec that provides high compression ratios but is less commonly used due to its slower speed.
+Zstandard (Zstd) — A relatively new codec that provides high compression ratios and is commonly used in systems that require both high performance and high compression.
+
+Here are some parameters to keep in mind as:
+
+Compression Ratio — How much can you squeeze in? This is like trying to fit your entire wardrobe into a carry-on suitcase. You want to make sure you choose a codec that can compress your data as much as possible, without losing important information.
+Speed — Are you in a hurry? Choosing a codec that compresses quickly is like choosing a fast car — it’ll get you where you need to go in a jiffy.
+Overhead — How much baggage are you carrying? Just like when you’re traveling, you want to avoid carrying unnecessary baggage. Choose a codec that doesn’t add too much overhead to your data.
+Compatibility — Will it fit in with the rest of the crew? Choose a codec that is compatible with the other tools and systems you’re using. You don’t want to be the odd one out at the party.
+Quality — How good does it look and feel? Just like when you’re shopping for a new outfit, you want your data to look and feel good. Choose a codec that produces high-quality compressed data.
+Complexity — Can you handle it? Some codecs are more complex than others, just like some dance moves are more complex than others. Choose a codec that you can handle without breaking a sweat.
+Hardware Support — Can it handle the weight? Just like when you’re carrying heavy bags, you want to make sure your hardware can handle the weight of your compressed data. Choose a codec that is supported by your hardware.
+
+recrusiveFileLookup
+df = spark.read.option('header',True).option('recursiveFileLookup',True).csv()
+display(df)
+
+df.write.option('header',True).mode('overwrite').csv(path,sep = '|', compression = 'gzip' encoding = 'cp1252')
+
+df1 = spark.read.option('header',True).csv(path.gzip, sep = '|', encoding='cp1252')
+df1.display()
+------
+df = spark.read.option('header',True).option('mode','PERMISSIVE').csv(path, columnRenamedOfCourrptedRecords='errorrows')
+display(df)
+
+-----
+Create dataframe:
+======================================================
+from pyspark.sql.types import *
+data=[(1,'2024-01-01',"I1",10,1000),(2,"2024-01-15","I2",20,2000),(3,"2024-02-01","I3",10,1500),(4,"2024-02-15","I4",20,2500),(5,"2024-03-01","I5",30,3000),(6,"2024-03-10","I6",40,3500),(7,"2024-03-20","I7",20,2500),(8,"2024-03-30","I8",10,1000)]
+schema=["SOId","SODate","ItemId","ItemQty","ItemValue"]
+df1=spark.createDataFrame(data,schema)
+display(df1)
+-----------------------------------------------------------------------------------------------------------------------
+df1=df1.withColumn("SODate",df1.SODate.cast(DateType()))
+df1.printSchema()
+---------------------------------------------------------------------------------------------------------------------
+from pyspark.sql.functions import *
+df2=df1.select(month(df1.SODate).alias('Month'),year(df1.SODate).alias('Year'),df1.ItemValue)
+display(df2)
+-------------------------------------------------------------------------------------------------------------------
+df3=df2.groupBy(df2.Month,df2.Year).agg(sum(df2.ItemValue).alias('TotalSale'))
+display(df3)
+-------------------------------------------------------------------------------------------------------------------
+from pyspark.sql.window import *
+df4=df3.select('*',lag(df3.TotalSale).over(Window.orderBy(df3.Month,df3.Year)).alias('PrevSale'))
+display(df4)
+-------------------------------------------------------------------------------------------------------------------
+display(df4.select('*',(df4.TotalSale-df4.PrevSale)*100/df4.TotalSale))
+============================================================
+
+---------
+Create dataframe:
+======================================================
+from pyspark.sql.types import *
+data=[(0,0,'start',0.712),(0,0,'end',1.520),(0,1,'start',3.140),(0,1,'end',4.120),
+      (1,0,'start',0.550),(1,0,'end',1.550),(1,1,'start',0.430),(1,1,'end',1.420),
+      (2,0,'start',4.100),(2,0,'end',4.512),(2,1,'start',2.500),(2,1,'end',5.000)]
+schema=["Machine_id","processid","activityid","timestamp"]
+df1=spark.createDataFrame(data,schema)
+display(df1)
+-----------------------------------------------------------------------------------------------------------------------
+from pyspark.sql.functions import *
+df2=df1.select(df1.Machine_id,df1.processid,when(df1.activityid=='start',df1.timestamp).alias('starttime'),when(df1.activityid=='end',df1.timestamp).alias('endtime'))
+display(df2)
+---------------------------------------------------------------------------------------------------------------------
+df3=df2.groupBy(df2.Machine_id,df2.processid).agg(max(df2.starttime).alias('starttime'),max(df2.endtime).alias('endtime'))
+display(df3)
+-------------------------------------------------------------------------------------------------------------------
+df4=df3.select(df3.Machine_id,(df3.endtime-df3.starttime).alias('diff'))
+display(df4)
+-------------------------------------------------------------------------------------------------------------------
+display(df4.groupBy(df4.Machine_id).agg(avg(df4.diff).alias('avg_processing_time')))
+============================================================
+---------
+----- create dataframe
+data=[('Joanne',"040-20215632"),('Tom',"044-23651023"),('John',"086-12456782")]
+schema=["name","phone"]
+df=spark.createDataFrame(data,schema)
+display(df)
+
+from pyspark.sql.functions import split
+df=df.withColumn("std_code",split(df.phone,'-').getItem(0))
+df=df.withColumn("phone_num",split(df.phone,'-').getItem(1))
+display(df)
+
+-------------
+write a pyspark program for a report that provides the paris (actor_id,director_id) where the actor has cooperated with the atleast 3 times.
+
+result_df = df.groupBy("ActorID","DirectorID").count()
+display(result_df)
+
+df1 = result_df.filter(result_df["count"] > 2)
+display(df1)
+-------------------------------
+table:
+value seq
+ A     1
+ A     2
+ A     4
+ A     5
+ B     1
+ B     2
+ B     4
+ B     5
+ B     7
+ B     8
+ C     1
+ C     3
+ C     4
+
+output :
+value 	  min_seq 	max_seq
+  A           1            2
+  A           4            5 
+  B           1            2
+  B           4            5
+  B           7            8
+  C           1            NULL
+  C           3            4
+how to get this output?
+
+WITH grouped_data AS (
+SELECT value,seq,seq - ROW_NUMBER() OVER (PARTITION BY value ORDER BY seq) AS grp FROM your_table)
+SELECT value, MIN(seq) AS min_seq, CASE WHEN COUNT(*) > 1 THEN MAX(seq)  ELSE NULL END AS max_seq FROM grouped_data GROUP BY value, grp ORDER BY value, min_seq;
+-----------------------
+
+𝗤.𝗪𝗿𝗶𝘁𝗲 𝗮𝗻 𝗦𝗤𝗟 𝗾𝘂𝗲𝗿𝘆 𝘁𝗼 𝗳𝗶𝗻𝗱 𝗮𝗹𝗹 𝗮𝗰𝘁𝗶𝘃𝗲 𝗯𝘂𝘀𝗶𝗻𝗲𝘀𝘀𝗲𝘀.
+𝗔𝗻 𝗮𝗰𝘁𝗶𝘃𝗲 𝗯𝘂𝘀𝗶𝗻𝗲𝘀𝘀 𝗶𝘀 𝗮 𝗯𝘂𝘀𝗶𝗻𝗲𝘀𝘀 𝘁𝗵𝗮𝘁 𝗵𝗮𝘀 𝗺𝗼𝗿𝗲 𝘁𝗵𝗮𝗻 𝗼𝗻𝗲 𝗲𝘃𝗲𝗻𝘁 𝘁𝘆𝗽𝗲 𝘄𝗶𝘁𝗵 𝗼𝗰𝗰𝘂𝗿𝗲𝗻𝗰𝗲𝘀 𝗴𝗿𝗲𝗮𝘁𝗲𝗿 𝘁𝗵𝗮𝗻 𝘁𝗵𝗲 𝗮𝘃𝗲𝗿𝗮𝗴𝗲 𝗼𝗰𝗰𝘂𝗿𝗲𝗻𝗰𝗲𝘀 𝗼𝗳 𝘁𝗵𝗮𝘁 𝗲𝘃𝗲𝗻𝘁 𝘁𝘆𝗽𝗲 𝗮𝗺𝗼𝗻𝗴 𝗮𝗹𝗹 𝗯𝘂𝘀𝗶𝗻𝗲𝘀𝘀𝗲𝘀.
+
+𝗘𝘅𝗮𝗺𝗽𝗹𝗲 𝗜𝗻𝗽𝘂𝘁:
++-------------+------------+------------+
+| business_id | event_type | occurences |
++-------------+------------+------------+
+| 1      | reviews  | 7     |
+| 3      | reviews  | 3     |
+| 1      | ads    | 11     |
+| 2      | ads    | 7     |
+| 3      | ads    | 6     |
+| 1      | page views | 3     |
+| 2      | page views | 12     |
++-------------+------------+------------+
+𝗘𝘅𝗽𝗲𝗰𝘁𝗲𝗱 𝗢𝘂𝘁𝗽𝘂𝘁:
++-------------+
+| business_id |
++-------------+
+| 1      |
++-------------+
+
+✅ 𝗦𝗰𝗵𝗲𝗺𝗮 𝗮𝗻𝗱 𝗗𝗮𝘁𝗮 𝗙𝗼𝗿 𝗿𝗲𝗾𝘂𝗲𝘀𝘁_𝗮𝗰𝗰𝗲𝗽𝘁𝗲𝗱 𝗧𝗮𝗯𝗹𝗲 :
+CREATE TABLE hashtag#Events (
+ business_id INT,
+ event_type VARCHAR(255),
+ occurrences INT );
+
+INSERT INTO hashtag#Events (business_id, event_type, occurrences)
+VALUES
+ (1, 'reviews', 7),
+ (3, 'reviews', 3),
+ (1, 'ads', 11),
+ (2, 'ads', 7),
+ (3, 'ads', 6),
+ (1, 'page views', 3),
+ (2, 'page views', 12);
+
+✅ 𝗦𝗰𝗵𝗲𝗺𝗮 𝗮𝗻𝗱 𝗗𝗮𝘁𝗮 𝗳𝗼𝗿 𝗣𝘆𝗦𝗽𝗮𝗿𝗸 𝗗𝗮𝘁𝗮𝗙𝗿𝗮𝗺𝗲 :
+event_data = [(1, 'reviews', 7),
+ (3, 'reviews', 3),
+ (1, 'ads', 11),
+ (2, 'ads', 7),
+ (3, 'ads', 6),
+ (1, 'page views', 3),
+ (2, 'page views', 12)]
+event_schema = 'business_id INT,    event_type STRING,    occurrences INT' 
+df = spark.createDataFrame(event_data,event_schema)
+
+with avgofevent as (
+select event_type,cast(sum(occurances) * 1.0/count(1) as decimal(5,2)) as avgofevent from events group by event_type)
+select business_id from events as e left join avgofevent as a on e.event_type = a.event_type where e.occurance > a.evgofevent group by business_id having count(1) > 1;
+
+%spark
+avgevent_df = df.groupBy("event_type").agg(sum("occurance")/count("business_id")).alias("avgofevent"))
+result_df = df.join(avgevent_df, on  = (df.event_type = avgevent_df.event_type), how = 'left')
+.where(df.occurances > avgevent_df.avgofevent)
+.groupBy("business_id")
+.agg(count("business_id").alias("cnt_business_id"))
+.select("business_id")
+
+result_df.show()
+-------------------
+𝗤.𝗪𝗿𝗶𝘁𝗲 𝗮𝗻 𝗦𝗤𝗟 𝗾𝘂𝗲𝗿𝘆 𝘁𝗵𝗮𝘁 𝗿𝗲𝗽𝗼𝗿𝘁𝘀 𝗳𝗼𝗿 𝗲𝘃𝗲𝗿𝘆 𝗱𝗮𝘁𝗲 𝘄𝗶𝘁𝗵𝗶𝗻 𝗮𝘁 𝗺𝗼𝘀𝘁 𝟵𝟬 𝗱𝗮𝘆𝘀 𝗳𝗿𝗼𝗺 𝘁𝗼𝗱𝗮𝘆, 𝘁𝗵𝗲 𝗻𝘂𝗺𝗯𝗲𝗿 𝗼𝗳 𝘂𝘀𝗲𝗿𝘀 𝘁𝗵𝗮𝘁 𝗹𝗼𝗴𝗴𝗲𝗱 𝗶𝗻 𝗳𝗼𝗿 𝘁𝗵𝗲 𝗳𝗶𝗿𝘀𝘁 𝘁𝗶𝗺𝗲 𝗼𝗻 𝘁𝗵𝗮𝘁 𝗱𝗮𝘁𝗲. 𝗔𝘀𝘀𝘂𝗺𝗲 𝘁𝗼𝗱𝗮𝘆 𝗶𝘀 𝟮𝟬𝟭𝟵-𝟬𝟲-𝟯𝟬.
+
+𝗘𝘅𝗽𝗲𝗰𝘁𝗲𝗱 𝗢𝘂𝘁𝗽𝘂𝘁:
++------------+-------------+
+| login_date | user_count |
++------------+-------------+
+| 2019-05-01 | 1      |
+| 2019-06-21 | 2      |
++------------+-------------+
+
+✅ 𝗦𝗰𝗵𝗲𝗺𝗮 𝗮𝗻𝗱 𝗗𝗮𝘁𝗮 𝗙𝗼𝗿 𝗿𝗲𝗾𝘂𝗲𝘀𝘁_𝗮𝗰𝗰𝗲𝗽𝘁𝗲𝗱 𝗧𝗮𝗯𝗹𝗲 :
+CREATE TABLE hashtag#Traffic (
+ user_id INT,
+ activity VARCHAR(255),
+ activity_date DATE
+);
+INSERT INTO hashtag#Traffic (user_id, activity, activity_date)
+VALUES
+ (1, 'login', '2019-05-01'),
+ (1, 'homepage', '2019-05-01'),
+ (1, 'logout', '2019-05-01'),
+ (2, 'login', '2019-06-21'),
+ (2, 'logout', '2019-06-21'),
+ (3, 'login', '2019-01-01'),
+ (3, 'jobs', '2019-01-01'),
+ (3, 'logout', '2019-01-01'),
+ (4, 'login', '2019-06-21'),
+ (4, 'groups', '2019-06-21'),
+ (4, 'logout', '2019-06-21'),
+ (5, 'login', '2019-03-01'),
+ (5, 'logout', '2019-03-01'),
+ (5, 'login', '2019-06-21'),
+ (5, 'logout', '2019-06-21');
+
+✅ 𝗦𝗰𝗵𝗲𝗺𝗮 𝗮𝗻𝗱 𝗗𝗮𝘁𝗮 𝗳𝗼𝗿 𝗣𝘆𝗦𝗽𝗮𝗿𝗸 𝗗𝗮𝘁𝗮𝗙𝗿𝗮𝗺𝗲 :
+traffic = [(1, 'login', '2019-05-01'),
+ (1, 'homepage', '2019-05-01'),
+ (1, 'logout', '2019-05-01'),
+ (2, 'login', '2019-06-21'),
+ (2, 'logout', '2019-06-21'),
+ (3, 'login', '2019-01-01'),
+ (3, 'jobs', '2019-01-01'),
+ (3, 'logout', '2019-01-01'),
+ (4, 'login', '2019-06-21'),
+ (4, 'groups', '2019-06-21'),
+ (4, 'logout', '2019-06-21'),
+ (5, 'login', '2019-03-01'),
+ (5, 'logout', '2019-03-01'),
+ (5, 'login', '2019-06-21'),
+ (5, 'logout', '2019-06-21')]
+
+traffic_schema = 'user_id INT, activity STRING, activity_date STRING' 
+
+df = spark.createDataFrame(traffic,traffic_schema)
+
+with before_90day_user as (
+select *,datediff(day,activity_date,'2019-06-30') as diff from traffic)
+select activity_date as login_date,count(1) as user_count from before_90day_user where diff < 90 and user_id not in (
+select user_id from before_90day_user where diff > 90) and activity = 'login' group by activity_date;
+
+%spark
+from pyspark.sql.functions import col,min,datediff,lit,to_date,count
+
+df = df.withColumn("activity_date", to_date("activity_date","yyyy-mm-dd"))
+filter_df = df.filter(col("activity") = login").groupBy("user_id").agg(min(col("activity_date")).alias("login_date"))
+result_df = filter_df.filter(datediff(lit("2019-06-30"),col("login_date")) < 90)
+.groupBy("login_date")
+.agg(count(col("user_id")).alias("user_count"))
+result_df.sort(col("login_date").asc()).show()
+----------------------
+𝗤.𝗪𝗿𝗶𝘁𝗲 𝗮𝗻 𝗦𝗤𝗟 𝗾𝘂𝗲𝗿𝘆 𝘁𝗵𝗮𝘁 𝗿𝗲𝗽𝗼𝗿𝘁𝘀 𝘁𝗵𝗲 𝗯𝗼𝗼𝗸𝘀 𝘁𝗵𝗮𝘁 𝗵𝗮𝘃𝗲 𝘀𝗼𝗹𝗱 𝗹𝗲𝘀𝘀 𝘁𝗵𝗮𝗻 𝟭𝟬 𝗰𝗼𝗽𝗶𝗲𝘀 𝗶𝗻 𝘁𝗵𝗲 𝗹𝗮𝘀𝘁 𝘆𝗲𝗮𝗿, 𝗲𝘅𝗰𝗹𝘂𝗱𝗶𝗻𝗴 𝗯𝗼𝗼𝗸𝘀 𝘁𝗵𝗮𝘁 𝗵𝗮𝘃𝗲 𝗯𝗲𝗲𝗻 𝗮𝘃𝗮𝗶𝗹𝗮𝗯𝗹𝗲 𝗳𝗼𝗿 𝗹𝗲𝘀𝘀 𝘁𝗵𝗮𝗻 𝟭 𝗺𝗼𝗻𝘁𝗵 𝗳𝗿𝗼𝗺 𝘁𝗼𝗱𝗮𝘆. 
+𝗔𝘀𝘀𝘂𝗺𝗲 𝘁𝗼𝗱𝗮𝘆 𝗶𝘀 𝟮𝟬𝟭𝟵-𝟬𝟲-𝟮𝟯.
+
+𝗘𝘅𝗽𝗲𝗰𝘁𝗲𝗱 𝗢𝘂𝘁𝗽𝘂𝘁:
+
++-----------+--------------------+
+| book_id  | name        |
++-----------+--------------------+
+| 1     | "Kalila And Demna" |
+| 2     | "28 Letters"    |
+| 5     | "The Hunger Games" |
++-----------+--------------------+
+
+✅ 𝗦𝗰𝗵𝗲𝗺𝗮 𝗮𝗻𝗱 𝗗𝗮𝘁𝗮 𝗙𝗼𝗿 𝗿𝗲𝗾𝘂𝗲𝘀𝘁_𝗮𝗰𝗰𝗲𝗽𝘁𝗲𝗱 𝗧𝗮𝗯𝗹𝗲 :
+
+CREATE TABLE hashtag#Books (
+ book_id INT PRIMARY KEY,
+ name VARCHAR(255),
+ available_from DATE);
+
+CREATE TABLE hashtag#Orders (
+ order_id INT PRIMARY KEY,
+ book_id INT,
+ quantity INT,
+ dispatch_date DATE );
+
+INSERT INTO hashtag#Books (book_id, name, available_from)
+VALUES
+ (1, 'Kalila And Demna', '2010-01-01'),
+ (2, '28 Letters', '2012-05-12'),
+ (3, 'The Hobbit', '2019-06-10'),
+ (4, '13 Reasons Why', '2019-06-01'),
+ (5, 'The Hunger Games', '2008-09-21');
+
+INSERT INTO hashtag#Orders (order_id, book_id, quantity, dispatch_date)
+VALUES
+ (1, 1, 2, '2018-07-26'),
+ (2, 1, 1, '2018-11-05'),
+ (3, 3, 8, '2019-06-11'),
+ (4, 4, 6, '2019-06-05'),
+ (5, 4, 5, '2019-06-20'),
+ (6, 5, 9, '2009-02-02'),
+ (7, 5, 8, '2010-04-13');
+
+✅ 𝗦𝗰𝗵𝗲𝗺𝗮 𝗮𝗻𝗱 𝗗𝗮𝘁𝗮 𝗳𝗼𝗿 𝗣𝘆𝗦𝗽𝗮𝗿𝗸 𝗗𝗮𝘁𝗮𝗙𝗿𝗮𝗺𝗲 :
+
+books = [(1, 'Kalila And Demna', '2010-01-01'),
+ (2, '28 Letters', '2012-05-12'),
+ (3, 'The Hobbit', '2019-06-10'),
+ (4, '13 Reasons Why', '2019-06-01'),
+ (5, 'The Hunger Games', '2008-09-21')]
+
+books_schema = ' book_id INT , name STRING, available_from STRING'
+
+orders = ([(1, 1, 2, '2018-07-26'),
+ (2, 1, 1, '2018-11-05'),
+ (3, 3, 8, '2019-06-11'),
+ (4, 4, 6, '2019-06-05'),
+ (5, 4, 5, '2019-06-20'),
+ (6, 5, 9, '2009-02-02'),
+ (7, 5, 8, '2010-04-13')])
+
+orders_schema = 'order_id INT , book_id INT, quantity INT, dispatch_date STRING'
+
+books_df = spark.createDataFrame(books,books_schema)
+orders_df = spark.createDataFrame(orders,orders_schema)
+
+with last_year_sales as (
+select book_id,sum(quantity) nsold from orders where dispatch_date '2018-06-23' and '2019-06-23' group by book_id)
+select b.book_id,b.name from books b left join last_year_sales as o on b.book_id = o.book_id where (o.nsold < 10 or o.nsold is NULL) and DATEDIFF(day,b.avaliable_from,'2019-06-23') > 30;
+%spark----------
+from pyspark.sql.functions import to_date,sum,col,lit,datediff
+
+last_yr_sales_df = orders_df.filter(col("dispatch_date").between('2018-06-23','2019-06-23'))
+.groupBy("book_id").agg(sum("quantity").alias("total_quantity"))
+result_df = books_df.alias("b").join(last_yr_sales_df.alias("a"),
+col("b.book_id") == col("a.book_id"), "left")\
+.filter(((col("a.total_quantity") <10 | (col("a.total_quantity").isNull()))\
+& (datediff(lit(2019-06-23'),col("b.avaliable_from")) >30)
+.select(col("b.book_id"),col("b.name"))
+result_df.show()
+---------------------------
+𝗤.𝗪𝗿𝗶𝘁𝗲 𝗮𝗻 𝗦𝗤𝗟 𝗾𝘂𝗲𝗿𝘆 𝘁𝗵𝗮𝘁 𝗿𝗲𝗽𝗼𝗿𝘁𝘀 𝗳𝗼𝗿 𝗲𝗮𝗰𝗵 𝗶𝗻𝘀𝘁𝗮𝗹𝗹 𝗱𝗮𝘁𝗲, 𝘁𝗵𝗲 𝗻𝘂𝗺𝗯𝗲𝗿 𝗼𝗳 𝗽𝗹𝗮𝘆𝗲𝗿𝘀 𝘁𝗵𝗮𝘁 𝗶𝗻𝘀𝘁𝗮𝗹𝗹𝗲𝗱 𝘁𝗵𝗲 𝗴𝗮𝗺𝗲 𝗼𝗻 𝘁𝗵𝗮𝘁 𝗱𝗮𝘆 𝗮𝗻𝗱 𝘁𝗵𝗲 𝗱𝗮𝘆 𝟭 𝗿𝗲𝘁𝗲𝗻𝘁𝗶𝗼𝗻. 
+
+𝗘𝘅𝗮𝗺𝗽𝗹𝗲 𝗜𝗻𝗽𝘂𝘁:
+Activity table:
++-----------+-----------+------------+--------------+
+| player_id | device_id | event_date | games_played |
++-----------+-----------+------------+--------------+
+| 1     | 2     | 2016-03-01 | 5      |
+| 1     | 2     | 2016-03-02 | 6      |
+| 2     | 3     | 2017-06-25 | 1      |
+| 3     | 1     | 2016-03-01 | 0      |
+| 3     | 4     | 2016-07-03 | 5      |
++-----------+-----------+------------+--------------+
+
+𝗘𝘅𝗽𝗲𝗰𝘁𝗲𝗱 𝗢𝘂𝘁𝗽𝘂𝘁:
+Result table:
++------------+----------+----------------+
+| install_dt | installs | Day1_retention |
++------------+----------+----------------+
+| 2016-03-01 | 2    | 0.50      |
+| 2017-06-25 | 1    | 0.00      |
++------------+----------+----------------+
+
+✅ 𝗦𝗰𝗵𝗲𝗺𝗮 𝗮𝗻𝗱 𝗗𝗮𝘁𝗮 𝗙𝗼𝗿 𝗿𝗲𝗾𝘂𝗲𝘀𝘁_𝗮𝗰𝗰𝗲𝗽𝘁𝗲𝗱 𝗧𝗮𝗯𝗹𝗲 :
+CREATE TABLE hashtag#Activity (
+ player_id INT,
+ device_id INT,
+ event_date DATE,
+ games_played INT
+);
+
+INSERT INTO hashtag#Activity (player_id, device_id, event_date, games_played)
+VALUES
+ (1, 2, '2016-03-01', 5),
+ (1, 2, '2016-03-02', 6),
+ (2, 3, '2017-06-25', 1),
+ (3, 1, '2016-03-01', 0),
+ (3, 4, '2016-07-03', 5);
+
+✅ 𝗦𝗰𝗵𝗲𝗺𝗮 𝗮𝗻𝗱 𝗗𝗮𝘁𝗮 𝗳𝗼𝗿 𝗣𝘆𝗦𝗽𝗮𝗿𝗸 𝗗𝗮𝘁𝗮𝗙𝗿𝗮𝗺𝗲 :
+act_data=[ (1, 2, '2016-03-01', 5),
+ (1, 2, '2016-03-02', 6),
+ (2, 3, '2017-06-25', 1),
+ (3, 1, '2016-03-01', 0),
+ (3, 4, '2016-07-03', 5)]
+
+act_schema = StructType([
+ StructField("player_id",IntegerType()),
+ StructField("device_id",IntegerType()),
+ StructField("event_date",StringType()),
+ StructField("games_played",IntegerType())])
+
+with cte as (
+select *,row_number() over(partition by player_id order by games_played) as rn,
+isnull(datediff(day,event_date,lead(event_date) over(partition by player_id order by games_played)),0) as diff from activity),
+retension_count as (
+select *, sum(case when rn = 1 and diff in (1,0) then 1 else 0 end) over(partition by event_date) as retension_count,count(1) over(parititon by event_date) as total_count from cte)
+select event_date as install_at, total_count as installs,convert(decimal(5,2), retension_count * 1.0/total_count) as day1_retension from retension_count where rn=1 and diff in (1,0) order by event_date;
+
+%spark-----------------
+from pyspark.sql.types import StructType,StructField,StringType,DataType,IntegerType
+from pyspark.sql.functions import to_date,min,col,date_add,count,round
+
+df = spark.createDataFrame(act_data,act_schema)
+df = df.withColumn("event_date",to_date("event_date","yyyy-mm-dd"))
+min_date_df = df.groupBy("player_id").agg(min("event_date").alias("min_date"))
+merged_df = min_date_df.alias("min")\
+.join(df.alias("d").((col("d.player_id") == col("min.player_id")) & (date_add(col("min.min_date"),1) == col("d.event_date"))),'left')\
+.select(col("min.player_id"),col("min.min_date").alias("install_at"),col("d.event_date").alias("retension"))
+final_df = merged_df.groupBy(col("install_at")).agg(count('player_id').alias('installs"),
+round((count('retension')/count('played_id')),2).alias('day1_retension"))
+final_df.show()
+-----------------------------
+𝗤.𝗪𝗿𝗶𝘁𝗲 𝗮𝗻 𝗦𝗤𝗟 𝗾𝘂𝗲𝗿𝘆 𝗳𝗼𝗿 𝗮 𝗿𝗲𝗽𝗼𝗿𝘁 𝘁𝗵𝗮𝘁 𝗽𝗿𝗼𝘃𝗶𝗱𝗲𝘀 𝘁𝗵𝗲 𝗰𝘂𝘀𝘁𝗼𝗺𝗲𝗿 𝗶𝗱𝘀 𝗳𝗿𝗼𝗺 𝘁𝗵𝗲 𝗖𝘂𝘀𝘁𝗼𝗺𝗲𝗿 𝘁𝗮𝗯𝗹𝗲 𝘁𝗵𝗮𝘁 𝗯𝗼𝘂𝗴𝗵𝘁 𝗮𝗹𝗹 𝘁𝗵𝗲 𝗽𝗿𝗼𝗱𝘂𝗰𝘁𝘀 𝗶𝗻 𝘁𝗵𝗲 𝗣𝗿𝗼𝗱𝘂𝗰𝘁 𝘁𝗮𝗯𝗹𝗲.
+
+𝗘𝘅𝗮𝗺𝗽𝗹𝗲 𝗜𝗻𝗽𝘂𝘁:
+Customer table:
++-------------+-------------+
+| customer_id | product_key |
++-------------+-------------+
+| 1      | 5      |
+| 2      | 6      |
+| 3      | 5      |
+| 3      | 6      | 
+| 1      | 6      |
++-------------+-------------+
+
+Product table:
++-------------+
+| product_key |
++-------------+
+| 5      |
+| 6      |
++-------------+
+
+𝗘𝘅𝗽𝗲𝗰𝘁𝗲𝗱 𝗢𝘂𝘁𝗽𝘂𝘁:
+Result table:
++-------------+
+| customer_id |
++-------------+
+| 1      |
+| 3      |
++-------------+
+
+✅ 𝗦𝗰𝗵𝗲𝗺𝗮 𝗮𝗻𝗱 𝗗𝗮𝘁𝗮 𝗙𝗼𝗿 𝗿𝗲𝗾𝘂𝗲𝘀𝘁_𝗮𝗰𝗰𝗲𝗽𝘁𝗲𝗱 𝗧𝗮𝗯𝗹𝗲 :
+CREATE TABLE hashtag#cCustomer (
+ customer_id INT,
+ product_key INT );
+
+CREATE TABLE Product (
+ product_key INT );
+
+INSERT INTO Product (product_key)
+VALUES 
+ (5),
+ (6);
+
+INSERT INTO Customer (customer_id, product_key)
+VALUES 
+ (1, 5),
+ (2, 6),
+ (3, 5),
+ (3, 6),
+ (1, 6);
+
+✅ 𝗦𝗰𝗵𝗲𝗺𝗮 𝗮𝗻𝗱 𝗗𝗮𝘁𝗮 𝗳𝗼𝗿 𝗣𝘆𝗦𝗽𝗮𝗿𝗸 𝗗𝗮𝘁𝗮𝗙𝗿𝗮𝗺𝗲 :
+
+cust_data = [(1, 5),
+ (2, 6),
+ (3, 5),
+ (3, 6),
+ (1, 6)]
+cust_schema = 'customer_id INT ,product_key INT' 
+
+prod_data = [(5,),
+ (6,)]
+
+prod_schema = 'product_key INT'
+
+cust_df = spark.createDataFrame(cust_data,cust_schema)
+prod_df = spark.createDataFrame(prod_data,prod_schema)
+
+select customer_id from customer group by customer_id having count(distinct product_key) = (select count(1) from product)
+
+%spark---
+from pyspark.sql.function import col,count,countDistinct
+
+cnt = prod_df.count()
+final_df = cust_df.groupBy(col("customer_id")).agg(countDistinct(col("product_key")).alias("cnt").filter(col("cnt") == cnt).select ("customer_id")
+final_df.show()
+--------------
+
+𝐈𝐝𝐞𝐧𝐭𝐢𝐟𝐲𝐢𝐧𝐠 𝐃𝐞𝐝𝐢𝐜𝐚𝐭𝐞𝐝 𝐃𝐨𝐜𝐮𝐦𝐞𝐧𝐭𝐚𝐫𝐲 𝐕𝐢𝐞𝐰𝐞𝐫𝐬
+
+Netflix is interested in finding users who have watched more than five documentary movies within the past month. The genre field may contain multiple categories, so ensure that "Documentary" is matched within any string. Retrieve the user’s name and email.
+
+Dataframes:
+movies: (movie_id, title, genre, release_year)
+customer: (user_id, name, email, last_movie_watched, date_watched)
+
+Solution
+-----------
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import col
+from datetime import date
+
+spark = SparkSession.builder.appName("NetflixAnalysis").getOrCreate()
+
+# Today's date
+today = current_date()
+
+movies_data = [
+ (1, 'Nature Wonders', 'Documentary', 2024),
+ (2, 'Tech Revolution', 'Documentary, Sci-Fi', 2023),
+ (3, 'The Life of Earth', 'Documentary, History', 2023),
+ (4, 'The Great War', 'Documentary, War', 2022),
+ (5, 'Space Explorers', 'Sci-Fi', 2024),
+ (6, 'The History of Science', 'Documentary, Science', 2023),
+ (7, 'Art and Culture', 'Drama', 2023),
+ (8, 'Earth and Us', 'Documentary, Drama', 2024)
+]
+
+movies_columns = ['movie_id', 'title', 'genre', 'release_year']
+movies_df = spark.createDataFrame(movies_data, movies_columns)
+
+customers_data = [
+ (1, 'Alice', 'alice@example.com', 1, date(2025, 2, 20)),
+ (1, 'Alice', 'alice@example.com', 2, date(2025, 2, 18)),
+ (1, 'Alice', 'alice@example.com', 3, date(2025, 2, 15)),
+ (1, 'Alice', 'alice@example.com', 4, date(2025, 2, 13)),
+ (1, 'Alice', 'alice@example.com', 6, date(2025, 1, 25)),
+ (1, 'Alice', 'alice@example.com', 8, date(2025, 1, 23)),
+ (2, 'Bob', 'bob@example.com', 5, date(2025, 2, 10)), 
+ (2, 'Bob', 'bob@example.com', 7, date(2025, 2, 5))]
+
+customers_columns = ['user_id', 'name', 'email', 'movie_id', 'date_watched']
+customer_df = spark.createDataFrame(customers_data, customers_columns)
+
+res_df = customer_df.alias("c").join(movies_df.alias("m"), col("c.movie_id") == col("m.movie_id")).filter((col("m.genre").like("%Documentary%")) & (col("c.date_watched") >= date(2025, 1, 22)))
+user_watch_count_df = res_df.groupBy("user_id", "name", "email").count()
+final_df = user_watch_count_df.filter(col("count") > 5)
+final_df.select("name", "email").show()
+----------
+null_counts = df_employee.agg(*(count(when(col(c).isNull(),c)).alias(c) for c in df_employee.columns))
+------------------------------
+You are given a table EmployeeLogs with columns EmployeeID, LoginTime, LogoutTime, and Date. Write a query to calculate the longest continuous working streak (consecutive days without missing a login) for each employee.
+
+with employeedailylogs as (
+select employeeID, date,row_number() over(partition by employeeID order by date) as rownum from employeelogs group by employeeID,date),
+streakgroups as (
+select employeeID, data,date-rownum as streakgroup from employeedailylogs)
+select employeeID,max(streaklength) as longeststreak from (select employeeID, streakgroup,count(*) as streaklength from streakgroups group by employeeID, streakgroup) streaklengths group by employeeID;
+
+A table SalesData contains columns TransactionID, Region, ProductID, SaleDate, and Revenue. Write a query to identify the top 3 products with the highest cumulative revenue in each region over the last fiscal year.
+
+with fiscalyearsales as (
+select region,productID, sum(revenue) as cumulativerevenue from salesdata where saledate >= add(trunc(sysdate,'year'),-12) group by region,productID)
+rankedproducts as (
+select region,productID,cumulativerevenue,rank() over(partition by region order by cumulativerevenue desc) as revenuerank from fiscalyearsales)
+select region,productID,cumulativerevenue from rankproducts where revenuerank <= 3;
+
+------------------
+duplicates
+----window
+delete * from (
+select *, row_number() over(partition by ID order by ID) as rno from table) where rno > 1;
+----using Distinct
+select distinct column1,column2 from table_name;
+----group BY
+select column1,column2 from table_name group by column1,column2;
+---spark
+df = spark.read.csv("path_to_file.csv", header = True, inferSchema = True)
+cleaned_df = df.dropDuplicates(["column1","column2"])
+cleaned_df.show()
+
+df.dropDuplicates()
+cleaned_df = df.distinct()
+
+----handling missing values
+SQL
+select * from table_name where column_name is not null;
+--replace values
+select coalesce(column_name, 'default_name') as column_name from table_name;
+--remove rows
+delete from table_name where column_name is null;
+
+--spark
+cleaned_df = df.na.fill({"column_name":"default_value"})
+cleaned_df = df.na.drop()
+cleaned_df.show()
+
+correct data inconsistencies
+
+--convert text to uppercase
+update table_name set column_name = upper(column_name);
+update table_name set column_name = replace(column_name,'old_value','new_value');
+
+--pyspark
+cleaned_df = df.withColumn("column_name", upper(df["column_name"]))
+cleaned_df = df.withColumn("column_name",regexp_replace(df["column_name"], "old_value","new_value"))
+cleaned_df.show()
+
+---standardizing data formats:
+
+select to_date(column, 'yyyy/mm/dd') as formatted_date from table_name;
+select cast(column_name as int) as column_name from table_name;
+
+from pyspark.sql.functions import to_date,col
+cleaned_df = df.withColumn("formatted_date", to_date(col("column"), "yyyy/mm/dd"))
+cleaned_df = df.withColumn("column_name",col("column_name").cast("int"))
+cleaned_df.show()
+
+removing outliers:
+---SQL
+select * from table_name where column_name between 
+(select percentile_cont(0.05) within group (order by column_name) from table_name)
+and
+(select percentile_cont(0.95) within group (order by column_name) from table_name)
+
+--spark
+percentiles = df.approxQuantile("column_name", [0.05,0.95],0.01)
+lower_bound, upper_bound = percentiles[0] , percentiles[1]
+
+cleaned_df = df.filter((col("column_name") >= lower_bound) & (col("column_name") <= upper_bound))
+cleaned_df.show()
+
+validation
+create table table_name (
+column1 int not null unique, column2 varchar(50) check (column2 in ('value1','value2')));
+
+---spark
+if df.select("column1").distinct().count != df.count():
+    raise valueerror("")
+
+allowed_value = ["value1","value2"]
+invalid_rows = df.filter(~col("column2").isin(allowed_values))
+if invalid_rows.count() > 0:
+   raise ValueError(f"Invalid values found in column2" {invalid_rows.collect()}
+
+print("data validation passed!")
+-------------------------------------------
+Calculate the moving average of sales for the past 6 months.
+
+select customer_id,order_date,sales,avg(sales) over(partition by customer_id order by order_date rows between 5 preceding current row) as moving_avg_sales_6_months from sales_data;
+
+from pyspark.sql import Window
+from pyspark.sql.functions import avg
+
+window_spec = Window.partitionBy("customer_id").orderBy("order_date").rowBetween(-5,0)
+df_moving = df.withColumn("moving_avg", avg("sales").over(window_spec))
+df_moving.show()
+
+dense_rank to employee based on their salary
+select employee_id,department_id,salary,dense_rank() over(parititon by department_id order by salary desc) as dense from employees;
+
+from pyspark.sql.window import Window
+from pyspark.sql.functions import dense_rank
+window_spec = Window.partitionBy("department_id").orderBy(df["salary"].desc())
+df_dense = withColumn("dense_rank",dense_rank().over(window_spec))
+df_dense.show()
+
+retrieve the first and last order date for each customer
+select customer_id,min(order_date) as first_order_date,max(order_date) as last_order_date from order group by customer_id;
+
+from pyspark.sql.functions import min,max
+result_df = df.groupBy("customer_id").agg(min("order_date").alias("first_order_date").max("order_date").alias("last_order_date"))
+result_df.show()
+
+Nth highest salary for each department using window functions
+with ranksalaries as (
+select departmentid,employeeid,salary,dense_rank() over(parititon by departmentid order by salary desc) as rank from employees)
+select departmentid,employeeid,salary from ranksalaries where rank = &n;
+
+from pyspark.sql.window import Window
+from pyspark.sql.functions import dense_rank
+
+window_spec = Window.partitionBy("departmentid").orderBy(df["salary"].desc())
+ranked_df = withColumn("rank",dense_rank().over(window_spec))
+nth_highest = ranked_df.filter(ranked_df["rank"] == &N)
+nth_highest.show()
+
+percentage of total_sales contributed by each employee
+select employee_id,sum(sales) as total_sales,sum(sales) * 100.0/sum(sum(sales)) over as sales_percentage from sales_date group by employee_id;
+
+from pyspark.sql.functions import sum as _sum
+employee_sales = df.groupBy("employee_id").agg(_sum("sales").alias("total_sales"))
+total_sales = employee_sales.agg(_sum("total_sales").alias("overall)
+result_df = employee_sales.withColumn("sales_percentage", (employee_sales["total_sales"]/total_sales) * 100)
+result_df.show()
+
+longest consecutive streak of sales for an employee
+with salesstreak as (
+select employee_id,sales_date,row_number() over(partition by employee_id order by sales) as rn,
+date_diff(sales_date, lag(sales_date) over(partition by employee_id order by sales_date from sales),
+consecutivestreaks as (
+select employee_id,count(*) as streak_length from salesstreak where diff = 1 or diff is null group by employee_id)
+select employee_id,max(streak_length) as longest_streak from consecutivestreak group by employee_id;
+
+from pyspark.sql import Window
+from pyspark.sql.functions import col, lag, datediff, row_number, count
+
+# Step 1: Calculate row number and date difference
+window_spec = Window.partitionBy("employee_id").orderBy("sale_date")
+sales_streak_df = df.withColumn("rn", row_number().over(window_spec)) \
+                    .withColumn("diff", datediff(col("sale_date"), lag("sale_date").over(window_spec)))
+
+# Step 2: Identify consecutive streaks
+consecutive_streaks_df = sales_streak_df.filter((col("diff") == 1) | col("diff").isNull()) \
+                                       .groupBy("employee_id") \
+                                       .agg(count("*").alias("streak_length"))
+
+# Step 3: Find the longest streak per employee
+longest_streak_df = consecutive_streaks_df.groupBy("employee_id") \
+                                         .agg({"streak_length": "max"}) \
+                                         .withColumnRenamed("max(streak_length)", "longest_streak")
+
+longest_streak_df.show()
+
+total sales for each category and filter categories with sales greater than a threashold using cte
+
+with categorysales as (
+select category,sum(sales) as total_sales from sales_data group by category)
+select * from categorysales where total_sales >  1000;
+
+from pyspark.sql.functions import sum as _sum
+
+# Step 1: Calculate total sales per category
+category_sales_df = df.groupBy("category").agg(_sum("sales").alias("total_sales"))
+
+# Step 2: Filter categories with sales greater than the threshold
+filtered_categories_df = category_sales_df.filter(col("total_sales") > 1000)  # Replace 1000 with your threshold
+
+filtered_categories_df.show()
+
+-------------
+
+Rename columns during data ingestion
+#read the csv file
+df = spark.read.csv("dbfs:/path/to/your/files.csv", header = True,inferSchema=True)
+column_counts = {col : df.columns.count(col) for col in df.columns}
+duplicates = {k,v for k,v in columns_counts.items() if v > 1}
+if duplicates :
+  print(f"Duplicate columns found : {duplicates}")
+
+#rename duplicate columns
+new_columns = []
+seen = {}
+for col in df.columns:
+   if df.columns.count(col) > 1"
+    seen[col] = seen.get(col,0) + 1
+    new_columns.append(f"{col}_{seen[col]}")
+   else:
+       new_columns.append(col)
+
+df = df.toDF(*new_columns)
+df.printSchema()
+
+----
+Preprocess the CSV File
+If you have control over the source file, preprocess it to remove or rename duplicate column headers before loading it into Databricks.
+
+import csv
+input_file = "path/to/input.csv"
+output_file = "path/to/output.csv"
+with open(input_file, 'r') as infile, open(output_file, 'w', newline='') as outfile:
+ reader = csv.reader(infile)
+ writer = csv.writer(outfile)
+ 
+ headers = next(reader)
+ new_headers = []
+ seen = {}   
+
+headers = next(reader)
+ new_headers = []
+ seen = {}
+ 
+ for header in headers:
+ if headers.count(header) > 1:
+ seen[header] = seen.get(header, 0) + 1
+ new_headers.append(f"{header}_{seen[header]}")
+ else:
+ new_headers.append(header)
+ 
+ writer.writerow(new_headers)
+ writer.writerows(reader)
+
+handle duplicate columns after loading
+
+#identify duplicate columns
+duplicates = [col for col in df.columns if df.column.count(col) > 1]
+
+#rename duplicate columns
+for col in duplicates:
+  indices = [i for i,c in enumerate(df.columns) if c == col]
+  for idx in indices[1:]:
+     df = df.withColumnRenamed(df.columns[idx], f"{col}_{idx}"_
+
+df.printSchema()
+
+-----------------------------------------------------------------------------------------------------------------------------------
+
+Write a SQL Query to identify yearwise count of new cities where they started their operations
+
+create table business_city (
+business_date date,
+city_id int);
+delete from business_city;
+insert into business_city
+values(cast('2020-01-02' as date),3),(cast('2020-07-01' as date),7),(cast('2021-01-01' as date),3),(cast('2021-02-03' as date),19)
+,(cast('2022-12-01' as date),3),(cast('2022-12-15' as date),3),(cast('2022-02-28' as date),12);
+
+
+from pyspark.sql.functions import col,row_number,date_format,count
+from pyspark.sql import Window
+
+row_num_window = Window.partitionBy("city_id").orderBy("business_date")
+city_row_num_df = business_city_df.withColumn("row_num", row_number().over(row_num_window))
+final_cites_df = (city_row_num_df.filter(col("row_num") == 1).groupBy(date_format(col("business_date"), "yyyy").alias("year")).agg(count(col("city_id")).alias("no_of_cities")))
+final_cities_df.show()
+
+%sql
+with city_row_num as (
+select *, row_number() over(partition by city_id order by business_date) as rn from business_city)
+select year(business_date) as year , count(city_id) as no_of_cities from city_row_num where rn = 1 group by year(business_date);
+
+------------
+Write a SQL query to display the records which have 3 or more consecutive rows with the amount of people more than 100 (inclusive) each day.
+
+create table stadium (
+id int,
+visit_date date,
+no_of_people int);
+insert into stadium
+values (1,'2017-07-01',10),(2,'2017-07-02',109),(3,'2017-07-03',150)
+,(4,'2017-07-04',99),(5,'2017-07-05',145),(6,'2017-07-06',1455),(7,'2017-07-07',199),(8,'2017-07-08',188);
+
+from pyspark.sql.functions import col,count,row_number
+from pyspark.sql.window import Window
+
+people_grp_df = (stadium_df.filter(col("no_of_people") >= 100)
+.withColumn("grp", col(id) - row_number().over(Window.orderBy("viist_date"))))
+
+people_grp_cnt_df = people_grp_df.withColumn("total_count", count("id").over(Window.partitionBy("grp")))
+
+final_people_df = people_grp_cnt_df.filter(col("total_count") >= 3).select("id","visit_date","no_of_people"))
+final_people_df.show()
+------------------------------------------------------
+
+-- Write a SQL query to find details of employees with 3rd highest salary in each department.
+-- IN case, there are less than 3 employees in a department, then return employee details with lowest salary in that department
+
+CREATE TABLE [emp](
+ [emp_id] [int] NULL,
+ [emp_name] [varchar](50) NULL,
+ [salary] [int] NULL,
+ [manager_id] [int] NULL,
+ [emp_age] [int] NULL,
+ [dep_id] [int] NULL,
+ [dep_name] [varchar](20) NULL,
+ [gender] [varchar](10) NULL);
+insert into emp values(1,'Ankit',14300,4,39,100,'Analytics','Female')
+insert into emp values(2,'Mohit',14000,5,48,200,'IT','Male')
+insert into emp values(3,'Vikas',12100,4,37,100,'Analytics','Female')
+insert into emp values(4,'Rohit',7260,2,16,100,'Analytics','Female')
+insert into emp values(5,'Mudit',15000,6,55,200,'IT','Male')
+insert into emp values(6,'Agam',15600,2,14,200,'IT','Male')
+insert into emp values(7,'Sanjay',12000,2,13,200,'IT','Male')
+insert into emp values(8,'Ashish',7200,2,12,200,'IT','Male')
+insert into emp values(9,'Mukesh',7000,6,51,300,'HR','Male')
+insert into emp values(10,'Rakesh',8000,6,50,300,'HR','Male')
+insert into emp values(11,'Akhil',4000,1,31,500,'Ops','Male');
+
+from pyspark.sql.functions import *
+from pyspark.sql import Window
+
+rnk_window = Window.partitionBy("dep_id").orderBy(col("salary").desc())
+
+emp_rank_df = emp_df.withColumn("rnk",dense_rank().over(rnk_window))
+.withColumn("total_cnt",count("dep_id").over(Window.partitionBy("dep_id")))
+
+final_employee_df = emp_rank_df.filter(
+(col("rnk") == 3 | ((col("total_cnt") < 3) & (col("rnk") == col("total_cnt")))).select("*").sort("emp_id")
+final_employees_df.show()
+
+with emp_rank as (
+select *, dense_rank() over(parititon by dep_id order by salary desc) as rnk,
+count(*) over (partition by dep_id) as total_cnt from emp)
+select emp_id,emp_name,salary,dep_id,dep_name from emp_rank where (rnk=3) or (total_cnt < 3 and rnk = total_cnt) order by emp_id;
+-----------------------------------------------------
+
+Write a SQL Query to find the median salary of each company. If the rows for a company are even then get the average of those middle 2 salaries.
+
+create table employee (emp_id int,company varchar(10),salary int);
+insert into employee values (1,'A',2341)
+insert into employee values (2,'A',341)
+insert into employee values (3,'A',15)
+insert into employee values (4,'A',15314)
+insert into employee values (5,'A',451)
+insert into employee values (6,'A',513)
+insert into employee values (7,'B',15)
+insert into employee values (8,'B',13)
+insert into employee values (9,'B',1154)
+insert into employee values (10,'B',1345)
+insert into employee values (11,'B',1221)
+insert into employee values (12,'B',234)
+insert into employee values (13,'C',2345)
+insert into employee values (14,'C',2645)
+insert into employee values (15,'C',2645)
+insert into employee values (16,'C',2652)
+insert into employee values (17,'C',65);
+
+from pyspark.sql.functions import *
+from pyspark.sql.window import Window
+
+row_num_window = Window.partitionBy("company").orderBy("salary")
+count_window = Window.partitionBy("company")
+
+employee_rows_df = employee_df.withColumn("row_num", row_number.over(row_num_window))
+.withColumn("cnt", count("company").over(count_window))
+
+companies_median_values_df = employee_rows_df.filter(
+(col("row_num") >= (col("cnt") * lit(1.0)/2)) & (col(row_num) <= (1 + (col("cnt") * lit(1.0) /2)))).select("*")
+
+final_companies_median = companies_medium_values_df.groupBy("company").agg(avg("salary").alias("avg_salary").sort("company")
+final_companies_medium.show()
+
+%sql
+with row_num_cte as (
+select *, row_number() over(parititon by company order by salary) as rn,
+count(*) over (parititon by company) as cnt from employee)
+select company,avg(salary) as avg_salary from (
+select * from row_num_cte where rn between cnt*1.0/2 and cnt*1.0/2 +1 ) temp
+group by company;
+------------------------------------------------------
+Given a dataset of players and their respective cities, group players by city and arrange them in a tabular format where each row contains players from different cities having the same rank based on alphabetical order.
+
+create table players_location (
+name varchar(20),
+city varchar(20));
+insert into players_location values ('Sachin','Mumbai'),('Virat','Delhi') , ('Rahul','Bangalore'),('Rohit','Mumbai'),('Mayank','Bangalore');
+ 
+from pyspark.sql.functions import *
+from pyspark.sql import Window
+
+row_num_window = Window.partitonBy("city").orderBy("name")
+players_grp_df = players_location_df.withColumn("player_grps", row_number().over(row_num_window))
+
+final_players_df = players_grp_df.groupBy("player_grps").agg(
+max(when(col("city") == "Bangalore", col("name"))).alias("Bangalore"),
+max(when(col("city") == "Mumbai", col("name"))).alias("Mumbai"),
+max(when(col("city") == "Delhi", col("name"))).alias("Delhi"))
+.select("Bangalore","Mumbai","Delhi")
+final_players_df.show()
+
+%sql
+select max(case when city = 'Bangalore' then name end) as Bangalore,
+max(case when city = 'Mumbai' then name end) as Mumbai,
+max(case when city = 'Delhi' then name end) as Delhi from (
+select *, row_number() over(partition by city order by name) as player_grps from players_location ) temp group by player_grps;
+-----------------------------
+Identify login sessions where the status changes from "off" to "on". For each session, determine the login time ( "on"), logout time ("off"), and count of "on" updates within the session.
+
+create table event_status (
+event_time varchar(10),
+status varchar(10));
+insert into event_status  values ('10:01','on'),('10:02','on'),('10:03','on'),('10:04','off'),('10:07','on'),('10:08','on'),('10:09','off'),('10:11','on'),('10:12','off');
+
+from pyspark.sql.functions import col,coalesce,lag,sum,when,min,max,count
+from pyspark.sql import Window
+
+status_window = Window.orderBy("event_time")
+
+prev_status_df = event_status_df.withColumn("prev_status", coalesce(lag(col("status"),1).over(status_window), col("status")))
+
+grp_status_df = prev_status_df.withColumn("grp_status", sum(
+when((col("status") == "on") & (col("prev_status") == "off"), 1).otherwise(0)).over(status_window))
+
+final_output_df = (
+grp_status_df.groupBy("grp_status").agg(min("event_time").alias("login"),max("event_time").alias("logout"),(count(status") - 1).alias("cnt")).select("login","logout","cnt"))
+
+final_output_df.show()
+
+%sql
+with prev_status_cte as (
+select *, lag(status,1,status) over(order by event_time) as prev_status from event_status),
+grp_status_cte as (
+select *, sum(case when status = 'on' and prev_status = 'off' then 1 else 0 end) over(order by event_time) as grp_status from prev_status_cte)
+select min(event_time) as login, max(event_time) as logout, count(grp_status) - 1 as cnt from grp_status_cte group by grp_status;
+
+-------------------------------------------------------------------------------------------------
+
+Find the largest order by value for each salesperson and display order details.
+
+CREATE TABLE [dbo].[int_orders](
+ [order_number] [int] NOT NULL,
+ [order_date] [date] NOT NULL,
+ [cust_id] [int] NOT NULL,
+ [salesperson_id] [int] NOT NULL,
+ [amount] [float] NOT NULL) ON [PRIMARY];
+
+INSERT INTO [dbo].[int_orders] ([order_number], [order_date], [cust_id], [salesperson_id], [amount]) VALUES (30, CAST('1995-07-14' AS Date), 9, 1, 460);
+INSERT into [dbo].[int_orders] ([order_number], [order_date], [cust_id], [salesperson_id], [amount]) VALUES (10, CAST('1996-08-02' AS Date), 4, 2, 540);
+INSERT INTO [dbo].[int_orders] ([order_number], [order_date], [cust_id], [salesperson_id], [amount]) VALUES (40, CAST('1998-01-29' AS Date), 7, 2, 2400);
+INSERT INTO [dbo].[int_orders] ([order_number], [order_date], [cust_id], [salesperson_id], [amount]) VALUES (50, CAST('1998-02-03' AS Date), 6, 7, 600);
+INSERT into [dbo].[int_orders] ([order_number], [order_date], [cust_id], [salesperson_id], [amount]) VALUES (60, CAST('1998-03-02' AS Date), 6, 7, 720);
+INSERT into [dbo].[int_orders] ([order_number], [order_date], [cust_id], [salesperson_id], [amount]) VALUES (70, CAST('1998-05-06' AS Date), 9, 7, 150);
+INSERT into [dbo].[int_orders] ([order_number], [order_date], [cust_id], [salesperson_id], [amount]) VALUES (20, CAST('1999-01-30' AS Date), 4, 8, 1800);
+
+from pyspark.sql.functions import col
+
+largest_orders_per_salesperson_df = (
+int_orders_df.alias("io1").join(int_orders_df.alias("io2"), (col("io1.salesperson_id") == col("io2.salesperson_id")) & (col("io1.amount") < col("io2.amount")),"left"))
+filtered_salesperson_df = (largest_orders_per_salesperson_df.filter(col("io2.amount").isNull()).selectExpr("io1.*"))
+filtered_salesperson_df.show()
+-------
+select o1.*, from int_orders o1 left join int_orders o2 on o1.salesperson_id = o2.salesperson_id and o1.amount < o2.amount where o2.amount is null;
+-----------
+
+For each Student and test, identify if their marks increased or decreased from the previous tests.
+
+CREATE TABLE [students](
+ [studentid] [int] NULL,
+ [studentname] [nvarchar](255) NULL,
+ [subject] [nvarchar](255) NULL,
+ [marks] [int] NULL,
+ [testid] [int] NULL,
+ [testdate] [date] NULL)
+insert into students values (2,'Max Ruin','Subject1',63,1,'2022-01-02');
+insert into students values (3,'Arnold','Subject1',95,1,'2022-01-02');
+insert into students values (4,'Krish Star','Subject1',61,1,'2022-01-02');
+insert into students values (5,'John Mike','Subject1',91,1,'2022-01-02');
+insert into students values (4,'Krish Star','Subject2',71,1,'2022-01-02');
+insert into students values (3,'Arnold','Subject2',32,1,'2022-01-02');
+insert into students values (5,'John Mike','Subject2',61,2,'2022-11-02');
+insert into students values (1,'John Deo','Subject2',60,1,'2022-01-02');
+insert into students values (2,'Max Ruin','Subject2',84,1,'2022-01-02');
+insert into students values (2,'Max Ruin','Subject3',29,3,'2022-01-03');
+insert into students values (5,'John Mike','Subject3',98,2,'2022-11-02');
+
+from pyspark.sql.functions import col,lag,when,lit
+from pyspark.sql import Window
+
+prev_test_marks_window = Window.partitonBy("studentid").orderBy("studentid","subject","testid")
+prev_marks_df = students_df.withColumn("prev_test_marks",lag(col("marks")).over(prev_test_marks_window))
+improvement_status_df = prev_marks_df.withColumn(
+"improvement_status", when(col("marks") > col("prev_test_marks"), lit("INCREASED"))
+.when(col("marks") < col("prev_test_marks"), lit("DECREASED")).otherwise(None)).sort("studentid")
+improvement_status_df.show()
+
+%sql
+with prev_test_marks_cte as (
+select *, lag(marks,1) over(partition by studentid order by studentid, subject, testid) as prev_test_marks from students )
+select studentid, studentname, subject, marks,testid, case when marks > prev_test_marks then 'Increased' else null end as improvement_status from prev_test_marks_cte;
+----------------------------------
+
+There are 3 rows in a movie hall each with 10 seats in each row. Write a SQL query to find 4 consecutive empty seats.
+
+create table movie (
+seat varchar(50),occupancy int);
+insert into movie values('a1',1),('a2',1),('a3',0),('a4',0),('a5',0),('a6',0),('a7',1),('a8',1),('a9',0),('a10',0),
+('b1',0),('b2',0),('b3',0),('b4',1),('b5',1),('b6',1),('b7',1),('b8',0),('b9',0),('b10',0),
+('c1',0),('c2',1),('c3',0),('c4',1),('c5',1),('c6',0),('c7',1),('c8',0),('c9',0),('c10',1);
+
+seat_alphabet_num_df = movie_df.withColumn("seat_alphabet", substring(col("seat"),0,1)).withColumn("seat"),2,2))
+
+row_num_window = Window.partitonBy("seat_alphabet").orderBy("seat_alphabet")
+
+seat_occupancy_filter_df = seat_alphabet_num_df.filter(col("occupancy") == 0)
+
+seat_num_grp_df = seat_occupancy_filter_df.withColumn("grp", (col("seat_num") - row_number().over(row_num_window).cast(IntegerType())).sort("seat_alphabet")
+
+seat_grp_count_df = seat_num_grp_df.withColumn("total_grp_count", count("seat").over(Window.partitonBy("seat_alphabet","grp")))
+
+final_seat_df = seat_grp_count_df.filter(col("total_grp_count") == 4).select("seat")
+
+final_seats_df.show()
+
+%sql
+with seat_alphabet_num as (
+select *, left(seat,1) as seat_alphabet, substring(seat,2,2) as seat_num from movie where occupancy = 0),
+seat_num_grp as (
+select *, seat_num-row_number() over(partiton by seat_alphabet order by seat_alphabet, seat_num) as grp from seat_alphabet_num)
+select seat from (
+select *, count(seat) over(partition by seat_alphabet,grp) as total_cnt form seat_num_grp) temp where total_cnt = 4;
+
+
+------------------------------------------------
+
+SCD 1
+
+from delta.tables import DeltaTable
+
+deltaTable = DeltaTable.forPath(spark, dim_path)
+deltaTable.alias("tgt").merge(df_updates.alias("src"), "tgt.CustomerID = src.CustomerID")
+.whenMatchedUpdate( set = {
+"Name" : F.col("src.Name"),
+"City" : F.col("src.City"),
+"SignUpdate" : F.col("src.SignUpdate") })
+.whenNotMatchedInsert( values = {
+"customerID" : F.col("src.Name"),
+"City" : F.col("src.City"),
+"SignUpDate" : F.col("src.SignUpDate") } ).execute()
+
+SCD2
+
+from pyspark.sql.functions import lit,expr,current_date
+
+deltaTable = DeltaTable.forPath(spark, dim_path)
+
+deltTable.update(
+condition = "true", set = {
+"StartDate" : F.col("SignUpdate"),
+"EndDate" : lit(None),
+"IsCurrent" : lit(None) })
+
+deltaTable.alias("tgt").merge(df_updates.alias("src"),
+"tgt.CustomerID = src.CustomerID and tgt.IsCurrent = true")
+.whenMatchedUpdated(conditon= "tgt.City <> src.City", set = {
+"EndateDate" : lit("2021-05-2025"),
+expr("date_sub(src.SignUpDate, 1)"), "IsCurrent" : lit(False) })
+.whenNotMatchedInsert(values = {
+"CustomerID " : F.col("src.CustomerID"),
+"Name" : F.col("src.Name"),
+"City" : F.col("src.City"),
+"SignUpDate" : F.col("src.SignUpDate"),
+"StartDate" : lit("2025-05-10"),
+"IsCurrent" : lit(True) }).execute()
+
+
+
+
+
+

@@ -1,0 +1,1722 @@
+Write a structured query that calculates the difference between consecutive running_total rows over time per department.
+
++----+----------+----------+-------------+
+|time|department|items_sold|running_total|
++----+----------+----------+-------------+
+|   1|        IT|        15|           15|
+|   2|   Support|        81|           81|
+|   3|   Support|        90|          171|
+|   4|   Support|        25|          196|
+|   5|        IT|        40|           55|
+|   6|        IT|        24|           79|
+|   7|   Support|        31|          227|
+|   8|   Support|         1|          228|
+|   9|        HR|        27|           27|
+|  10|        IT|        75|          154|
++----+----------+----------+-------------+
+
+with ranked_sales as (
+select time,department,items_sold,running_total,row_number() over(partition by department order by time) as row_num from your_table_name)
+select time,department,items_sold,running_total,running_total - lag(running_total) over (partition by department order by time) as difference from ranked_sales order by department,time;
+
+---Spark
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.functions._
+import org.apache.spark.sql.expression.Window
+
+val spark = SparkSession.builder().appName("RunningTotalDifference").getOrCreate()
+// Sample data
+val data = Seq(
+  (1, "IT", 15),
+  (2, "Support", 81),
+  (3, "Support", 90),
+  (4, "Support", 25),
+  (5, "IT", 40),
+  (6, "IT", 24),
+  (7, "Support", 31),
+  (8, "Support", 1),
+  (9, "HR", 27),
+  (10, "IT", 75)
+)
+
+val df = spark.createDataFrame(data).toDF("time", "department", "items_sold")
+
+val windowSpec = Window.partitionBy("department").orderBy("time")
+val runningtotalcolumn = sum("items_sold").over(windowSpec).alias("running_total")
+val runningtotaldf = df.withColumn("running_total", runningtotalcolumn)
+
+val differencecolumn = col("running_total") - lag("running_total",1).over(windowSpec).otherwise(lit(0))
+val resultDf = runnningtotaldf.withColumn("difference",differenceColumn)
+resultDf.show()
+
+------------------
+
+Write a structured query that shows the difference in salaries between the top-paid employee and others per department. In other words, we want to know how much more the highest-paid employee gets compared to other teammates.
+
+The exercise could also be described as "Calculating the gap between the current book and the bestseller per genre" (given the other exercise with book sales and bestsellers).
+
++---+-----------------+----------+------+
+| id|             name|department|salary|
++---+-----------------+----------+------+
+|  1|    Hunter Fields|        IT|    15|
+|  2|    Leonard Lewis|   Support|    81|
+|  3|     Jason Dawson|   Support|    90|
+|  4|      Andre Grant|   Support|    25|
+|  5|      Earl Walton|        IT|    40|
+|  6|      Alan Hanson|        IT|    24|
+|  7|   Clyde Matthews|   Support|    31|
+|  8|Josephine Leonard|   Support|     1|
+|  9|       Owen Boone|        HR|    27|
+| 10|      Max McBride|        IT|    75|
++---+-----------------+----------+------+
+
+with max_salaries as (
+select department,max(salary) as max_salary from you_table_name group by department)
+select e.id,e.name,e.department,e.salary,m.max_salary,m.max_salary - e.salary as salary_difference from your_table_name e join max_salaries m
+on e.department = m.department order by e.department,e.id;
+
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.functions._
+
+// Create SparkSession
+val spark = SparkSession.builder()
+  .appName("SalaryDifference")
+  .getOrCreate()
+
+// Sample data
+val data = Seq(
+  (1, "Hunter Fields", "IT", 15),
+  (2, "Leonard Lewis", "Support", 81),
+  (3, "Jason Dawson", "Support", 90),
+  (4, "Andre Grant", "Support", 25),
+  (5, "Earl Walton", "IT", 40),
+  (6, "Alan Hanson", "IT", 24),
+  (7, "Clyde Matthews", "Support", 31),
+  (8, "Josephine Leonard", "Support", 1),
+  (9, "Owen Boone", "HR", 27),
+  (10, "Max McBride", "IT", 75)
+)
+
+val df = spark.createDataFrame(data).toDF("id","name","department","salary")
+
+val maxSalaries = df.groupBy("department").agg(max("salary").alias("max_salary"))
+val resultDF = df.join(maxSalaries, seq("department"),"inner").\
+                        .withColumn("salary_difference", $"max_salary" - $"salary").orderBy("department","id")
+resultDF.show()
+
+----------------------------------
+
+Write a structured query (using spark-shell or Databricks Community Edition) that gives the 1st and 2nd bestsellers per genre.
+
++---+-----------------+--------+--------+
+| id|            title|   genre|quantity|
++---+-----------------+--------+--------+
+|  1|    Hunter Fields| romance|      15|
+|  2|    Leonard Lewis|thriller|      81|
+|  3|     Jason Dawson|thriller|      90|
+|  4|      Andre Grant|thriller|      25|
+|  5|      Earl Walton| romance|      40|
+|  6|      Alan Hanson| romance|      24|
+|  7|   Clyde Matthews|thriller|      31|
+|  8|Josephine Leonard|thriller|       1|
+|  9|       Owen Boone|  sci-fi|      27|
+| 10|      Max McBride| romance|      75|
++---+-----------------+--------+--------+
+
+WITH ranked_books AS (
+SELECT id, title, genre, quantity, ROW_NUMBER() OVER (PARTITION BY genre ORDER BY quantity DESC) AS rank FROM
+your_table_name -- Replace with your actual table name)
+
+SELECT id, title, genre, quantity FROM ranked_books WHERE rank <= 2;
+-------------
+// Import necessary Spark libraries
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.functions._
+import org.apache.spark.sql.expressions.Window
+
+// Create SparkSession
+val spark = SparkSession.builder()
+  .appName("BestsellersPerGenre")
+  .getOrCreate()
+
+// Sample data
+val data = Seq(
+  (1, "Hunter Fields", "romance", 15),
+  (2, "Leonard Lewis", "thriller", 81),
+  (3, "Jason Dawson", "thriller", 90),
+  (4, "Andre Grant", "thriller", 25),
+  (5, "Earl Walton", "romance", 40),
+  (6, "Alan Hanson", "romance", 24),
+  (7, "Clyde Matthews", "thriller", 31),
+  (8, "Josephine Leonard", "thriller", 1),
+  (9, "Owen Boone", "sci-fi", 27),
+  (10, "Max McBride", "romance", 75)
+)
+
+// Create DataFrame
+val df = spark.createDataFrame(data).toDF("id", "title", "genre", "quantity")
+
+// Define window specification
+val windowSpec = Window.partitionBy("genre").orderBy($"quantity".desc)
+
+// Rank the books within each genre based on quantity sold
+val rankedBooks = df.withColumn("rank", rank().over(windowSpec))
+
+// Filter the top 2 bestsellers per genre
+val top2Bestsellers = rankedBooks.filter($"rank" <= 2)
+
+// Display the result
+top2Bestsellers.show()
+
+
+----------------------------------------------
+
+Develop a standalone Spark SQL application (using IntelliJ IDEA) that finds the ids of the rows that have values of one column in an array column.
+
++---+------------------+-----+
+| id|             words| word|
++---+------------------+-----+
+|  1|     one,two,three|  one|
+|  2|     four,one,five|  six|
+|  3|seven,nine,one,two|eight|
+|  4|    two,three,five| five|
+|  5|      six,five,one|seven|
++---+------------------+-----+
+
+SELECT id FROM your_table_name WHERE FIND_IN_SET(word, words) > 0;
+SELECT id FROM your_table_name WHERE CONCAT(',', words, ',') LIKE CONCAT('%,', word, ',%');
+
+--------------
+import org.apache.spark.sql.SparkSession
+
+object Main {
+  def main(args: Array[String]): Unit = {
+    // Create SparkSession
+    val spark = SparkSession.builder()
+      .appName("FindRowsWithArrayColumn")
+      .master("local[*]") // Use "local[*]" for local testing
+      .getOrCreate()
+
+    // Import implicits for Spark SQL
+    import spark.implicits._
+
+    // Sample data
+    val data = Seq(
+      (1, "one,two,three", "one"),
+      (2, "four,one,five", "six"),
+      (3, "seven,nine,one,two", "eight"),
+      (4, "two,three,five", "five"),
+      (5, "six,five,one", "seven")
+    )
+
+    // Create DataFrame
+    val df = spark.createDataFrame(data).toDF("id", "words", "word")
+
+    // Convert words column to array
+    val dfWithArray = df.withColumn("words_array", split($"words", ","))
+
+    // Find rows where the word column is in the words_array column
+    val result = dfWithArray.filter(array_contains($"words_array", $"word"))
+      .select("id")
+
+    // Show result
+    result.show()
+
+    // Stop SparkSession
+    spark.stop()
+  }
+}
+
+-------------------------------------------
+
+Write a structured query (using spark-shell or Databricks Community Edition) that gives the most populated cities per country with the population.
+
++-----------------+-------------+----------+
+|             name|      country|population|
++-----------------+-------------+----------+
+|           Warsaw|       Poland| 1 764 615|
+|           Cracow|       Poland|   769 498|
+|            Paris|       France| 2 206 488|
+|Villeneuve-Loubet|       France|    15 020|
+|    Pittsburgh PA|United States|   302 407|
+|       Chicago IL|United States| 2 716 000|
+|     Milwaukee WI|United States|   595 351|
+|          Vilnius|    Lithuania|   580 020|
+|        Stockholm|       Sweden|   972 647|
+|         Goteborg|       Sweden|   580 020|
++-----------------+-------------+----------+
+
+WITH ranked_cities AS (
+  SELECT
+    name,
+    country,
+    population,
+    ROW_NUMBER() OVER (PARTITION BY country ORDER BY population DESC) AS rn
+  FROM
+    your_table_name -- Replace with your actual table name
+)
+
+SELECT
+  name,
+  country,
+  population
+FROM
+  ranked_cities
+WHERE
+  rn = 1;
+
+
+----------
+// Create DataFrame with sample data
+val df = Seq(
+  ("Warsaw", "Poland", "1 764 615"),
+  ("Cracow", "Poland", "769 498"),
+  ("Paris", "France", "2 206 488"),
+  ("Villeneuve-Loubet", "France", "15 020"),
+  ("Pittsburgh PA", "United States", "302 407"),
+  ("Chicago IL", "United States", "2 716 000"),
+  ("Milwaukee WI", "United States", "595 351"),
+  ("Vilnius", "Lithuania", "580 020"),
+  ("Stockholm", "Sweden", "972 647"),
+  ("Goteborg", "Sweden", "580 020")
+).toDF("name", "country", "population")
+
+// Convert population column to numeric type
+val dfWithPopulation = df.withColumn("population", regexp_replace($"population", " ", "").cast("long"))
+
+// Find the most populated cities per country
+val windowSpec = Window.partitionBy("country").orderBy($"population".desc)
+val mostPopulatedCities = dfWithPopulation.withColumn("rank", row_number().over(windowSpec))
+  .filter($"rank" === 1)
+  .drop("rank")
+
+// Display the result
+mostPopulatedCities.show()
+
+
+-------------------
+
+Write a structured query (using spark-shell or Databricks Community Edition) that adds a given number of days (from one column) to a date (from another column) and prints out the rows to the standard output.
+
++--------------+----------+
+|number_of_days|date      |
++--------------+----------+
+|0             |2016-01-1 |
+|1             |2016-02-2 |
+|2             |2016-03-22|
+|3             |2016-04-25|
+|4             |2016-05-21|
+|5             |2016-06-1 |
+|6             |2016-03-21|
++--------------+----------+
+SELECT number_of_days,date,DATE_ADD(date, number_of_days) AS new_date FROM your_table_name;
+-----
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.functions._
+
+// Create SparkSession
+val spark = SparkSession.builder()
+  .appName("AddDaysToDate")
+  .getOrCreate()
+
+// Sample data
+val data = Seq(
+  (0, "2016-01-01"),
+  (1, "2016-02-02"),
+  (2, "2016-03-22"),
+  (3, "2016-04-25"),
+  (4, "2016-05-21"),
+  (5, "2016-06-01"),
+  (6, "2016-03-21")
+)
+
+// Create DataFrame
+val df = spark.createDataFrame(data).toDF("number_of_days", "date")
+
+// Convert date column to DateType
+val dfWithDate = df.withColumn("date", to_date($"date"))
+
+// Add given number of days to the date
+val result = dfWithDate.withColumn("new_date", date_add($"date", $"number_of_days"))
+
+// Show result
+result.show()
+
+-----------------------------------------
+
+Write a structured query (using spark-shell or Databricks Community Edition) that computes multiple aggregations per group, i.e. the maximum and the minimum of id column per group.
+
++---+-----+
+| id|group|
++---+-----+
+|  0|    0|
+|  1|    1|
+|  2|    0|
+|  3|    1|
+|  4|    0|
++---+-----+
+
+SELECT `group`,MAX(id) AS max_id, MIN(id) AS min_id FROM your_table_name GROUP BY `group`;
+-----
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.functions._
+
+// Create SparkSession
+val spark = SparkSession.builder()
+  .appName("MultipleAggregations")
+  .getOrCreate()
+
+// Sample data
+val data = Seq(
+  (0, 0),
+  (1, 1),
+  (2, 0),
+  (3, 1),
+  (4, 0)
+)
+
+// Create DataFrame
+val df = spark.createDataFrame(data).toDF("id", "group")
+
+// Compute multiple aggregations per group
+val result = df.groupBy("group")
+  .agg(
+    max("id").alias("max_id"),
+    min("id").alias("min_id")
+  )
+
+// Show result
+result.show()
+
+-----------------------------------------
+
+Write a structured query (using spark-shell or Databricks Community Edition) that calculates cost average (part 1) and collects all the values in a column 
+
++---+----+----+------+----+
+| id|type|cost|  date|ship|
++---+----+----+------+----+
+|  0|   A| 223|201603|PORT|
+|  0|   A|  22|201602|PORT|
+|  0|   A| 422|201601|DOCK|
+|  1|   B|3213|201602|DOCK|
+|  1|   B|3213|201601|PORT|
+|  2|   C|2321|201601|DOCK|
++---+----+----+------+----+
+
+-- Calculate cost average per type
+SELECT type, AVG(cost) AS cost_average FROM your_table_name GROUP BY type;
+
+-- Collect all values in the ship column
+SELECT DISTINCT ship FROM your_table_name;
+
+
+---------
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.functions._
+
+// Create SparkSession
+val spark = SparkSession.builder()
+  .appName("CostAverageAndCollect")
+  .getOrCreate()
+
+// Sample data
+val data = Seq(
+  (0, "A", 223, "201603", "PORT"),
+  (0, "A", 22, "201602", "PORT"),
+  (0, "A", 422, "201601", "DOCK"),
+  (1, "B", 3213, "201602", "DOCK"),
+  (1, "B", 3213, "201601", "PORT"),
+  (2, "C", 2321, "201601", "DOCK")
+)
+
+// Create DataFrame
+val df = spark.createDataFrame(data).toDF("id", "type", "cost", "date", "ship")
+
+// Calculate cost average
+val costAverage = df.groupBy("type").agg(avg("cost").alias("cost_average"))
+
+// Collect all values in the ship column
+val collectedShipValues = df.select("ship").distinct().collect().map(_.getString(0))
+
+// Show cost average and collected ship values
+costAverage.show()
+println("Collected ship values: " + collectedShipValues.mkString(", "))
+
+
+---------------------------------------------
+
+Write a structured query that adds aggregations to the input dataset.
+
++---------------+--------------+--------------+-----+
+|        column0|       column1|       column2|label|
++---------------+--------------+--------------+-----+
+|05:49:56.604899|10.0.0.2.54880| 10.0.0.3.5001|    2|
+|05:49:56.604900|10.0.0.2.54880| 10.0.0.3.5001|    2|
+|05:49:56.604899|10.0.0.2.54880| 10.0.0.3.5001|    2|
+|05:49:56.604900|10.0.0.2.54880| 10.0.0.3.5001|    2|
+|05:49:56.604899|10.0.0.2.54880| 10.0.0.3.5001|    2|
+|05:49:56.604900|10.0.0.2.54880| 10.0.0.3.5001|    2|
+|05:49:56.604899|10.0.0.2.54880| 10.0.0.3.5001|    2|
+|05:49:56.604900|10.0.0.2.54880| 10.0.0.3.5001|    2|
+|05:49:56.604899|10.0.0.2.54880| 10.0.0.3.5001|    2|
+|05:49:56.604900|10.0.0.2.54880| 10.0.0.3.5001|    2|
+|05:49:56.604899|10.0.0.2.54880| 10.0.0.3.5001|    2|
+|05:49:56.604900|10.0.0.2.54880| 10.0.0.3.5001|    2|
+|05:49:56.604899|10.0.0.2.54880| 10.0.0.3.5001|    2|
+|05:49:56.604908| 10.0.0.3.5001|10.0.0.2.54880|    2|
+|05:49:56.604908| 10.0.0.3.5001|10.0.0.2.54880|    2|
+|05:49:56.604908| 10.0.0.3.5001|10.0.0.2.54880|    2|
+|05:49:56.604908| 10.0.0.3.5001|10.0.0.2.54880|    2|
+|05:49:56.604908| 10.0.0.3.5001|10.0.0.2.54880|    2|
+|05:49:56.604908| 10.0.0.3.5001|10.0.0.2.54880|    2|
+|05:49:56.604908| 10.0.0.3.5001|10.0.0.2.54880|    2|
++---------------+--------------+--------------+-----+
+
+SELECT
+    column1,
+    column2,
+    COUNT(*) AS count,
+    MAX(label) AS max_label,
+    MIN(label) AS min_label
+FROM
+    your_table_name
+GROUP BY
+    column1,
+    column2;
+
+------------------------------
+
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.functions._
+
+// Create SparkSession
+val spark = SparkSession.builder()
+  .appName("AggregateData")
+  .getOrCreate()
+
+// Sample data
+val data = Seq(
+  ("05:49:56.604899", "10.0.0.2.54880", "10.0.0.3.5001", 2),
+  ("05:49:56.604900", "10.0.0.2.54880", "10.0.0.3.5001", 2),
+  // Add more data here...
+)
+
+// Create DataFrame
+val df = spark.createDataFrame(data)
+  .toDF("column0", "column1", "column2", "label")
+
+// Aggregate data
+val aggregatedDF = df.groupBy("column1", "column2")
+  .agg(
+    count("*").alias("count"),
+    max("label").alias("max_label"),
+    min("label").alias("min_label")
+  )
+
+// Show result
+aggregatedDF.show()
+
+
+Write a structured query that "explodes" an array of structs (of open and close hours).
+
++-----------+--------------+----------------------------------------------------------------------------------------------------------------+
+|business_id|full_address  |hours                                                                                                           |
++-----------+--------------+----------------------------------------------------------------------------------------------------------------+
+|abc        |random_address|[[02:00, 11:00], [02:00, 11:00], [02:00, 11:00], [00:00, 11:00], [02:00, 11:00], [02:00, 11:00], [02:00, 11:00]]|
++-----------+--------------+----------------------------------------------------------------------------------------------------------------+
+
+SELECT
+    business_id,
+    full_address,
+    hours.open AS open_hour,
+    hours.close AS close_hour
+FROM
+    your_table_name
+LATERAL VIEW EXPLODE(hours) AS hours;
+
+-------
+
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.functions._
+
+// Create SparkSession
+val spark = SparkSession.builder()
+  .appName("ExplodeArrayStruct")
+  .getOrCreate()
+
+// Sample data
+val data = Seq(
+  ("abc", "random_address", Seq(("02:00", "11:00"), ("02:00", "11:00"), ("02:00", "11:00"), ("00:00", "11:00"), ("02:00", "11:00"), ("02:00", "11:00"), ("02:00", "11:00")))
+)
+
+// Create DataFrame
+val df = spark.createDataFrame(data)
+  .toDF("business_id", "full_address", "hours")
+
+// Explode the array of structs
+val explodedDF = df.withColumn("exploded_hours", explode($"hours"))
+  .select(
+    $"business_id",
+    $"full_address",
+    $"exploded_hours._1".alias("open_hour"),
+    $"exploded_hours._2".alias("close_hour")
+  )
+
+// Show result
+explodedDF.show(false)
+
+------------------------------
+
+Write a structured query that limits collect_set standard function.
+
++---+---+
+| id|key|
++---+---+
+|  0|  0|
+|  1|  1|
+|  2|  2|
+|  3|  3|
+|  4|  4|
+|  5|  0|
+|  6|  1|
+|  7|  2|
+|  8|  3|
+|  9|  4|
+| 10|  0|
+| 11|  1|
+| 12|  2|
+| 13|  3|
+| 14|  4|
+| 15|  0|
+| 16|  1|
+| 17|  2|
+| 18|  3|
+| 19|  4|
++---+---+
+SELECT
+    id,
+    collect_set(key) AS unique_keys
+FROM (
+    SELECT
+        id,
+        key
+    FROM
+        your_table_name
+    LIMIT 5 -- Limiting the number of rows to collect the set from
+) subquery
+GROUP BY
+    id;
+--------------
+
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.functions._
+
+// Create SparkSession
+val spark = SparkSession.builder()
+  .appName("LimitCollectSet")
+  .getOrCreate()
+
+// Sample data
+val data = Seq(
+  (0, 0),
+  (1, 1),
+  (2, 2),
+  (3, 3),
+  (4, 4),
+  (5, 0),
+  (6, 1),
+  (7, 2),
+  (8, 3),
+  (9, 4),
+  (10, 0),
+  (11, 1),
+  (12, 2),
+  (13, 3),
+  (14, 4),
+  (15, 0),
+  (16, 1),
+  (17, 2),
+  (18, 3),
+  (19, 4)
+)
+
+// Create DataFrame
+val df = spark.createDataFrame(data)
+  .toDF("id", "key")
+
+// Limit the number of rows
+val limitedDF = df.limit(5)
+
+// Apply collect_set function
+val result = limitedDF.groupBy("id")
+  .agg(collect_set("key").alias("unique_keys"))
+
+// Show result
+result.show(false)
+
+-----------------------------
+
+Write a structured query that "merges" two rows of the same id (to replace nulls).
+
++---+-----+----+--------+
+| id| name| age|    city|
++---+-----+----+--------+
+|100| John|  35|    null|
+|100| John|null| Georgia|
+|101| Mike|  25|    null|
+|101| Mike|null|New York|
+|103| Mary|  22|    null|
+|103| Mary|null|   Texas|
+|104|Smith|  25|    null|
+|105| Jake|null| Florida|
++---+-----+----+--------+
+
+SELECT
+    id,
+    COALESCE(MAX(name), MIN(name)) AS name,
+    COALESCE(MAX(age), MIN(age)) AS age,
+    COALESCE(MAX(city), MIN(city)) AS city
+FROM
+    your_table_name
+GROUP BY
+    id;
+
+-----------------
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.functions._
+
+// Create SparkSession
+val spark = SparkSession.builder()
+  .appName("MergeRows")
+  .getOrCreate()
+
+// Sample data
+val data = Seq(
+  (100, "John", Some(35), None),
+  (100, "John", None, Some("Georgia")),
+  (101, "Mike", Some(25), None),
+  (101, "Mike", None, Some("New York")),
+  (103, "Mary", Some(22), None),
+  (103, "Mary", None, Some("Texas")),
+  (104, "Smith", Some(25), None),
+  (105, "Jake", None, Some("Florida"))
+)
+
+// Create DataFrame
+val df = spark.createDataFrame(data)
+  .toDF("id", "name", "age", "city")
+
+// Group by id and aggregate other columns to replace nulls
+val result = df.groupBy("id", "name")
+  .agg(
+    coalesce(max("age"), min("age")).alias("age"),
+    coalesce(max("city"), min("city")).alias("city")
+  )
+
+// Show result
+result.show(false)
+
+----------------------------------
+
+Write a structured query that selects the most important rows per assigned priority.
+
++---+------+
+| id| value|
++---+------+
+|  1|   MV1|
+|  1|   MV2|
+|  2|   VPV|
+|  2|Others|
++---+------+
+
+SELECT id, value
+FROM (
+    SELECT 
+        id, 
+        value,
+        ROW_NUMBER() OVER (PARTITION BY id ORDER BY 
+                           CASE 
+                               WHEN value = 'MV1' THEN 1
+                               WHEN value = 'MV2' THEN 2
+                               WHEN value = 'VPV' THEN 3
+                               ELSE 4
+                           END) AS priority
+    FROM your_table_name
+) subquery
+WHERE priority = 1;
+----------
+
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.expressions.Window
+import org.apache.spark.sql.functions._
+
+// Create SparkSession
+val spark = SparkSession.builder()
+  .appName("SelectMostImportantRows")
+  .getOrCreate()
+
+// Sample data
+val data = Seq(
+  (1, "MV1"),
+  (1, "MV2"),
+  (2, "VPV"),
+  (2, "Others")
+)
+
+// Create DataFrame
+val df = spark.createDataFrame(data)
+  .toDF("id", "value")
+
+// Define window specification
+val windowSpec = Window.partitionBy("id").orderBy(
+  when(col("value") === "MV1", 1)
+    .when(col("value") === "MV2", 2)
+    .when(col("value") === "VPV", 3)
+    .otherwise(4)
+)
+
+// Select most important rows per assigned priority
+val result = df.withColumn("priority", row_number().over(windowSpec))
+  .filter(col("priority") === 1)
+  .drop("priority")
+
+// Show result
+result.show()
+
+
+-----------------------------
+
+Write a structured query that splits a column by using delimiters from another column.
+
++-------------------+---------+
+|             VALUES|Delimiter|
++-------------------+---------+
+|       50000.0#0#0#|        #|
+|          0@1000.0@|        @|
+|                 1$|        $|
+|1000.00^Test_string|        ^|
++-------------------+---------+
+
+SELECT VALUES, Delimiter, split(VALUES, Delimiter) AS split_values FROM your_table_name;
+-------------
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.functions._
+
+// Create SparkSession
+val spark = SparkSession.builder()
+  .appName("SplitColumnByDelimiter")
+  .getOrCreate()
+
+// Sample data
+val data = Seq(
+  ("50000.0#0#0#", "#"),
+  ("0@1000.0@", "@"),
+  ("1$", "$"),
+  ("1000.00^Test_string", "^")
+)
+
+// Create DataFrame
+val df = spark.createDataFrame(data)
+  .toDF("VALUES", "Delimiter")
+
+// Split column by delimiter
+val result = df.withColumn("split_values", split(col("VALUES"), col("Delimiter")))
+
+// Show result
+result.show(false)
+
+
+----------------------------
+
+Write a structured query that "transpose" a dataset so a new dataset uses column names and values from a struct column.
+
++------+--------------------------------------------------+
+|name  |movieRatings                                      |
++------+--------------------------------------------------+
+|Manuel|[[Logan, 1.5], [Zoolander, 3.0], [John Wick, 2.5]]|
+|John  |[[Logan, 2.0], [Zoolander, 3.5], [John Wick, 3.0]]|
++------+--------------------------------------------------+
+
+SELECT
+    name,
+    movieRating.movieName,
+    movieRating.rating
+FROM your_table_name
+CROSS APPLY (
+SELECT movieName, rating FROM TABLE(movieRatings)) movieRating;
+
+-----------
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.functions._
+
+// Create SparkSession
+val spark = SparkSession.builder()
+  .appName("TransposeDataset")
+  .getOrCreate()
+
+// Sample data
+val data = Seq(
+  ("Manuel", Seq(("Logan", 1.5), ("Zoolander", 3.0), ("John Wick", 2.5))),
+  ("John", Seq(("Logan", 2.0), ("Zoolander", 3.5), ("John Wick", 3.0)))
+)
+
+// Create DataFrame
+val df = spark.createDataFrame(data)
+  .toDF("name", "movieRatings")
+
+// Transpose the dataset
+val result = df.withColumn("movie", explode(col("movieRatings")))
+  .select($"name", $"movie._1".alias("movieName"), $"movie._2".alias("rating"))
+
+// Show result
+result.show(false)
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+SQL queries that are commonly asked during interviews:
+ 
+1. Retrieve the first 10 rows from a table:
+SELECT * FROM table_name LIMIT 10;
+ 
+2. Find the second highest salary from an Employee table:
+SELECT MAX(salary) FROM Employee WHERE salary < (SELECT MAX(salary) FROM Employee);
+ 
+ 
+3. List employees who joined in the last month:
+SELECT * FROM Employee WHERE JOIN_DATE >= DATEADD(MONTH, -1, GETDATE());
+ 
+ 
+4. Count the number of employees in each department:
+SELECT department, COUNT(*) AS num_employees
+FROM Employee
+GROUP BY department;
+ 
+ 
+5. Retrieve employees who have the highest salary in each department:
+SELECT department, MAX(salary) AS max_salary
+FROM Employee
+GROUP BY department;
+ 
+ 
+6. Find the nth highest salary from an Employee table:
+SELECT DISTINCT salary FROM Employee ORDER BY salary DESC LIMIT n-1, 1;
+ 
+7. List employees who don't have a manager:
+SELECT * FROM Employee WHERE manager_id IS NULL;
+ 
+ 
+8. Retrieve employees who earn more than their managers:
+SELECT e.*
+FROM Employee e
+JOIN Employee m ON e.manager_id = m.employee_id
+WHERE e.salary > m.salary;
+ 
+ 
+9. Find duplicate records in a table:
+SELECT column1, column2, COUNT(*)
+FROM table_name
+GROUP BY column1, column2
+HAVING COUNT(*) > 1;
+ 
+10. Calculate the total sales for each product:
+SELECT product_id, SUM(quantity * price) AS total_sales
+FROM Sales
+GROUP BY product_id;
+
+11. Retrieve the top 5 customers with the highest total purchase amount:
+SELECT customer_id, SUM(amount) AS total_purchase_amount
+FROM Orders
+GROUP BY customer_id
+ORDER BY total_purchase_amount DESC
+LIMIT 5;
+ 
+ 
+12. List the names of all customers who have made at least 3 orders:
+SELECT customer_name
+FROM Customers
+WHERE customer_id IN (
+ SELECT customer_id
+ FROM Orders
+ GROUP BY customer_id
+ HAVING COUNT(*) >= 3);
+ 
+ 
+13. Calculate the average salary of employees in each department:
+SELECT department, AVG(salary) AS average_salary
+FROM Employee
+GROUP BY department;
+ 
+ 
+14. Find the most common word in a text column:
+SELECT word, COUNT(*) AS word_count
+FROM (
+ SELECT regexp_split_to_table(text_column, '\s+') AS word
+ FROM table_name
+) AS words
+GROUP BY word
+ORDER BY word_count DESC
+LIMIT 1;
+ 
+15. Retrieve the oldest and newest employees in each department:
+SELECT
+ department,
+ MIN(hire_date) AS oldest_employee_hire_date,
+ MAX(hire_date) AS newest_employee_hire_date
+FROM
+ Employee
+GROUP BY
+ department;
+ 
+ 
+16. List the top 3 best-selling products in each category:
+SELECT category, product_name, total_sales
+FROM (
+ SELECT category, product_name, SUM(quantity_sold) AS total_sales,
+ ROW_NUMBER() OVER (PARTITION BY category ORDER BY SUM(quantity_sold) DESC) AS rank
+ FROM Products
+ GROUP BY category, product_name
+) AS ranked_products
+WHERE rank <= 3;
+ 
+ 
+17. Calculate the percentage of total sales contributed by each product:
+SELECT product_id, (SUM(sales_amount) / (SELECT SUM(sales_amount) FROM Sales)) * 100 AS sales_percentage
+FROM Sales
+GROUP BY product_id;
+ 
+ 
+18. Find employees who have the same salary as their colleagues:
+SELECT
+ e1.employee_id,
+ e1.employee_name,
+ e1.salary
+FROM
+ Employee e1
+JOIN
+ Employee e2 ON e1.salary = e2.salary
+ AND e1.employee_id <> e2.employee_id
+ AND e1.department = e2.department
+WHERE
+ e1.employee_id < e2.employee_id;
+ 
+ 
+19. List the employees who have been with the company for more than 5 years:
+SELECT * FROM Employee WHERE DATEDIFF(YEAR, join_date, GETDATE()) > 5;
+ 
+20. Retrieve orders that have not been shipped yet:
+SELECT * FROM Orders WHERE ship_date IS NULL;
+
+21. Calculate the total number of orders placed each month:
+SELECT EXTRACT(MONTH FROM order_date) AS month, COUNT(*) AS num_orders
+FROM Orders
+GROUP BY EXTRACT(MONTH FROM order_date);
+ 
+ 
+22. Find the customer who has placed the highest number of orders:
+SELECT customer_id, COUNT(*) AS num_orders
+FROM Orders
+GROUP BY customer_id
+ORDER BY num_orders DESC
+LIMIT 1;
+ 
+ 
+23. Retrieve the top 10% of highest-paid employees:
+SELECT *
+FROM Employee
+ORDER BY salary DESC
+LIMIT (SELECT COUNT(*) * 0.1 FROM Employee);
+ 
+ 
+24. List employees who have the same manager:
+SELECT e1.employee_id, e1.employee_name, e1.manager_id
+FROM Employee e1
+JOIN Employee e2 ON e1.manager_id = e2.manager_id AND e1.employee_id <> e2.employee_id;
+ 
+ 
+25. Calculate the running total of sales for each month:
+SELECT order_date, SUM(amount) OVER (ORDER BY order_date) AS running_total
+FROM Orders;
+ 
+ 
+26. Retrieve the latest order placed by each customer:
+SELECT DISTINCT ON (customer_id) *
+FROM Orders
+ORDER BY customer_id, order_date DESC;
+ 
+27. Find customers who have never placed an order:
+SELECT *
+FROM Customers
+WHERE customer_id NOT IN (SELECT DISTINCT customer_id FROM Orders);
+ 
+ 
+28. List the products that have never been sold:
+SELECT *
+FROM Products
+WHERE product_id NOT IN (SELECT DISTINCT product_id FROM Sales);
+ 
+ 
+29. Retrieve the average time taken to ship orders for each shipping method:
+SELECT shipping_method, AVG(DATEDIFF(DAY, order_date, ship_date)) AS avg_shipping_time
+FROM Orders
+GROUP BY shipping_method;
+ 
+ 
+30. Find the total number of unique customers who made purchases in each year:
+SELECT EXTRACT(YEAR FROM order_date) AS year, COUNT(DISTINCT customer_id) AS num_customers
+FROM Orders
+GROUP BY EXTRACT(YEAR FROM order_date);
+
+31. Retrieve the top 3 highest-paid employees in each department:
+SELECT department, employee_name, salary
+FROM (
+ SELECT department, employee_name, salary,
+ ROW_NUMBER() OVER (PARTITION BY department ORDER BY salary DESC) AS rank
+ FROM Employee
+) AS ranked_employees
+WHERE rank <= 3;
+ 
+32. Find the average salary difference between employees and their managers:
+SELECT AVG(e.salary - m.salary) AS avg_salary_difference
+FROM Employee e
+JOIN Employee m ON e.manager_id = m.employee_id;
+ 
+33. List customers who have spent more than the average total amount spent by all customers:
+SELECT customer_id, SUM(amount) AS total_spent
+FROM Orders
+GROUP BY customer_id
+HAVING SUM(amount) > (SELECT AVG(total_amount) FROM (SELECT SUM(amount) AS total_amount FROM Orders GROUP BY customer_id) AS avg_amount);
+ 
+34. Retrieve the top 5 categories with the highest average sales amount:
+SELECT category, AVG(amount) AS avg_sales_amount
+FROM Products
+GROUP BY category
+ORDER BY avg_sales_amount DESC
+LIMIT 5;
+ 
+35. Calculate the median salary of employees:
+SELECT AVG(salary) AS median_salary
+FROM (
+ SELECT salary, ROW_NUMBER() OVER (ORDER BY salary) AS row_num,
+ COUNT(*) OVER () AS total_rows
+ FROM Employee
+) AS salary_data
+WHERE row_num IN ((total_rows + 1) / 2, (total_rows + 2) / 2);
+ 
+36. Find the employees who have never been managers:
+SELECT *
+FROM Employee
+WHERE employee_id NOT IN (SELECT DISTINCT manager_id FROM Employee WHERE manager_id IS NOT NULL);
+ 
+37. Retrieve the top 3 most recent orders for each customer:
+SELECT customer_id, order_id, order_date
+FROM (
+ SELECT customer_id, order_id, order_date,
+ ROW_NUMBER() OVER (PARTITION BY customer_id ORDER BY order_date DESC) AS rank
+ FROM Orders
+) AS ranked_orders
+WHERE rank <= 3;
+ 
+38. List the customers who have placed orders in all categories:
+SELECT customer_id
+FROM Orders
+GROUP BY customer_id
+HAVING COUNT(DISTINCT category_id) = (SELECT COUNT(DISTINCT category_id) FROM Products);
+ 
+39. Calculate the percentage of null values in each column of a table:
+SELECT column_name,
+ (COUNT(*) - COUNT(column_name)) / COUNT(*) * 100 AS null_percentage
+FROM table_name
+GROUP BY column_name;
+ 
+40. Find the products that have been sold every month for the past year:
+SELECT product_id
+FROM Sales
+GROUP BY product_id
+HAVING COUNT(DISTINCT EXTRACT(MONTH FROM sale_date)) = 12;
+ 
+41. Retrieve the most recent order for each product:
+SELECT product_id, MAX(order_date) AS recent_order_date
+FROM Orders
+GROUP BY product_id;
+ 
+42. Find the total number of orders and the average order amount for each customer:
+SELECT customer_id, COUNT(*) AS total_orders, AVG(amount) AS avg_order_amount
+FROM Orders
+GROUP BY customer_id;
+ 
+43. List the products that have been sold more than 100 times:
+SELECT product_id
+FROM Sales
+GROUP BY product_id
+HAVING COUNT(*) > 100;
+ 
+44. Retrieve the email addresses of customers who have not made any purchases:
+SELECT email
+FROM Customers
+WHERE customer_id NOT IN (SELECT DISTINCT customer_id FROM Orders);
+ 
+45. Calculate the total number of days each product has been in stock:
+SELECT product_id, DATEDIFF(DAY, MIN(stock_date), MAX(stock_date)) AS total_days_in_stock
+FROM Stock
+GROUP BY product_id;
+ 
+46.Find the departments with the highest and lowest average employee salaries:
+Highest average
+SELECT department, AVG(salary) AS avg_salary
+FROM Employee
+GROUP BY department
+ORDER BY avg_salary DESC
+LIMIT 1;
+ 
+lowest average
+SELECT department, AVG(salary) AS avg_salary
+FROM Employee
+GROUP BY department
+ORDER BY avg_salary Asc
+LIMIT 1;
+ 
+47. List the customers who have made purchases in all months of the year:
+SELECT customer_id
+FROM Orders
+GROUP BY customer_id
+HAVING COUNT(DISTINCT EXTRACT(MONTH FROM order_date)) = 12;
+ 
+48. Calculate the difference in sales between the current year and the previous year for each product:
+SELECT product_id,
+ SUM(CASE WHEN EXTRACT(YEAR FROM sale_date) = EXTRACT(YEAR FROM CURRENT_DATE) THEN amount ELSE 0 END) -
+ SUM(CASE WHEN EXTRACT(YEAR FROM sale_date) = EXTRACT(YEAR FROM CURRENT_DATE) - 1 THEN amount ELSE 0 END) AS sales_difference
+FROM Sales
+GROUP BY product_id;
+ 
+49. Retrieve the employees who have joined in the last quarter:
+SELECT *
+FROM Employee
+WHERE JOIN_DATE >= DATEADD(QUARTER, -1, GETDATE());
+ 
+50. List the products that have never been out of stock:
+SELECT product_id
+FROM Products
+WHERE product_id NOT IN (SELECT DISTINCT product_id FROM Stock WHERE stock_quantity = 0);
+
+51. Retrieve the average number of days between orders for each customer:
+SELECT customer_id, AVG(DATEDIFF(day, LAG(order_date) OVER(PARTITION BY customer_id ORDER BY order_date), order_date)) AS avg_days_between_orders
+FROM Orders
+GROUP BY customer_id;
+ 
+52. Find the customers who have placed orders on consecutive days:
+SELECT DISTINCT o1.customer_id
+FROM Orders o1
+JOIN Orders o2 ON o1.customer_id = o2.customer_id
+WHERE DATEDIFF(day, o1.order_date, o2.order_date) = 1;
+ 
+53. Calculate the total revenue generated from each product category:
+SELECT p.category_id, SUM(o.amount) AS total_revenue
+FROM Orders o
+JOIN Products p ON o.product_id = p.product_id
+GROUP BY p.category_id;
+ 
+54. Retrieve the top 3 most profitable products based on total revenue:
+SELECT product_id, SUM(amount) AS total_revenue
+FROM Orders
+GROUP BY product_id
+ORDER BY total_revenue DESCLIMIT 3;
+ 
+55. Find the number of employees in each salary range (e.g., 0-50000, 50001-100000, etc.):
+SELECT CONCAT(FLOOR(salary/50000)*50000 + 1, '-', FLOOR(salary/50000)*50000 + 50000) AS salary_range, COUNT(*) AS num_employees
+FROM Employee
+GROUP BY FLOOR(salary/50000);
+ 
+56. Retrieve the top 5 most frequent words from a text column:
+SELECT word, COUNT(*) AS frequency
+FROM (
+ SELECT regexp_split_to_table(text_column, '\s+') AS word
+ FROM table_name
+) AS words
+GROUP BY word
+ORDER BY frequency DESC
+LIMIT 5;
+ 
+57. Calculate the percentage change in sales amount compared to the previous month for each product:
+SELECT product_id,
+ (SUM(amount) - LAG(SUM(amount)) OVER(PARTITION BY product_id ORDER BY EXTRACT(YEAR_MONTH FROM sale_date))) / LAG(SUM(amount)) OVER(PARTITION BY product_id ORDER BY EXTRACT(YEAR_MONTH FROM sale_date)) * 100 AS percentage_change
+FROM Sales
+GROUP BY product_id;
+ 
+58. List the customers who have placed orders for all products:
+SELECT customer_id
+FROM Orders
+GROUP BY customer_id
+HAVING COUNT(DISTINCT product_id) = (SELECT COUNT(*) FROM Products);
+ 
+59. Retrieve the orders placed by customers who have not logged in to the system in the last 30 days:
+SELECT *
+FROM Orders
+WHERE customer_id IN (
+ SELECT customer_id
+ FROM Customers
+ WHERE last_login_date <= DATEADD(day, -30, GETDATE()));
+ 
+60. Find the average number of products sold per order:
+SELECT AVG(num_products) AS avg_products_per_order
+FROM (
+ SELECT order_id, COUNT(*) AS num_products
+ FROM OrderDetails
+ GROUP BY order_id
+) AS order_products;
+
+61. Retrieve the customers who have made purchases on weekdays only:
+SELECT customer_id
+FROM Orders
+GROUP BY customer_id
+HAVING COUNT(DISTINCT CASE WHEN EXTRACT(ISODOW FROM order_date) < 6 THEN EXTRACT(ISODOW FROM order_date) END) = COUNT(DISTINCT EXTRACT(ISODOW FROM order_date));
+ 
+62. Find the average time taken to ship orders for each product category:
+SELECT p.category_id, AVG(DATEDIFF(day, order_date, ship_date)) AS avg_shipping_time
+FROM Orders o
+JOIN Products p ON o.product_id = p.product_id
+GROUP BY p.category_id;
+ 
+63. Retrieve the customers who have placed orders for more than 10 unique products in a single order:
+SELECT customer_id, order_id
+FROM (
+ SELECT customer_id, order_id, COUNT(DISTINCT product_id) AS unique_products
+ FROM OrderDetails
+ GROUP BY customer_id, order_id
+) AS order_products
+WHERE unique_products > 10;
+ 
+64. Calculate the total sales for each product category in the last quarter:
+SELECT p.category_id, SUM(o.amount) AS total_sales_last_quarter
+FROM Orders o
+JOIN Products p ON o.product_id = p.product_id
+WHERE order_date >= DATEADD(QUARTER, -1, GETDATE())
+GROUP BY p.category_id;
+ 
+65. List the employees who have worked in multiple departments:
+SELECT employee_id, employee_name
+FROM (
+ SELECT employee_id, employee_name, COUNT(DISTINCT department_id) AS num_departments
+ FROM Employee_Departments
+ GROUP BY employee_id, employee_name
+) AS multi_department_employees
+WHERE num_departments > 1;
+ 
+66. Retrieve the orders with the highest and lowest order amounts:
+SELECT * FROM Orders WHERE amount = (SELECT MAX(amount) FROM Orders)
+UNION
+SELECT * FROM Orders WHERE amount = (SELECT MIN(amount) FROM Orders);
+ 
+67.Find the top 3 most common pairs of products bought together:
+SELECT product_id1, product_id2, COUNT(*) AS pair_count
+FROM (
+ SELECT od1.product_id AS product_id1, od2.product_id AS product_id2
+ FROM OrderDetails od1
+ JOIN OrderDetails od2 ON od1.order_id = od2.order_id AND od1.product_id < od2.product_id
+) AS product_pairs
+GROUP BY product_id1, product_id2
+ORDER BY pair_count DESC
+LIMIT 3;
+ 
+68. Calculate the percentage of total orders for each product category:
+SELECT p.category_id, COUNT(o.order_id) * 100.0 / (SELECT COUNT(*) FROM Orders) AS percentage_total_orders
+FROM Orders o
+JOIN Products p ON o.product_id = p.product_id
+GROUP BY p.category_id;
+ 
+69. Retrieve the customers who have made purchases on weekends only:
+SELECT customer_id
+FROM Orders
+GROUP BY customer_id
+HAVING COUNT(DISTINCT CASE WHEN EXTRACT(ISODOW FROM order_date) > 5 THEN EXTRACT(ISODOW FROM order_date) END) = COUNT(DISTINCT EXTRACT(ISODOW FROM order_date)));
+
+71. Retrieve the customers who have made purchases of at least three different products in each category:
+SELECT customer_id
+FROM (SELECT customer_id, category_id, COUNT(DISTINCT product_id) AS num_products FROM Orders o
+ JOIN Products p ON o.product_id = p.product_id
+ GROUP BY customer_id, category_id
+) AS customer_products_per_category
+GROUP BY customer_id
+HAVING COUNT(*) = (SELECT COUNT(*) FROM Categories);
+ 
+72.Find the top 3 most common words in a text column excluding common stop words ("and", "the", "is", etc.):
+SELECT word, COUNT(*) AS frequency
+FROM (
+ SELECT regexp_split_to_table(LOWER(text_column), '\s+') AS word
+ FROM table_name
+) AS words
+WHERE word NOT IN ('and', 'the', 'is', 'of', 'a', 'to', 'in', 'it')
+GROUP BY word
+ORDER BY frequency DESC
+LIMIT 3;
+ 
+73. Calculate the average number of orders per month for each customer:
+SELECT customer_id, AVG(num_orders) AS avg_orders_per_month
+FROM (
+ SELECT customer_id, EXTRACT(MONTH FROM order_date) AS month, COUNT(*) AS num_orders
+ FROM Orders
+ GROUP BY customer_id, EXTRACT(MONTH FROM order_date)
+) AS monthly_orders
+GROUP BY customer_id;
+ 
+74. Retrieve the products that have been out of stock for the longest continuous period:
+SELECT product_id, MIN(stock_date) AS start_date, MAX(stock_date) AS end_date,
+ DATEDIFF(DAY, MIN(stock_date), MAX(stock_date)) AS days_out_of_stock
+FROM (
+ SELECT product_id, stock_date,
+ ROW_NUMBER() OVER (PARTITION BY product_id ORDER BY stock_date) -
+ ROW_NUMBER() OVER (PARTITION BY product_id, stock_quantity ORDER BY stock_date) AS grp
+ FROM Stock
+) AS stock_groups
+WHERE stock_quantity = 0
+GROUP BY product_id, grp
+ORDER BY days_out_of_stock DESC
+LIMIT 1;
+ 
+75. List the employees who have worked in all departments:
+SELECT employee_id
+FROM (
+ SELECT employee_id, COUNT(DISTINCT department_id) AS num_departments
+ FROM Employee_Departments
+ GROUP BY employee_id
+) AS employee_department_counts
+GROUP BY employee_id
+HAVING COUNT(*) = (SELECT COUNT(*) FROM Departments);
+ 
+76.Retrieve the products that have experienced a decrease in sales amount for each consecutive month for the last three months:
+SELECT product_id
+FROM (
+ SELECT product_id,
+ ROW_NUMBER() OVER (PARTITION BY product_id ORDER BY sale_date) AS rn,
+ SUM(amount) AS total_amount
+ FROM Sales
+ GROUP BY product_id, EXTRACT(YEAR_MONTH FROM sale_date)
+) AS sales_per_month
+WHERE rn <= 3
+GROUP BY product_id
+HAVING COUNT(*) = 3 AND total_amount = MAX(total_amount);
+ 
+77. Find the average length of time between orders for each customer:
+SELECT customer_id, AVG(DATEDIFF(day, LAG(order_date) OVER(PARTITION BY customer_id ORDER BY order_date), order_date)) AS avg_time_between_orders
+FROM Orders
+GROUP BY customer_id;
+
+81. Retrieve the customers who have made purchases of all products within a specific category:
+SELECT customer_id
+FROM (
+ SELECT o.customer_id, p.category_id, COUNT(DISTINCT o.product_id) AS num_products
+ FROM Orders o
+ JOIN Products p ON o.product_id = p.product_id
+ GROUP BY o.customer_id, p.category_id
+) AS customer_product_count
+GROUP BY customer_id HAVING COUNT(*) = (SELECT COUNT(DISTINCT product_id) FROM Products);
+ 
+82. Find the top 3 most popular product categories based on the total number of orders:
+SELECT p.category_id, COUNT(o.order_id) AS num_orders FROM Orders o
+JOIN Products p ON o.product_id = p.product_id
+GROUP BY p.category_id ORDER BY num_orders DESC LIMIT 3;
+ 
+83. Retrieve the orders with the highest and lowest total order amounts within each product category:
+WITH ranked_orders AS (SELECT *,
+ RANK() OVER (PARTITION BY category_id ORDER BY order_amount DESC) AS rank_highest,
+ RANK() OVER (PARTITION BY category_id ORDER BY order_amount ASC) AS rank_lowest
+ FROM (
+ SELECT o.order_id, o.product_id, p.category_id, SUM(o.amount) AS order_amount
+ FROM Orders o
+ JOIN Products p ON o.product_id = p.product_id
+ GROUP BY o.order_id, o.product_id, p.category_id
+ ) AS order_amounts
+)SELECT * FROM ranked_orders WHERE rank_highest = 1 OR rank_lowest = 1;
+ 
+84. List the customers who have made purchases in all product categories:
+SELECT customer_id FROM Orders GROUP BY customer_id
+HAVING COUNT(DISTINCT category_id) = (SELECT COUNT(DISTINCT category_id) FROM Products);
+ 
+85. Calculate the percentage of total orders for each customer:
+SELECT customer_id, (COUNT(order_id) * 100.0 / (SELECT COUNT(*) FROM Orders)) AS percentage_of_total_orders
+FROM Orders GROUP BY customer_id;
+ 
+86. Find the employees who have not been assigned to any department:
+SELECT employee_id, employee_name FROM Employee
+WHERE employee_id NOT IN (SELECT DISTINCT employee_id FROM Employee_Departments);
+ 
+87. Retrieve the orders with the highest and lowest total order quantities within each product category:
+WITH ranked_orders AS (SELECT *,
+ RANK() OVER (PARTITION BY category_id ORDER BY total_quantity DESC) AS rank_highest,
+ RANK() OVER (PARTITION BY category_id ORDER BY total_quantity ASC) AS rank_lowest
+ FROM (SELECT o.order_id, p.category_id, SUM(od.quantity) AS total_quantity
+ FROM Orders o JOIN OrderDetails od ON o.order_id = od.order_id
+ JOIN Products p ON od.product_id = p.product_id
+ GROUP BY o.order_id, p.category_id
+ ) AS order_quantities
+)SELECT * FROM ranked_orders WHERE rank_highest = 1 OR rank_lowest = 1;
+ 
+88. List the customers who have made purchases on both weekdays and weekends:
+SELECT customer_id FROM Orders GROUP BY customer_id
+HAVING COUNT(DISTINCT CASE WHEN EXTRACT(ISODOW FROM order_date) <= 5 THEN 'weekday' ELSE 'weekend' END) = 2;
+ 
+91. Retrieve the top 5 customers with the highest average order amounts:
+SELECT customer_id, AVG(amount) AS avg_order_amount
+FROM Orders
+GROUP BY customer_id
+ORDER BY avg_order_amount DESC
+LIMIT 5;
+ 
+92. Find the top 3 most frequent combinations of products bought together (pairs):
+SELECT product1, product2, COUNT(*) AS frequency
+FROM (
+ SELECT od1.product_id AS product1, od2.product_id AS product2
+ FROM OrderDetails od1
+ JOIN OrderDetails od2 ON od1.order_id = od2.order_id AND od1.product_id < od2.product_id
+) AS product_pairs
+GROUP BY product1, product2
+ORDER BY frequency DESC
+LIMIT 3;
+ 
+93. List the customers who have made purchases in every month of a given year:
+SELECT customer_id
+FROM Orders
+WHERE EXTRACT(YEAR FROM order_date) = 2024
+GROUP BY customer_id
+HAVING COUNT(DISTINCT EXTRACT(MONTH FROM order_date)) = 12;
+ 
+94. Retrieve the top 5 most profitable months based on total sales amount:
+SELECT EXTRACT(MONTH FROM order_date) AS month, SUM(amount) AS total_sales_amount
+FROM Orders
+GROUP BY EXTRACT(MONTH FROM order_date)
+ORDER BY total_sales_amount DESC
+LIMIT 5;
+ 
+95.Find the customers who have placed orders on the same day they registered as customers:
+SELECT c.customer_id, c.customer_name
+FROM Customers c
+JOIN Orders o ON c.customer_id = o.customer_id
+WHERE DATE_TRUNC('day', c.registration_date) = DATE_TRUNC('day', o.order_date);
+ 
+96. Retrieve the orders with the highest and lowest total order amounts for each month:
+WITH monthly_orders AS (
+ SELECT order_id, EXTRACT(MONTH FROM order_date) AS month, SUM(amount) AS total_amount
+ FROM Orders
+ GROUP BY order_id, EXTRACT(MONTH FROM order_date)
+)
+SELECT *
+FROM (
+ SELECT *, RANK() OVER (PARTITION BY month ORDER BY total_amount DESC) AS rank_highest
+ FROM monthly_orders
+) AS highest_orders
+WHERE rank_highest = 1
+UNION
+SELECT *
+FROM (
+ SELECT *, RANK() OVER (PARTITION BY month ORDER BY total_amount ASC) AS rank_lowest
+ FROM monthly_orders
+) AS lowest_orders
+WHERE rank_lowest = 1;
+ 
+97. List the products that have been sold at least once every month for the past year:
+SELECT product_id
+FROM (
+ SELECT product_id, EXTRACT(YEAR_MONTH FROM sale_date) AS sale_month
+ FROM Sales
+ GROUP BY product_id, EXTRACT(YEAR_MONTH FROM sale_date)
+ HAVING COUNT(DISTINCT EXTRACT(MONTH FROM sale_date)) = 12
+) AS monthly_sales
+GROUP BY product_id
+HAVING COUNT(*) = 12;
+ 
+98. Retrieve the customers who have made purchases of all products with a specific attribute (e.g., color, size):
+SELECT customer_id
+FROM (
+ SELECT customer_id, attribute
+ FROM Orders o
+ JOIN Products p ON o.product_id = p.product_id
+ WHERE p.attribute = 'color' -- Specify the attribute here
+ GROUP BY customer_id, attribute
+) AS customer_product_count
+GROUP BY customer_id
+HAVING COUNT(*) = (SELECT COUNT(*) FROM Products WHERE attribute = 'color'); -- Specify the attribute here
+
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+𝗣𝗿𝗼𝗯𝗹𝗲𝗺 𝗦𝘁𝗮𝘁𝗲𝗺𝗲𝗻𝘁: 𝖶𝗋𝗂𝗍𝖾 𝖺𝗇 𝖲𝖰𝖫 𝗊𝗎𝖾𝗋𝗒 𝗍𝗈 𝗌𝗁𝗈𝗐 𝗍𝗁𝖾 𝗌𝖾𝖼𝗈𝗇𝖽 𝗆𝗈𝗌𝗍 𝗋𝖾𝖼𝖾𝗇𝗍 𝖺𝖼𝗍𝗂𝗏𝗂𝗍𝗒 𝗈𝖿 𝖾𝖺𝖼𝗁 𝗎𝗌𝖾𝗋. 𝖨𝖿 𝗍𝗁𝖾 𝗎𝗌𝖾𝗋 𝗈𝗇𝗅𝗒 𝗁𝖺𝗌 𝗈𝗇𝖾 𝖺𝖼𝗍𝗂𝗏𝗂𝗍𝗒, 𝗋𝖾𝗍𝗎𝗋𝗇 𝗍𝗁𝖺𝗍 𝗈𝗇𝖾. 𝖠 𝗎𝗌𝖾𝗋 𝖼𝖺𝗇'𝗍 𝗉𝖾𝗋𝖿𝗈𝗋𝗆 𝗆𝗈𝗋𝖾 𝗍𝗁𝖺𝗇 𝗈𝗇𝖾 𝖺𝖼𝗍𝗂𝗏𝗂𝗍𝗒 𝖺𝗍 𝗍𝗁𝖾 𝗌𝖺𝗆𝖾 𝗍𝗂𝗆𝖾. 𝖱𝖾𝗍𝗎𝗋𝗇 𝗍𝗁𝖾 𝗋𝖾𝗌𝗎𝗅𝗍 𝗍𝖺𝖻𝗅𝖾 𝗂𝗇 𝖺𝗇𝗒 𝗈𝗋𝖽𝖾𝗋.
+
+drop table if exists UserActivity;
+create table UserActivity (username varchar(10) , activity varchar(10) , startDate date , endDate date);
+insert into UserActivity values ('Alice' , 'Travel' , '2020-02-12' , '2020-02-20');
+insert into UserActivity values ('Alice' , 'Dancing' , '2020-02-21' , '2020-02-23');
+insert into UserActivity values ('Alice' , 'Travel' , '2020-02-24' , '2020-02-28');
+insert into UserActivity values ('Bob' , 'Travel' , '2020-02-11' , '2020-02-18');
+
+with X as(
+select *, count(*) over (partition by username) as activity_count, dense_rank() over(partition by username order by startdate) as rnk from useractivity)
+select username,activity,startdate,enddate from X where (activity_count > 1 and rnk = 2) or (activity_count = 1);
+
+
+----------------------------------------------------------------------------------------------------------------
+𝗣𝗿𝗼𝗯𝗹𝗲𝗺 𝗦𝘁𝗮𝘁𝗲𝗺𝗲𝗻𝘁: 𝖶𝗋𝗂𝗍𝖾 𝖺 𝖲𝖰𝖫 𝗊𝗎𝖾𝗋𝗒 𝗍𝗈 𝖿𝗂𝗇𝖽 𝗈𝗎𝗍 𝗍𝗁𝖾 𝖿𝗂𝗋𝗌𝗍 𝖽𝖺𝗍𝖾 𝗐𝗁𝖾𝗇 𝗍𝗁𝖾 𝗐𝗈𝗋𝗄 𝗐𝖺𝗌 𝖺𝗌𝗌𝗂𝗀𝗇𝖾𝖽 𝗍𝗈 𝗍𝗁𝖾 𝗅𝖺𝗌𝗍 𝗉𝖾𝗋𝗌𝗈𝗇.
+
+👉 𝖶𝗋𝗂𝗍𝖾 𝖺𝗇 𝖲𝖰𝖫 𝗊𝗎𝖾𝗋𝗒 𝗍𝗈 𝖿𝗂𝗇𝖽 𝗁𝗈𝗐 𝗆𝖺𝗇𝗒 𝗎𝗌𝖾𝗋𝗌 𝗏𝗂𝗌𝗂𝗍𝖾𝖽 𝗍𝗁𝖾 𝖻𝖺𝗇𝗄 𝖺𝗇𝖽 𝖽𝗂𝖽𝗇'𝗍 𝖽𝗈 𝖺𝗇𝗒 𝗍𝗋𝖺𝗇𝗌𝖺𝖼𝗍𝗂𝗈𝗇𝗌, 𝗁𝗈𝗐 𝗆𝖺𝗇𝗒 𝗏𝗂𝗌𝗂𝗍𝖾𝖽 𝗍𝗁𝖾 𝖻𝖺𝗇𝗄 𝖺𝗇𝖽 𝖽𝗂𝖽 𝗈𝗇𝖾 𝗍𝗋𝖺𝗇𝗌𝖺𝖼𝗍𝗂𝗈𝗇 𝖺𝗇𝖽 𝗌𝗈 𝗈𝗇. 
+
+𝖳𝗁𝖾 𝗋𝖾𝗌𝗎𝗅𝗍 𝗍𝖺𝖻𝗅𝖾 𝗐𝗂𝗅𝗅 𝖼𝗈𝗇𝗍𝖺𝗂𝗇 𝗍𝗐𝗈 𝖼𝗈𝗅𝗎𝗆𝗇𝗌:
+ 𝗍𝗋𝖺𝗇𝗌𝖺𝖼𝗍𝗂𝗈𝗇𝗌_𝖼𝗈𝗎𝗇𝗍 : 𝗐𝗁𝗂𝖼𝗁 𝗂𝗌 𝗍𝗁𝖾 𝗇𝗎𝗆𝖻𝖾𝗋 𝗈𝖿 𝗍𝗋𝖺𝗇𝗌𝖺𝖼𝗍𝗂𝗈𝗇𝗌 𝖽𝗈𝗇𝖾 𝗂𝗇 𝗈𝗇𝖾 𝗏𝗂𝗌𝗂𝗍. 
+ 𝗏𝗂𝗌𝗂𝗍𝗌_𝖼𝗈𝗎𝗇𝗍 𝗐𝗁𝗂𝖼𝗁 : 𝗂𝗌 𝗍𝗁𝖾 𝖼𝗈𝗋𝗋𝖾𝗌𝗉𝗈𝗇𝖽𝗂𝗇𝗀 𝗇𝗎𝗆𝖻𝖾𝗋 𝗈𝖿 𝗎𝗌𝖾𝗋𝗌 𝗐𝗁𝗈 𝖽𝗂𝖽 
+𝗍𝗋𝖺𝗇𝗌𝖺𝖼𝗍𝗂𝗈𝗇𝗌_𝖼𝗈𝗎𝗇𝗍 𝗂𝗇 𝗈𝗇𝖾 𝗏𝗂𝗌𝗂𝗍 𝗍𝗈 𝗍𝗁𝖾 𝖻𝖺𝗇𝗄. 𝗍𝗋𝖺𝗇𝗌𝖺𝖼𝗍𝗂𝗈𝗇𝗌_𝖼𝗈𝗎𝗇𝗍 𝗌𝗁𝗈𝗎𝗅𝖽 𝗍𝖺𝗄𝖾 𝖺𝗅𝗅 𝗏𝖺𝗅𝗎𝖾𝗌 𝖿𝗋𝗈𝗆 𝟢 𝗍𝗈 𝗆𝖺𝗑(𝗍𝗋𝖺𝗇𝗌𝖺𝖼𝗍𝗂𝗈𝗇𝗌_𝖼𝗈𝗎𝗇𝗍) 𝖽𝗈𝗇𝖾 𝖻𝗒 𝗈𝗇𝖾 𝗈𝗋 𝗆𝗈𝗋𝖾 𝗎𝗌𝖾𝗋𝗌. 𝖮𝗋𝖽𝖾𝗋 𝗍𝗁𝖾 𝗋𝖾𝗌𝗎𝗅𝗍 𝗍𝖺𝖻𝗅𝖾 𝖻𝗒 𝗍𝗋𝖺𝗇𝗌𝖺𝖼𝗍𝗂𝗈𝗇𝗌_𝖼𝗈𝗎𝗇𝗍.
+
+drop table if exists visits;
+create table visits (user_id int , visit_date date);
+insert into visits values (1,'2020-01-01');
+insert into visits values (2,'2020-01-02');
+insert into visits values (12,'2020-01-01');
+insert into visits values (9,'2020-01-03');
+insert into visits values (1,'2020-01-02');
+insert into visits values (2,'2020-01-03');
+insert into visits values (1,'2020-01-04');
+insert into visits values (7,'2020-01-11');
+insert into visits values (9,'2020-01-25');
+insert into visits values (8,'2020-01-28');
+
+drop table if exists transactions;
+create table transactions (user_id int , transaction_date date , amount int);
+insert into transactions values (1,'2020-01-02',120);
+insert into transactions values (2,'2020-01-03',22);
+insert into transactions values (7,'2020-01-11',232);
+insert into transactions values (1,'2020-01-04',7);
+insert into transactions values (9,'2020-01-25',33);
+insert into transactions values (9,'2020-01-25',66);
+insert into transactions values (8,'2020-01-28',1);
+insert into transactions values (9,'2020-01-25',99);
+
+with temp(lvl) as (
+select 1 from lvl from dual
+union all
+select lvl+1 as lvl from emp where lvl <
+(select max(cnt) from (select count(transaction_date) as cnt from transaction group by transaction_date)x))
+select tran_count, max(visits_count) as visits_count from (
+select lvl as tran_count,0  as visit_count temp
+union
+select tran_count,
+count(case when user_id_t is null then tran_zero else tran_count end) over (partition by tran_count) as cnt,v*
+,sum(case when t.user_id is null then 0 else 1 end) over(partition by case when t.user_id is null then date '1990-01-01' else v.visit_date end) as tran_count
+,sum(case when t.user_id is null then 1 else 0 end) over() as tran_zero from visits v full join transaction t 
+on v.visit_date = t.transaction_date and v.user_id = t.user_id )x ) y group by tran_count order by tran_count;
+----
+
+WITH transaction_counts AS (
+SELECT COUNT(*) AS tran_count, transaction_date FROM transaction GROUP BY transaction_date),
+visit_counts AS (
+SELECT COUNT(*) AS visit_count, visit_date FROM visits GROUP BY visit_date),
+combined_counts AS (
+SELECT NVL(tc.tran_count, 0) AS tran_count, NVL(vc.visit_count, 0) AS visit_count FROM transaction_counts tc FULL OUTER JOIN
+visit_counts vc ON tc.transaction_date = vc.visit_date)
+SELECT tran_count, MAX(visit_count) AS max_visit_count FROM
+combined_counts GROUP BY tran_count ORDER BY tran_count;
+
+---------------------------------------------------------------------------------------------
+
+𝗣𝗿𝗼𝗯𝗹𝗲𝗺 𝗦𝘁𝗮𝘁𝗲𝗺𝗲𝗻𝘁: 𝖶𝗋𝗂𝗍𝖾 𝖺 𝖲𝖰𝖫 𝗊𝗎𝖾𝗋𝗒 𝗍𝗈 𝖿𝗂𝗇𝖽 𝗈𝗎𝗍 𝗍𝗁𝖾 𝖿𝗂𝗋𝗌𝗍 𝖽𝖺𝗍𝖾 𝗐𝗁𝖾𝗇 𝗍𝗁𝖾 𝗐𝗈𝗋𝗄 𝗐𝖺𝗌 𝖺𝗌𝗌𝗂𝗀𝗇𝖾𝖽 𝗍𝗈 𝗍𝗁𝖾 𝗅𝖺𝗌𝗍 𝗉𝖾𝗋𝗌𝗈𝗇.
+
+𝗙𝗼𝗿 𝗘𝘅. 𝖨𝖿 𝗒𝗈𝗎 𝗅𝗈𝗈𝗄 𝖺𝗍 𝗐𝗈𝗋𝗄𝗂𝖽 𝟣, 𝗍𝗁𝖾 𝗅𝖺𝗌𝗍 𝗉𝖾𝗋𝗌𝗈𝗇 𝗐𝗁𝗈 𝗁𝖺𝖽 𝖻𝖾𝖾𝗇 𝖺𝗌𝗌𝗂𝗀𝗇𝖾𝖽 𝗍𝗈 𝗍𝗁𝖾 𝗐𝗈𝗋𝗄 𝗇𝗎𝗆𝖻𝖾𝗋 𝟣 𝗐𝖺𝗌 𝗍𝗁𝖾 𝗈𝗐𝗇𝖾𝗋𝗂𝖽 𝟣, 𝗌𝗈 𝗍𝗁𝖾 𝖿𝗂𝗋𝗌𝗍 𝖽𝖺𝗍𝖾 𝗐𝗁𝖾𝗇 𝗍𝗁𝖾 𝗐𝗈𝗋𝗄 𝗐𝖺𝗌 𝖺𝗌𝗌𝗂𝗀𝗇𝖾𝖽 𝗐𝗈𝗎𝗅𝖽 𝖻𝖾 𝟢𝟪-𝟢𝟣-𝟤𝟢𝟤𝟢. 𝖨𝗍 𝗐𝗈𝗇'𝗍 𝖻𝖾 𝟢𝟣-𝟢𝟣-𝟤𝟢𝟤𝟢 𝖻𝖾𝖼𝖺𝗎𝗌𝖾 𝗍𝗁𝖾𝗋𝖾 𝖼𝗈𝗎𝗅𝖽 𝖻𝖾 𝗈𝗍𝗁𝖾𝗋 𝗈𝗐𝗇𝖾𝗋𝗌 𝗂𝗇 𝗍𝗁𝖾 𝗌𝖺𝗆𝖾 𝗐𝗈𝗋𝗄𝗂𝖽 𝗐𝗁𝗈 𝗁𝖺𝖽 𝖻𝖾𝖾𝗇 𝖺𝗌𝗌𝗂𝗀𝗇𝖾𝖽 𝗍𝗁𝖾 𝗌𝖺𝗆𝖾 𝗐𝗈𝗋𝗄 𝗂𝗇 𝖻𝖾𝗍𝗐𝖾𝖾𝗇.
+
+CREATE TABLE [dbo].[AssignedTo]
+(
+ [WorkId] [INT] NOT NULL,
+ [OwnerId] [INT] NOT NULL,
+ [ValidFrom] [DATETIME] NULL
+) ON [PRIMARY];
+
+INSERT INTO dbo.AssignedTo (WorkId, OwnerId, ValidFrom) VALUES (1, 1, '2020-01-01');
+INSERT INTO dbo.AssignedTo (WorkId, OwnerId, ValidFrom) VALUES (1, 2, '2020-01-02');
+INSERT INTO dbo.AssignedTo (WorkId, OwnerId, ValidFrom) VALUES (1, 1, '2020-01-03');
+INSERT INTO dbo.AssignedTo (WorkId, OwnerId, ValidFrom) VALUES (1, 1, '2020-01-04');
+INSERT INTO dbo.AssignedTo (WorkId, OwnerId, ValidFrom) VALUES (1, 2, '2020-01-05');
+INSERT INTO dbo.AssignedTo (WorkId, OwnerId, ValidFrom) VALUES (1, 2, '2020-01-06');
+INSERT INTO dbo.AssignedTo (WorkId, OwnerId, ValidFrom) VALUES (1, 2, '2020-01-07');
+
+select a.workerid, a.ownerid,min(a.validform) as validfrom from Assignedto a outer apply (
+select top 1 b.validfrom from assignedto where a.workerid = b.workerid and a.ownerid <> b.ownerid order by validfrom desc) c
+where (a.validfrom > c.validfrom or c.validfrom is null) group by a.workerid,a.ownerid
+
+------------------------------------------------------------------------------------------------------------------------------
+
+❓𝗣𝗿𝗼𝗯𝗹𝗲𝗺 𝗦𝘁𝗮𝘁𝗲𝗺𝗲𝗻𝘁:
+𝖶𝗋𝗂𝗍𝖾 𝖺 𝖲𝖰𝖫 𝗊𝗎𝖾𝗋𝗒 𝗍𝗈 𝖿𝗂𝗇𝖽 𝗈𝗎𝗍 𝗍𝗁𝖾 𝖼𝗎𝗆𝗎𝗅𝖺𝗍𝗂𝗏𝖾 𝖺𝗆𝗈𝗎𝗇𝗍 𝖿𝗈𝗋 𝖺 𝗀𝗂𝗏𝖾𝗇 𝗋𝗈𝗐 𝗐𝗁𝖾𝗇 𝗂𝗇𝗏𝗈𝗂𝖼𝖾𝖽 𝖾𝗊𝗎𝖺𝗅𝗌 𝗍𝗈 𝟣. 𝖳𝗁𝖾 𝗅𝗈𝗀𝗂𝖼 𝗂𝗌: 𝗐𝗁𝖾𝗇 𝗍𝗁𝖾 𝗂𝗇𝗏𝗈𝗂𝖼𝖾𝖽 𝗏𝖺𝗅𝗎𝖾 𝗂𝗌 𝟣, 𝗐𝖾 𝗇𝖾𝖾𝖽 𝗍𝗈 𝗌𝗎𝗆 𝗍𝗁𝖾 𝖺𝗆𝗈𝗎𝗇𝗍 𝖿𝗈𝗋 𝗍𝗁𝗂𝗌 𝗋𝗈𝗐 𝖺𝗇𝖽 𝗍𝗁𝖾 𝗉𝗋𝖾𝗏𝗂𝗈𝗎𝗌 𝗋𝗈𝗐𝗌 𝗍𝗂𝗅𝗅 𝗍𝗁𝖾 𝗉𝗈𝗂𝗇𝗍 𝗐𝗁𝖾𝗇 𝗂𝗍 𝗂𝗌 𝖻𝖾𝖼𝗈𝗆𝗂𝗇𝗀 𝟣 𝖺𝗀𝖺𝗂𝗇 (𝖾𝗑𝖼𝗅𝗎𝗌𝗂𝗏𝖾). 
+
+👉𝐄𝐱𝐩𝐥𝐚𝐧𝐚𝐭𝐢𝐨𝐧: 𝖥𝗈𝗋 𝗂𝖽 𝖠𝖠𝖠 𝖺𝗇𝖽 𝗍𝗁𝖾 𝖽𝖺𝗍𝖾 𝟢𝟣-𝟢𝟨-𝟤𝟢𝟤𝟥, 𝗐𝖾 𝖼𝖺𝗇 𝗌𝖾𝖾 𝗍𝗁𝖺𝗍 𝗍𝗁𝖾 𝗂𝗇𝗏𝗈𝗂𝖼𝖾𝖽 𝗏𝖺𝗅𝗎𝖾 𝗂𝗌 𝟣, 𝗌𝗈 𝗐𝖾 𝗇𝖾𝖾𝖽 𝗍𝗈 𝗀𝗈 𝖻𝖺𝖼𝗄 𝗍𝗂𝗅𝗅 𝟢𝟣-𝟢𝟦-𝟤𝟢𝟤𝟥 𝖺𝗇𝖽 𝗌𝗎𝗆 𝗍𝗁𝖾 𝖺𝗆𝗈𝗎𝗇𝗍 𝗎𝗉 𝖻𝖾𝖼𝖺𝗎𝗌𝖾 𝗍𝗁𝖾 𝗂𝗇𝗏𝗈𝗂𝖼𝖾𝖽 𝗏𝖺𝗅𝗎𝖾 𝗂𝗌 𝖻𝖾𝖼𝗈𝗆𝗂𝗇𝗀 𝟣 𝖺𝗀𝖺𝗂𝗇 𝗈𝗇 𝟢𝟣-𝟢𝟥-𝟤𝟢𝟤𝟥.
+
+
+drop table if exists tblSales;
+create table tblSales (id varchar(3) , date date , invoiced int , amount int);
+insert into tblSales values ('AAA' , '2023-01-01' , 0 , 10);
+insert into tblSales values ('AAA' , '2023-02-01' , 0 , 15);
+insert into tblSales values ('AAA' , '2023-03-01' , 1 , 15);
+insert into tblSales values ('AAA' , '2023-04-01' , 0 , 10);
+insert into tblSales values ('AAA' , '2023-05-01' , 0 , 10);
+insert into tblSales values ('AAA' , '2023-06-01' , 1 , 10);
+insert into tblSales values ('BBB' , '2022-05-01' , 0 , 40);
+insert into tblSales values ('BBB' , '2022-06-01' , 1 , 20);
+insert into tblSales values ('BBB' , '2022-07-01' , 0 , 30);
+insert into tblSales values ('BBB' , '2022-08-01' , 1 , 30);
+
+with flg as(
+select *, case when sum(case when invoiced =1 then 1 end)over(partition by id order by date) =1 and invoiced =0 then null else
+sum(case when invoiced =1 then 1 end)over(partition by id order by date) end as flg from tblsales), 
+grp as (
+select *, last_value(flg )ignore nulls over (partition by id order by date desc)as grp from flg)
+select * from ( select id, date, invoiced, sum(amount)over(partition by id, grp )as total_amount from grp)a where invoiced=1 order by 1,2;
+
+-------------------------------------------------------------------------------------------------------------------------
+
+𝚆𝚎 𝚑𝚊𝚟𝚎 𝚋𝚎𝚎𝚗 𝚐𝚒𝚟𝚎𝚗 𝚊 𝚛𝚊𝚗𝚍𝚘𝚖 𝚝𝚊𝚋𝚕𝚎 𝚠𝚒𝚝𝚑 𝚝𝚠𝚘 𝚏𝚒𝚎𝚕𝚍𝚜 𝚗 & 𝚡 𝚊𝚗𝚍 𝚝𝚑𝚎 𝚝𝚊𝚜𝚔 𝚒𝚜 𝚝𝚘 𝚌𝚊𝚕𝚌𝚞𝚕𝚊𝚝𝚎 𝚍𝚎𝚏. 𝚃𝚑𝚎 𝚟𝚊𝚛𝚒𝚊𝚋𝚕𝚎𝚜 𝚡 𝚊𝚗𝚍 𝚍𝚎𝚏 𝚊𝚛𝚎 𝚊 𝚌𝚘𝚞𝚗𝚝𝚎𝚛 𝚊𝚗𝚍 𝚊 𝙱𝚘𝚘𝚕𝚎𝚊𝚗 𝚛𝚎𝚜𝚙𝚎𝚌𝚝𝚒𝚟𝚎𝚕𝚢. 𝙱𝚘𝚝𝚑 𝚜𝚝𝚊𝚛𝚝 𝚊𝚝 𝚣𝚎𝚛𝚘. 
+
+𝙸𝚏 𝚊𝚝 𝚊𝚗𝚢 𝚙𝚘𝚒𝚗𝚝 𝚒𝚗 𝚝𝚒𝚖𝚎 𝚡 > 𝟸 𝚝𝚑𝚎𝚗 𝚍𝚎𝚏 = 𝟷 𝚏𝚛𝚘𝚖 𝚝𝚑𝚊𝚝 𝚙𝚘𝚒𝚗𝚝 𝚘𝚗𝚠𝚊𝚛𝚍. 𝙽𝚘𝚠 𝚒𝚏 𝚍𝚎𝚏 = 𝟷 𝚝𝚑𝚎𝚗 𝚒𝚗 𝚘𝚛𝚍𝚎𝚛 𝚏𝚘𝚛 𝚒𝚝 𝚝𝚘 𝚋𝚎𝚌𝚘𝚖𝚎 𝚣𝚎𝚛𝚘 𝚊𝚐𝚊𝚒𝚗, 𝚡 𝚑𝚊𝚜 𝚝𝚘 𝚋𝚎 𝚎𝚚𝚞𝚊𝚕 𝚝𝚘 𝚣𝚎𝚛𝚘 𝚏𝚘𝚛 𝟹 𝚙𝚛𝚎𝚟𝚒𝚘𝚞𝚜 𝚌𝚘𝚗𝚜𝚎𝚌𝚞𝚝𝚒𝚟𝚎 𝚙𝚎𝚛𝚒𝚘𝚍𝚜 (𝚌𝚞𝚛𝚛𝚎𝚗𝚝 𝚛𝚘𝚠 𝚒𝚗𝚌𝚕𝚞𝚜𝚒𝚟𝚎) 𝚘𝚝𝚑𝚎𝚛𝚠𝚒𝚜𝚎 𝚍𝚎𝚏 𝚛𝚎𝚖𝚊𝚒𝚗𝚜 𝟷.
+
+
+create table have (
+ n int,
+ x int
+) ;
+insert into have (n,x)
+values (1,0),(2,1),(3,2),(4,3),(5,4),(6,2),
+ (7,1),(8,0),(9,1),(10,0),(11,0),(12,0),
+ (13,0),(14,1),(15,2),(16,3),(17,4),(18,0),(19,0),(20,0),(21,1),(22,3),(23,1),(24,0)
+
+With cte as(
+ select x,val,
+ case 
+ when x=0 then 0
+ when val>2 then 1 
+ when val =0 and lag(val) over(order by x) = 0 and lag(val,2) over(order by x) = 0 and lag(val,3) over(order by x) = 0 then 0 else null end as dt
+ from have
+)
+select * from(
+ select t1x,val,dz,row_number() over(partition by t1x order by t2x desc) rnk from(
+ select 
+ t1.x t1x,t1.val,t2.x as t2x,coalesce(t1.dt,t2.dt) dz
+ from cte t1 left join cte t2 on t2.x<t1.x
+ ) where dz is not null
+) where rnk=1
+---------------------------------------------------------------------------------------------------------------
+𝚆𝚛𝚒𝚝𝚎 𝚊𝚗 𝚂𝚀𝙻 𝚚𝚞𝚎𝚛𝚢 𝚝𝚘 𝚏𝚒𝚗𝚍 𝚝𝚑𝚎 𝚙𝚘𝚙𝚞𝚕𝚊𝚛𝚒𝚝𝚢 𝚙𝚎𝚛𝚌𝚎𝚗𝚝𝚊𝚐𝚎 𝚏𝚘𝚛 𝚎𝚊𝚌𝚑 𝚞𝚜𝚎𝚛 𝚘𝚗 𝙼𝚎𝚝𝚊/𝙵𝚊𝚌𝚎𝚋𝚘𝚘𝚔. 𝚃𝚑𝚎 𝚙𝚘𝚙𝚞𝚕𝚊𝚛𝚒𝚝𝚢 𝚙𝚎𝚛𝚌𝚎𝚗𝚝𝚊𝚐𝚎 𝚒𝚜 𝚍𝚎𝚏𝚒𝚗𝚎𝚍 𝚊𝚜 𝚝𝚑𝚎 𝚝𝚘𝚝𝚊𝚕 𝚗𝚞𝚖𝚋𝚎𝚛 𝚘𝚏 𝚏𝚛𝚒𝚎𝚗𝚍𝚜 𝚝𝚑𝚎 𝚞𝚜𝚎𝚛 𝚑𝚊𝚜 𝚍𝚒𝚟𝚒𝚍𝚎𝚍 𝚋𝚢 𝚝𝚑𝚎 𝚝𝚘𝚝𝚊𝚕 𝚗𝚞𝚖𝚋𝚎𝚛 𝚘𝚏 𝚞𝚜𝚎𝚛𝚜 𝚘𝚗 𝚝𝚑𝚎 𝚙𝚕𝚊𝚝𝚏𝚘𝚛𝚖, 𝚝𝚑𝚎𝚗 𝚌𝚘𝚗𝚟𝚎𝚛𝚝𝚎𝚍 𝚒𝚗𝚝𝚘 𝚊 𝚙𝚎𝚛𝚌𝚎𝚗𝚝𝚊𝚐𝚎 𝚋𝚢 𝚖𝚞𝚕𝚝𝚒𝚙𝚕𝚢𝚒𝚗𝚐 𝚋𝚢 𝟷𝟶𝟶, 𝚛𝚘𝚞𝚗𝚍𝚎𝚍 𝚝𝚘 𝟸 𝚍𝚎𝚌𝚒𝚖𝚊𝚕 𝚙𝚕𝚊𝚌𝚎𝚜.
+
+drop table if exists friends;
+create table friends (user1 int , user2 int);
+insert into friends values (2,1);
+insert into friends values (1,3);
+insert into friends values (4,1);
+insert into friends values (1,5);
+insert into friends values (1,6);
+insert into friends values (2,6);
+insert into friends values (7,2);
+insert into friends values (8,3);
+insert into friends values (3,9);
+
+with cte as
+(select * from friends
+union
+select user2, user1 from friends)
+
+select user1, round(100.0*(cnt/tot),2) as percentage_popularity from
+(select user1, count(user2) as cnt, (select count(distinct user1) from cte) as tot from cte group by 1) a1 order by 1
+---------------------------------------------------------------------------------------------------------------
+
+
+
