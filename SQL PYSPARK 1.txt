@@ -1,0 +1,1921 @@
+1️⃣ SQL and Pyspark Question 1: Identify VIP Users for Netflix
+
+Question: To better cater to its most dedicated users, Netflix would like to identify its “VIP users” - those who are most active in terms of the number of hours of content they watch. Write a SQL query that will retrieve the top 10 users with the most watched hours in the last month.
+
+Tables:
+* users table: user_id (integer), sign_up_date (date), subscription_type (text)
+* watching_activity table: activity_id (integer), user_id (integer), date_time (timestamp), show_id (integer), hours_watched (float)
+
+%sql
+select u.user_id, u.subscription_type, sum(wa.hours_watched) as total_hours_watched from users u join watching_activity wa on u.user_id = wa.user_id where wa.data_time >= add_months(trunc(sysdate,'Month'), -1) and wa.data_time < Trunc(sysdate,'Month') group by u.user_id, u.subscription_type order by total_hours_watched desc fetch first 10 rows only;
+
+%python
+from pyspark.sql import functions as F
+from pyspark.sql.window import Window
+
+current_date = F.current_date()
+first_day_of_month = F.date_trunc("month",current_date)
+last_month_start = F.add_months(first_day_of_month, -1)
+
+vip_users = (watching_activity_df.filter(F.col("date_time") >= last_month_start).filter(F.col("date_time") < first_day_of_month).groupBy("user_id").agg(F.sum("hours_watched").alias("total_hours_watched")).join(users_df,"user_id").orderBy(F.desc("total_hours_watched")).limit(10))
+
+2️⃣ SQL and Pyspark Question 2: Analyzing Ratings For Netflix Shows
+
+Question: Given a table of user ratings for Netflix shows, calculate the average rating for each show within a given month. Assume that there is a column for user_id, show_id, rating (out of 5 stars), and date of review. Order the results by month and then by average rating (descending order).
+
+Tables:
+* show_reviews table: review_id (integer), user_id (integer), review_date (timestamp), show_id (integer), stars (integer)
+
+%sql
+select show_id, extract(month from review_date) as month, extract(year from review_date) as year, avg(stars) as avg_rating, count(*) as review_count from show_reviews group by show_id, extract(month from review_date), extract(year from review_date) order by year,month,avg_rating desc;
+
+%python
+from pyspark.sql import functions as F
+
+rating_by_month = (show_reviews_df.withColumn("month", F.month("review_date")).withColumn("year",F.year("review_date")).groupBy("show_id","month","year").agg(F.avg("stars").alias("avg_rating"), F.count("*").alias("review_count")).orderBy("year","month",F.desc("avg_rating")))
+rating_by_month.show()
+
+3️⃣ SQL Question 3: What does EXCEPT / MINUS SQL commands do?
+
+Question: Explain the purpose and usage of the EXCEPT (or MINUS in some SQL dialects) SQL commands.
+
+The EXCEPT (or MINUS in Oracle) operator is used to return all distinct rows from the first query that are not present in the results of the second query.
+
+Key characteristics:
+Both queries must have the same number of columns
+Corresponding columns must have compatible data types
+Duplicates are removed from the final result
+Similar to set difference operation in mathematics
+
+%sql
+-- Users who watched show A but not show B
+SELECT user_id FROM watching_activity WHERE show_id = 101
+EXCEPT
+SELECT user_id FROM watching_activity WHERE show_id = 102;
+
+%python
+# Users who watched show A but not show B
+show_a_watchers = watching_activity_df.filter(F.col("show_id") == 101).select("user_id")
+show_b_watchers = watching_activity_df.filter(F.col("show_id") == 102).select("user_id")
+
+a_not_b_watchers = show_a_watchers.exceptAll(show_b_watchers)
+a_not_b_watchers.show()
+
+4️⃣ SQL Question 4: Filter Netflix Users Based on Viewing History and Subscription Status
+
+Question: You are given a database of Netflix’s user viewing history and their current subscription status. Write a SQL query to find all active customers who watched more than 10 episodes of a show called “Stranger Things” in the last 30 days.
+
+Tables:
+* users table: user_id (integer), active (boolean)
+* viewing_history table: user_id (integer), show_id (integer), episode_id (integer), watch_date (date)
+* shows table: show_id (integer), show_name (text)
+
+%sql
+select u.user_id from users u join viewing_history vh on u.user_id = vh.user_id join shows s on vh.show_id = s.how_id where u.active = True and s.show_name = 'Stringer things and vh.watch_date >= Sysdate - 30 group by u.user_id having count(Distinct vh.episode_id) > 10;
+
+%python
+from pyspark.sql import functions as F
+
+active_stranger_things_viewers = (users_df.filter(F.col("active") == True).join(viewing_history_df, "user_id").join(shows_df.filter(F.col("show_name") == "Stranger Things"), "show_id").groupBy("user_id").agg(F.countDistinct("episode_id").alias("episodes_watched")).filter(F.col("episode_watched") > 10))
+active_stranger_things_viewers.show()
+
+5️⃣ SQL Question 5: What does it mean to denormalize a database?
+
+Question: Explain the concept and implications of denormalizing a database.
+
+Denormalization is the process of intentionally introducing redundancy into a database design to improve read performance by reducing the number of joins needed for queries.
+
+Key aspects:
+Purpose: Optimize read performance at the cost of write performance
+Techniques: Adding redundant columns, combining tables, creating summary tables
+When to use: For read-heavy applications, reporting systems, data warehouses
+
+Trade-offs:
+Pros: Faster reads, simpler queries
+Cons: Data redundancy, potential inconsistency, more complex updates
+Increased storage requirements
+
+In PySpark, denormalization typically involves:
+Creating wide DataFrames with redundant data
+Using join() operations to combine tables
+Persisting denormalized DataFrames for better performance
+
+# Denormalize by joining user data with viewing history
+denormalized_df = (viewing_history_df
+    .join(users_df, "user_id")
+    .join(shows_df, "show_id")
+    .cache()  # Persist in memory for faster access)
+
+6️⃣ SQL Question 6: Filter and Match Customer’s Viewing Records
+
+Question: As a data analyst at Netflix, you are asked to analyze the customer’s viewing records. You confirmed that Netflix is especially interested in customers who have been continuously watching a particular genre - ‘Documentary’ over the last month. The task is to find the name and email of those customers who have viewed more than five ‘Documentary’ movies within the last month. ‘Documentary’ could be a part of a broader genre category in the genre field (for example, ‘Documentary, History’). Therefore, the matching pattern could occur anywhere within the string.
+
+Tables:
+* movies table: movie_id (integer), title (text), genre (text), release_year (integer)
+* customer table: user_id (integer), name (text), email (text), last_movie_watched (integer), date_watched (date)
+
+%sql
+select c.user_id, c.name, c.email, count(*) as documentary_count from customer c join movies m on c.last_movie_watched = m.movie_id where c.date_watched >= sysdate - 30 and m.genre like '%Documentary%' group by c.user_id, c.name, c.email having count(*) > 5 order by documentry_count DESC;
+
+%python
+from pyspark.sql import functions as F
+
+documentary_viewers = (customer_df
+.join(movies_df, customer_df.last_movie_watched == movies_df.movie_id)
+.filter(F.col("date_watched") >= F.date_sub(F.current_date(), 30))
+.filter(F.col("genre").contains("Documentry"))
+.groupBy("user_id", "name", "email")
+.agg(F.count("*").alias("documentry_count"))
+.filter(F.col("documentry_count") > 5)
+.orderBy(F.desc("documentry_count")))
+
+documentray_viewers.show()
+------------------------------------------------------------------------------
+calculate the percentage of users active 7days after their signup
+
+select signup_week, count(distinct a.user_id) * 100/count(Distinct s.user_id) as retention_rate from signups s left join activity a on s.user_id = a.user_id and a.event_date = s.signup_date + interval '7days' group by signup_week;
+
+Top 5 products per category (with ties)
+
+with ranked_products as (
+select category, product_id, sales, dense_rank() over(partition by category order by sales desc) as rank from products)
+select category,product_id, sales from ranked_products where rank <= 5;
+
+month-over-month revenue growth
+
+with monthly_revenue as (
+select trunc(order_date,'mm') as month, sum(revenue) as revenue from orders group by 1)
+select month, (revenue-lag(revenue) over(order by month)) * 100/ lag(revenue) over (order by month) as growth from monthly_revenue;
+
+Consecutive purchases/Login
+
+with user_dates as (
+select user_id, event_date, lag(event_date,2) over(partition by user_id order by event_date) as prev_date from activity)
+select distinct user_id from user_dates where event_date - prev_date = 2;
+
+Funnel Conversion Rates
+
+with stages as (
+select visit.user_id, signup.user_id is not null as signed_up, purchase.user_id is not null as purchased from visits left join signups on visit.user_id = signup.user_id left join purchase on visit.user_id = purchase.user_id)
+select count(*) as visits, sum(signed_up) as signups, sum(purchased) as purchases from stages;
+
+Median Session Duration
+
+with ordered_sessions as (
+select duration, row_number() over(order by duration) as rn, count(*) over() as total from sessions)
+select avg(duration) as median from ordered_sessions where rn between total/2 and total/2 + 1;
+
+Cohort weekly retention
+
+select signup_week, count(distinct user_id) as cohort_size, date_trunc(disitnct case when week_diff = 1 then user_id end) as week_1, count(distinct case when week_diff = 2 then user_id end) as week_2 from ( 
+select s.user_id, date_trunc('week', s.signup_date) as signup_week, date_trunc('week', a.event_date) - date_trunc('week',s.signup_date) as week_diff from signups s left join activity a on s.user_id = a.user_id) group by 1;
+
+30-Day moving average of sales
+
+select date, avg(sales) over(order by date rows between 29 preceding and current row) as moving_avg from daily_sales;
+
+Reciprocal user follows
+
+select distinct f1.user_id as user_a, f2.user_id as user_b from follows f1 join follows f2 on f1.user_id = f2.target_id and f1.target_id = f2.user_id and f1.user_id < f2.user_id;
+
+Net promoter score (NPS)
+
+with nps_categories as (
+select case when score >= 9 then 'promoter' when score <= 6 then 'detractor' else 'passive' end as category from survey)
+select (count(*) filter(where category = ' promoter') - count(*) filter (where category = 'detractor)) * 100.0/ count(*) as nps from nps_categories;
+
+-----
+7day retention rate:
+
+from pyspark.sql.functions import col,countDistinct ,date_trunc, expr
+
+retention = (signups.join(activity, (signup.user_id == activity.user_id) & (activity.event_date == expr("date_add(signup_date,7)")),"left").groupBy(date_trunc("week","signup_date").alias("signup_week")).agg((countDistinct(activity.user_id) * 100.0/countDistinct(signups.user_id)).alias("retention_rate")))
+
+Top 5 products per category (with ties):
+
+from pyspark.sql.window import Window
+from pyspark.sql.functions import dense_rank
+
+window_spec = Window.partitionBy("category").orderBy(col("sales").desc())
+
+top_products = (products.withColumn("rank", dense_rank().over(window_spec)).filter(col("rank") <= 5).select("category","product_id","sales"))
+
+Month-over-month revenue growth:
+
+from pyspark.sql.functions import lag
+
+monthly_revenue = (orders.groupBy(date_trunc("month","order_date").alias("month").agg(sum("revenue").alias("revenue")))
+growth = monthly_revenue.withColumn("growth", (col("revenue") - lag("revenue",1).over(Window.orderBy("month"))) * 100.0/lag("revenue",1).over(Window.orderBy("month")))
+growth.show()
+
+Consecutive purchases/logins
+
+from pyspark.sql.functions import datediff, lag
+
+window_spec = Window.partitionBy("user_id").orderBy("event_date")
+consecutive_users = (activity,withColumn("prev_date", lag("event_date",2).over(window_spec)).filter(datediff(col("event_date"), col("prev_date")) == 2).select("user_id").distinct())
+consecutive_users.show()
+
+Funnel Conversion Rates
+
+from pyspark.sql.functions import sum as spark_sum,col,count
+funnel = (visits.join(signups, "user_id","left").join(purchase,"user_id","left").agg(count('*').alias("visits"), spark_sum(col("signups.user_id").isNotNull().cast("integer")).alias("signups"), spark_sum(col("pruchase.user_id").isNotNull().cast("integer")).alias("purchases")))
+funnel.show()
+
+Median session duration
+
+from pyspark.sql.functions import row_number, count
+
+window_spec = Window.orderBy("duration")
+median = (session.withColumn("m", row_number().over(window_spec)).withColumn("total", count('*').over(Window.partitionBy())).filter((col("m") >= col("total")/2) & (col("m") <= col("total")/2 +1)).agg(avg("duration").alias("median")))
+
+Cohort weekly retention
+
+from pyspark.sql.functions import when, countDistinct
+
+cohort_data = (
+    signups.join(activity, "user_id", "left")
+    .withColumn("signup_week", date_trunc("week", "signup_date"))
+    .withColumn("event_week", date_trunc("week", "event_date"))
+    .withColumn("week_diff", 
+        (datediff("event_week", "signup_week") / 7).cast("integer")))
+
+retention = cohort_data.groupBy("signup_week").agg(
+    countDistinct("user_id").alias("cohort_size"),
+    countDistinct(when(col("week_diff") == 1, col("user_id"))).alias("week_1"),
+    countDistinct(when(col("week_diff") == 2, col("user_id"))).alias("week_2")
+    # Add weeks 3-8 similarly)
+
+Reciprocal User Follows
+
+reciprocal_follows = (
+    follows.alias("f1")
+    .join(follows.alias("f2"),
+        (col("f1.user_id") == col("f2.target_id")) &
+        (col("f1.target_id") == col("f2.user_id")) &
+        (col("f1.user_id") < col("f2.user_id"))).select(col("f1.user_id").alias("user_a"),col("f2.user_id").alias("user_b")).distinct())
+
+Net Promoter Score (NPS)
+
+from pyspark.sql.functions import sum as spark_sum, count
+
+nps = (
+    survey.withColumn("category",
+        when(col("score") >= 9, "promoter")
+        .when(col("score") <= 6, "detractor")
+        .otherwise("passive"))
+    .agg(
+        ((spark_sum(when(col("category") == "promoter", 1).otherwise(0)) -
+         (spark_sum(when(col("category") == "detractor", 1).otherwise(0))) * 100.0 /
+         count("*")).alias("nps")))
+
+-------------
+Rolling Average Sales Over Last 7 Days
+
+SELECT sale_date, sales_amount,AVG(sales_amount) OVER (ORDER BY sale_date ROWS BETWEEN 6 PRECEDING AND CURRENT ROW) AS rolling_avg_7_days FROM daily_sales;
+
+from pyspark.sql.window import Window
+from pyspark.sql.functions import avg
+
+window_spec = Window.orderBy("sale_date").rowsBetween(-6, 0)
+daily_sales.withColumn("rolling_avg_7_days", avg("sales_amount").over(window_spec))
+
+Second-Highest Salary in Each Department
+
+SELECT department_id, MAX(salary) AS second_highest_salary
+FROM employees
+WHERE salary < (SELECT MAX(salary) FROM employees e WHERE e.department_id = employees.department_id) GROUP BY department_id;
+
+from pyspark.sql.window import Window
+from pyspark.sql.functions import max, col
+
+window_spec = Window.partitionBy("department_id").orderBy(col("salary").desc())
+
+second_highest = (
+    employees.withColumn("rank", dense_rank().over(window_spec))
+    .filter(col("rank") == 2)
+    .groupBy("department_id")
+    .agg(max("salary").alias("second_highest_salary")))
+
+Orders Placed Between 9AM-5PM
+
+SELECT order_id, order_time FROM orders WHERE CAST(order_time AS TIME) BETWEEN '09:00:00' AND '17:00:00';
+
+from pyspark.sql.functions import col, to_timestamp
+
+orders.filter((to_timestamp(col("order_time")).between(to_timestamp(lit("09:00:00"), to_timestamp(lit("17:00:00")))
+
+Detect Data Gaps for Each Product:
+
+SELECT p.product_id, d.date FROM products p CROSS JOIN dates d
+LEFT JOIN sales s ON p.product_id = s.product_id AND d.date = s.sale_date WHERE s.sale_date IS NULL;
+
+from pyspark.sql.functions import col
+
+(products.crossJoin(dates).join(sales, 
+        (products.product_id == sales.product_id) & 
+        (dates.date == sales.sale_date),"left").filter(col("sale_date").isNull()).select("product_id", "date"))
+
+Cumulative Sum of Sales by Month:
+
+SELECT month, sales_amount, SUM(sales_amount) OVER (ORDER BY month) AS cumulative_sales FROM monthly_sales;
+
+from pyspark.sql.window import Window
+from pyspark.sql.functions import sum
+
+window_spec = Window.orderBy("month")
+monthly_sales.withColumn("cumulative_sales", sum("sales_amount").over(window_spec))
+
+Employees in Multiple Departments:
+
+SELECT employee_id FROM employee_departments GROUP BY employee_id HAVING COUNT(DISTINCT department_id) > 1;
+
+from pyspark.sql.functions import countDistinct
+
+employee_departments.groupBy("employee_id").agg(countDistinct("department_id").alias("dept_count")).filter(col("dept_count") > 1).select("employee_id"))
+
+Products with Zero Sales in Last Quarter:
+
+SELECT product_id, product_name  
+FROM products  
+WHERE product_id NOT IN (  
+    SELECT DISTINCT product_id  
+    FROM sales  
+    WHERE sale_date >= DATEADD(quarter, -1, GETDATE()));
+
+from pyspark.sql.functions import date_add, current_date
+
+last_quarter_sales = sales.filter(
+    col("sale_date") >= date_add(current_date(), -90)).select("product_id").distinct()
+
+products.join(last_quarter_sales, "product_id", "left_anti")
+
+Count Orders with Discounts in Each Category:
+
+SELECT category_id, COUNT(*) AS discounted_orders  FROM orders WHERE discount > 0 GROUP BY category_id;
+
+(orders.filter(col("discount") > 0)
+    .groupBy("category_id")
+    .count()
+    .withColumnRenamed("count", "discounted_orders"))
+
+Employees with Tenure Below Average:
+
+SELECT employee_id, name, tenure FROM employees WHERE tenure < (SELECT AVG(tenure) FROM employees);
+
+avg_tenure = employees.agg(avg("tenure").first()[0]
+employees.filter(col("tenure") < avg_tenure)
+
+Most Popular Product in Each Category:
+
+SELECT category_id, product_name, MAX(sales) AS max_sales FROM products GROUP BY category_id, product_name ORDER BY max_sales DESC;
+
+from pyspark.sql.window import Window
+from pyspark.sql.functions import rank
+
+window_spec = Window.partitionBy("category_id").orderBy(col("sales").desc())
+
+(products.withColumn("rank", rank().over(window_spec)).filter(col("rank") == 1)
+    .select("category_id", "product_name", "sales"))
+
+Orders Exceeding $10,000 Monthly Threshold:
+
+SELECT customer_id, SUM(order_amount) AS total_spent FROM orders  
+GROUP BY customer_id, MONTH(order_date)  
+HAVING SUM(order_amount) > 10000;
+
+from pyspark.sql.functions import month, sum
+
+(orders.groupBy("customer_id", month("order_date").alias("month")).agg(sum("order_amount").alias("total_spent"))
+    .filter(col("total_spent") > 10000))
+
+Customers Who Never Ordered Product "P123":
+
+SELECT customer_id  
+FROM customers  
+WHERE customer_id NOT IN (  
+    SELECT customer_id  
+    FROM orders  
+    WHERE product_id = 'P123');
+
+customers.join(
+    orders.filter(col("product_id") == "P123").select("customer_id").distinct(),
+    "customer_id",
+    "left_anti")
+
+Employee's Percentage of Departmental Sales:
+
+SELECT employee_id, sales,sales * 100.0 / SUM(sales) OVER (PARTITION BY department_id) AS dept_sales_percentage FROM employee_sales;
+
+from pyspark.sql.window import Window
+from pyspark.sql.functions import sum
+
+window_spec = Window.partitionBy("department_id")
+
+(employee_sales.withColumn("dept_sales_percentage",col("sales") * 100.0 / sum("sales").over(window_spec)))
+
+Products with Sales Growth Between Q1 and Q2:
+
+SELECT p.product_id,  
+    q1.sales AS q1_sales, q2.sales AS q2_sales,  
+    (q2.sales - q1.sales) / NULLIF(q1.sales, 0) * 100 AS growth_rate  
+FROM (SELECT product_id, SUM(sales) AS sales FROM sales WHERE quarter = 'Q1' GROUP BY product_id) q1  
+JOIN (SELECT product_id, SUM(sales) AS sales FROM sales WHERE quarter = 'Q2' GROUP BY product_id) q2  
+ON q1.product_id = q2.product_id;
+
+q1_sales = (
+    sales.filter(col("quarter") == "Q1")
+    .groupBy("product_id")
+    .agg(sum("sales").alias("q1_sales")))
+
+q2_sales = (
+    sales.filter(col("quarter") == "Q2")
+    .groupBy("product_id")
+    .agg(sum("sales").alias("q2_sales")))
+
+growth = q1_sales.join(q2_sales, "product_id").withColumn(
+    "growth_rate",
+    (col("q2_sales") - col("q1_sales")) / 
+    when(col("q1_sales") == 0, 1).otherwise(col("q1_sales")) * 100)
+
+
+Customers with Consecutive Months of Purchases:
+
+SELECT customer_id FROM (
+SELECT customer_id, order_date,DATEDIFF(month, LAG(order_date) OVER (PARTITION BY customer_id ORDER BY order_date), order_date) AS months_diff FROM orders) t WHERE months_diff = 1;
+
+from pyspark.sql.window import Window
+from pyspark.sql.functions import lag, datediff, month
+
+window_spec = Window.partitionBy("customer_id").orderBy("order_date")
+
+consecutive_customers = (orders.withColumn("prev_date", lag("order_date").over(window_spec))
+.withColumn("months_diff", datediff("order_date", "prev_date") / 30).filter(col("months_diff") == 1)
+    .select("customer_id").distinct())
+
+Average Order Value (AOV) by Month:
+
+SELECT month, AVG(order_amount) AS avg_order_value FROM orders  
+GROUP BY month;
+
+from pyspark.sql.functions import month, avg
+
+(orders.groupBy(month("order_date").alias("month")).agg(avg("order_amount").alias("avg_order_value")))
+
+Rank Sales Representatives by Quarterly Performance:
+
+SELECT sales_rep_id, quarter, total_sales,RANK() OVER (PARTITION BY quarter ORDER BY total_sales DESC) AS rank FROM quarterly_sales;
+
+from pyspark.sql.window import Window
+from pyspark.sql.functions import rank
+
+window_spec = Window.partitionBy("quarter").orderBy(col("total_sales").desc())
+quarterly_sales.withColumn("rank", rank().over(window_spec))
+
+Month with Highest Revenue in Each Year:
+
+SELECT year, month, revenue  
+FROM (
+    SELECT year, month, revenue,
+    RANK() OVER (PARTITION BY year ORDER BY revenue DESC) AS rank
+    FROM monthly_revenue) AS yearly_revenue WHERE rank = 1;
+
+from pyspark.sql.window import Window
+from pyspark.sql.functions import rank
+
+window_spec = Window.partitionBy("year").orderBy(col("revenue").desc())
+(monthly_revenue.withColumn("rank", rank().over(window_spec)).filter(col("rank") == 1).select("year", "month", "revenue"))
+
+Items with Stockouts:
+SELECT item_id, date FROM inventory WHERE stock_quantity = 0;
+
+inventory.filter(col("stock_quantity") == 0).select("item_id", "date")
+
+Average Time Between Orders by Customer:
+
+SELECT customer_id,AVG(DATEDIFF(day, LAG(order_date) OVER (PARTITION BY customer_id ORDER BY order_date), order_date)) AS avg_days_between_orders FROM orders;
+
+from pyspark.sql.window import Window
+from pyspark.sql.functions import avg, datediff, lag
+
+window_spec = Window.partitionBy("customer_id").orderBy("order_date")
+
+(orders.withColumn("prev_date", lag("order_date").over(window_spec))
+    .withColumn("days_diff", datediff("order_date", "prev_date"))
+    .groupBy("customer_id")
+    .agg(avg("days_diff").alias("avg_days_between_orders")))
+
+---------------------------------------------------------------------------------------------------
+Second-highest salary:
+
+SELECT MAX(salary) FROM employees WHERE salary < (SELECT MAX(salary) FROM employees);
+
+from pyspark.sql.functions import max
+
+max_salary = employees.agg(max("salary")).first()[0]
+employees.filter(col("salary") < max_salary).agg(max("salary"))
+
+Nth highest salary:
+
+SELECT salary FROM (SELECT salary, DENSE_RANK() OVER (ORDER BY salary DESC) AS rank FROM employees) AS ranked_salaries WHERE rank = N;
+
+from pyspark.sql.window import Window
+from pyspark.sql.functions import dense_rank
+
+window_spec = Window.orderBy(col("salary").desc())
+employees.withColumn("rank", dense_rank().over(window_spec)).filter(col("rank") == N)
+
+Employees earning above average:
+
+SELECT * FROM employees WHERE salary > (SELECT AVG(salary) FROM employees);
+
+avg_salary = employees.agg(avg("salary")).first()[0] 
+employees.filter(col("salary") > avg_salary)
+
+Current timestamp
+
+SELECT CURRENT_TIMESTAMP;
+
+from pyspark.sql.functions import current_timestamp
+spark.sql("SELECT current_timestamp()")
+
+Find duplicate records:
+
+SELECT column_name, COUNT(*) FROM table_name GROUP BY column_name HAVING COUNT(*) > 1;
+
+table.groupBy("column_name").count().filter(col("count") > 1)
+
+Delete duplicate rows:
+
+WITH CTE AS (
+SELECT column_name,ROW_NUMBER() OVER (PARTITION BY column_name ORDER BY column_name) AS row_num FROM table_name)
+DELETE FROM CTE WHERE row_num > 1;
+
+from pyspark.sql.window import Window
+window_spec = Window.partitionBy("column_name").orderBy("column_name")
+df = table.withColumn("row_num", row_number().over(window_spec))
+df.filter(col("row_num") == 1).drop("row_num")
+
+Common records between tables:
+
+SELECT * FROM table1 INTERSECT SELECT * FROM table2;
+
+table1.intersect(table2)
+
+Last 10 records:
+
+SELECT * FROM employees ORDER BY employee_id DESC LIMIT 10;
+
+employees.orderBy(col("employee_id").desc()).limit(10)
+
+Top 5 highest salaries:
+
+SELECT * FROM employees ORDER BY salary DESC LIMIT 5;
+
+employees.orderBy(col("salary").desc()).limit(5)
+
+Total salary:
+
+SELECT SUM(salary) FROM employees;
+
+employees.agg(sum("salary"))
+
+Employees joined in 2020:
+
+SELECT * FROM employees WHERE YEAR(join_date) = 2020;
+
+from pyspark.sql.functions import year
+employees.filter(year("join_date") == 2020)
+
+Names starting with 'A':
+
+SELECT * FROM employees WHERE name LIKE 'A%';
+
+employees.filter(col("name").like("A%"))
+
+Employees without manager:
+
+SELECT * FROM employees WHERE manager_id IS NULL;
+
+employees.filter(col("manager_id").isNull())
+
+Department with most employees:
+
+SELECT department_id, COUNT(*) FROM employees GROUP BY department_id ORDER BY COUNT(*) DESC LIMIT 1;
+
+employees.groupBy("department_id").count().orderBy(col("count").desc()).limit(1)
+
+Employee count per department:
+
+SELECT department_id, COUNT(*) FROM employees GROUP BY department_id;
+
+employees.groupBy("department_id").count()
+
+Highest salary per department:
+
+SELECT department_id, employee_id, salary FROM employees AS e WHERE salary = (SELECT MAX(salary)
+                FROM employees
+                WHERE department_id = e.department_id);
+
+from pyspark.sql.window import Window
+window_spec = Window.partitionBy("department_id").orderBy(col("salary").desc())
+employees.withColumn("rank", dense_rank().over(window_spec)).filter(col("rank") == 1)
+
+Update salary by 10%:
+
+UPDATE employees SET salary = salary * 1.1;
+
+employees = employees.withColumn("salary", col("salary") * 1.1)
+
+Salary between range:
+
+SELECT * FROM employees WHERE salary BETWEEN 50000 AND 100000;
+
+employees.filter(col("salary").between(50000, 100000))
+
+Youngest employee:
+
+SELECT * FROM employees ORDER BY birth_date DESC LIMIT 1;
+
+employees.orderBy(col("birth_date").desc()).limit(1)
+
+First and last records:
+
+(SELECT * FROM employees ORDER BY employee_id ASC LIMIT 1)
+UNION ALL
+(SELECT * FROM employees ORDER BY employee_id DESC LIMIT 1);
+
+first = employees.orderBy("employee_id").limit(1)
+last = employees.orderBy(col("employee_id").desc()).limit(1)
+first.union(last)
+
+Employees by manager:
+
+SELECT * FROM employees WHERE manager_id = ?;
+
+employees.filter(col("manager_id") == manager_id)
+
+Department count:
+
+SELECT COUNT(DISTINCT department_id) FROM employees;
+
+employees.agg(countDistinct("department_id"))
+
+Department with lowest avg salary:
+
+SELECT department_id, AVG(salary) FROM employees GROUP BY department_id ORDER BY AVG(salary) ASC LIMIT 1;
+
+employees.groupBy("department_id").agg(avg("salary").alias("avg_salary")).orderBy("avg_salary").limit(1)
+
+Delete department employees:
+
+DELETE FROM employees WHERE department_id = ?;
+
+employees = employees.filter(col("department_id") != dept_id)
+
+Employees with >5 years tenure:
+
+SELECT * FROM employees WHERE DATEDIFF(CURDATE(), join_date) > 1825;
+
+from pyspark.sql.functions import datediff, current_date
+employees.filter(datediff(current_date(), col("join_date")) > 1825)
+
+Second largest value:
+
+SELECT MAX(column_name) FROM table_name WHERE column_name < (SELECT MAX(column_name) FROM table_name);
+
+max_val = table.agg(max("column_name")).first()[0]
+table.filter(col("column_name") < max_val).agg(max("column_name"))
+
+Truncate table:
+
+TRUNCATE TABLE table_name;
+
+# In PySpark, you would typically overwrite the DataFrame with an empty one
+empty_df = spark.createDataFrame([], schema)
+empty_df.write.mode("overwrite").saveAsTable("table_name")
+
+Employee records in XML:
+
+SELECT employee_id, name, department_id FROM employees FOR XML AUTO;
+
+# PySpark doesn't have direct XML output, but you can convert to XML string
+from pyspark.sql.functions import concat, lit
+employees.select(
+    concat(
+        lit("<employee id=\""), col("employee_id"), lit("\">"),
+        lit("<name>"), col("name"), lit("</name>"),
+        lit("<department>"), col("department_id"), lit("</department>"),
+        lit("</employee>")).alias("xml"))
+
+Current month name:
+
+SELECT MONTHNAME(CURDATE());
+
+from pyspark.sql.functions import monthname, current_date
+spark.sql("SELECT monthname(current_date())")
+
+Employees without subordinates:
+
+SELECT * FROM employees
+WHERE employee_id NOT IN (SELECT manager_id FROM employees WHERE manager_id IS NOT NULL);
+
+managers = employees.select("manager_id").filter(col("manager_id").isNotNull()).distinct()
+employees.join(managers, employees.employee_id == managers.manager_id, "left_anti")
+
+Total sales per customer:
+
+SELECT customer_id, SUM(sales_amount) FROM sales GROUP BY customer_id;
+
+sales.groupBy("customer_id").agg(sum("sales_amount"))
+
+Check if table is empty:
+
+SELECT CASE WHEN EXISTS (SELECT 1 FROM table_name) THEN 'Not Empty' ELSE 'Empty' END;
+
+from pyspark.sql.functions import when, lit
+df.agg(when(count("*") > 0, lit("Not Empty")).otherwise(lit("Empty")))
+
+Second highest salary per dept:
+
+SELECT department_id, salary
+FROM (SELECT department_id, salary,
+      DENSE_RANK() OVER (PARTITION BY department_id ORDER BY salary DESC) AS rank
+      FROM employees) AS ranked_salaries WHERE rank = 2;
+
+window_spec = Window.partitionBy("department_id").orderBy(col("salary").desc())
+employees.withColumn("rank", dense_rank().over(window_spec)).filter(col("rank") == 2)
+
+Salary multiple of 10,000:
+
+SELECT * FROM employees WHERE salary % 10000 = 0;
+
+employees.filter(col("salary") % 10000 == 0)
+
+Null values in column:
+
+SELECT * FROM employees WHERE column_name IS NULL;
+
+employees.filter(col("column_name").isNull())
+
+Employees per job title:
+
+SELECT job_title, COUNT(*) FROM employees GROUP BY job_title;
+
+employees.groupBy("job_title").count()
+
+Names ending with 'n':
+
+SELECT * FROM employees WHERE name LIKE '%n';
+
+employees.filter(col("name").like("%n"))
+
+Employees in both depts 101 and 102:
+
+SELECT employee_id FROM employees WHERE department_id IN (101, 102) GROUP BY employee_id HAVING COUNT(DISTINCT department_id) = 2;
+
+employees.filter(col("department_id").isin([101, 102])) \
+    .groupBy("employee_id") \
+    .agg(countDistinct("department_id").alias("dept_count")) \
+    .filter(col("dept_count") == 2)
+
+Employees with same salary:
+
+SELECT *
+FROM employees
+WHERE salary IN (SELECT salary
+                 FROM employees
+                 GROUP BY salary
+                 HAVING COUNT(*) > 1);
+
+dupe_salaries = employees.groupBy("salary").count().filter(col("count") > 1)
+employees.join(dupe_salaries, "salary")
+
+Update salaries by department:
+
+UPDATE employees
+SET salary = CASE
+    WHEN department_id = 101 THEN salary * 1.10
+    WHEN department_id = 102 THEN salary * 1.05 ELSE salary END;
+
+from pyspark.sql.functions import when
+employees = employees.withColumn("salary", 
+    when(col("department_id") == 101, col("salary") * 1.10)
+    .when(col("department_id") == 102, col("salary") * 1.05)
+    .otherwise(col("salary")))
+
+Employees without department:
+
+SELECT * FROM employees WHERE department_id IS NULL;
+
+employees.filter(col("department_id").isNull())
+
+Min/max salary per dept:
+
+SELECT department_id, MAX(salary), MIN(salary) FROM employees GROUP BY department_id;
+
+employees.groupBy("department_id").agg(max("salary"), min("salary"))
+
+Employees hired last 6 months:
+
+SELECT * FROM employees WHERE hire_date > ADDDATE(CURDATE(), INTERVAL -6 MONTH);
+
+from pyspark.sql.functions import add_months, current_date
+employees.filter(col("hire_date") > add_months(current_date(), -6))
+
+Dept-wise total and avg salary:
+
+SELECT department_id, SUM(salary) AS total_salary, AVG(salary) AS avg_salary FROM employees GROUP BY department_id;
+
+employees.groupBy("department_id").agg(sum("salary"), avg("salary"))
+
+Employees hired same month as manager:
+
+SELECT e.employee_id, e.name FROM employees e JOIN employees m ON e.manager_id = m.employee_id WHERE MONTH(e.join_date) = MONTH(m.join_date) AND YEAR(e.join_date) = YEAR(m.join_date);
+
+from pyspark.sql.functions import month, year
+employees.alias("e").join(
+    employees.alias("m"),
+    (col("e.manager_id") == col("m.employee_id")) &
+    (month(col("e.join_date")) == month(col("m.join_date"))) &
+    (year(col("e.join_date")) == year(col("m.join_date")))).select("e.employee_id", "e.name")
+
+Names starting and ending with same letter:
+
+SELECT COUNT(*) FROM employees WHERE LEFT(name, 1) = RIGHT(name, 1);
+
+from pyspark.sql.functions import substring, length
+employees.filter(
+    substring("name", 1, 1) == substring("name", length("name"), 1)).count()
+
+Employee info string:
+
+SELECT CONCAT(name,' earns', salary) AS employee_info FROM employees;
+
+from pyspark.sql.functions import concat, lit
+employees.select(concat(col("name"), lit(" earns"), col("salary")).alias("employee_info"))
+
+Employees earning more than manager:
+
+SELECT e.employee_id, e.name FROM employees e JOIN employees m ON e.manager_id = m.employee_id WHERE e.salary > m.salary;
+
+employees.alias("e").join(
+    employees.alias("m"),
+    col("e.manager_id") == col("m.employee_id")).filter(col("e.salary") > col("m.salary")).select("e.employee_id", "e.name")
+
+Employees in small departments (<3):
+
+SELECT * FROM employees WHERE department_id IN (SELECT department_id FROM employees GROUP BY department_id HAVING COUNT(*) < 3);
+
+small_depts = employees.groupBy("department_id").count().filter(col("count") < 3)
+employees.join(small_depts, "department_id")
+
+Employees with same first name:
+
+SELECT * FROM employees
+WHERE first_name IN (SELECT first_name FROM employees GROUP BY first_name HAVING COUNT(*) > 1);
+
+dupe_names = employees.groupBy("first_name").count().filter(col("count") > 1)
+employees.join(dupe_names, "first_name")
+
+Delete employees with >15 years tenure:
+
+DELETE FROM employees WHERE DATEDIFF(CURDATE(), join_date) > 5475;
+
+from pyspark.sql.functions import datediff, current_date
+employees = employees.filter(datediff(current_date(), col("join_date")) <= 5475)
+
+Employees under same manager:
+
+SELECT * FROM employees WHERE manager_id = ?;
+
+employees.filter(col("manager_id") == manager_id)
+
+Top 3 highest-paid per dept:
+
+SELECT * FROM (SELECT *,
+      DENSE_RANK() OVER (PARTITION BY department_id ORDER BY salary DESC) AS rank
+      FROM employees) AS ranked_employees WHERE rank <= 3;
+
+window_spec = Window.partitionBy("department_id").orderBy(col("salary").desc())
+employees.withColumn("rank", dense_rank().over(window_spec)).filter(col("rank") <= 3)
+
+Employees with >5 years experience:
+
+SELECT * FROM employees WHERE DATEDIFF(CURDATE(), join_date) > 1825;
+
+from pyspark.sql.functions import datediff, current_date
+employees.filter(datediff(current_date(), col("join_date")) > 1825)
+
+Departments with no hires in 2 years:
+
+SELECT *
+FROM employees
+WHERE department_id IN (SELECT department_id
+                        FROM employees
+                        GROUP BY department_id
+                        HAVING MAX(hire_date) < ADDDATE(CURDATE(), INTERVAL -2 YEAR));
+
+from pyspark.sql.functions import max, add_months, current_date
+inactive_depts = employees.groupBy("department_id") \
+    .agg(max("hire_date").alias("last_hire")) \
+    .filter(col("last_hire") < add_months(current_date(), -24))
+employees.join(inactive_depts, "department_id")
+
+Employees earning above dept average:
+
+SELECT * FROM employees e WHERE salary > (SELECT AVG(salary) FROM employees WHERE department_id = e.department_id);
+
+from pyspark.sql.window import Window
+window_spec = Window.partitionBy("department_id")
+employees.withColumn("dept_avg", avg("salary").over(window_spec)) \
+    .filter(col("salary") > col("dept_avg"))
+
+Managers with >5 subordinates:
+
+SELECT * FROM employees WHERE employee_id IN (SELECT manager_id FROM employees GROUP BY manager_id HAVING COUNT(*) > 5);
+
+busy_managers = employees.groupBy("manager_id").count().filter(col("count") > 5)
+employees.join(busy_managers, employees.employee_id == busy_managers.manager_id)
+
+Formatted employee info:
+
+SELECT CONCAT(name, ' - ', DATE_FORMAT(hire_date, '%m/%d/%Y')) AS employee_info FROM employees;
+
+from pyspark.sql.functions import date_format, concat, lit
+employees.select(concat(col("name"), lit(" - "), 
+    date_format("hire_date", "MM/dd/yyyy")).alias("employee_info"))
+
+Top 10% earners:
+
+SELECT * FROM employees WHERE salary >= (SELECT PERCENTILE_CONT(0.9) WITHIN GROUP (ORDER BY salary ASC) FROM employees);
+
+from pyspark.sql.functions import percent_rank
+window_spec = Window.orderBy("salary")
+employees.withColumn("percentile", percent_rank().over(window_spec)) \
+    .filter(col("percentile") >= 0.9)
+
+Employees by age bracket:
+
+SELECT CASE
+    WHEN age BETWEEN 20 AND 30 THEN '20-30'
+    WHEN age BETWEEN 31 AND 40 THEN '31-40'
+    ELSE '41+' END AS age_bracket, COUNT(*) FROM employees GROUP BY age_bracket;
+
+from pyspark.sql.functions import when
+employees.select(
+    when(col("age").between(20, 30), "20-30")
+    .when(col("age").between(31, 40), "31-40")
+    .otherwise("41+").alias("age_bracket")).groupBy("age_bracket").count()
+
+Avg salary of top 5 per dept:
+
+SELECT department_id, AVG(salary)
+FROM (SELECT department_id, salary,
+      DENSE_RANK() OVER (PARTITION BY department_id ORDER BY salary DESC) AS rank
+      FROM employees) AS ranked_employees WHERE rank <= 5
+GROUP BY department_id;
+
+window_spec = Window.partitionBy("department_id").orderBy(col("salary").desc())
+ranked = employees.withColumn("rank", dense_rank().over(window_spec))
+ranked.filter(col("rank") <= 5).groupBy("department_id").agg(avg("salary"))
+
+Percentage of employees per dept:
+
+SELECT department_id, (COUNT(*) * 100.0 / (SELECT COUNT(*) FROM employees)) AS percentage FROM employees GROUP BY department_id;
+
+total = employees.count()
+employees.groupBy("department_id").count().withColumn("percentage", col("count") * 100 / total)
+
+Employees with example.com email:
+
+SELECT * FROM employees WHERE email LIKE '%@example.com';
+
+employees.filter(col("email").like("%@example.com"))
+
+Year-to-date sales per customer:
+
+SELECT customer_id, SUM(sales_amount) FROM sales WHERE sale_date BETWEEN '2024-01-01' AND CURDATE() GROUP BY customer_id;
+
+from pyspark.sql.functions import current_date
+sales.filter(
+    (col("sale_date") >= "2024-01-01") & 
+    (col("sale_date") <= current_date())).groupBy("customer_id").agg(sum("sales_amount"))
+
+Hire date and day of week:
+
+SELECT name, hire_date, DAYNAME(hire_date) AS day_of_week FROM employees;
+
+from pyspark.sql.functions import dayofweek, date_format
+employees.select("name", "hire_date", date_format("hire_date", "EEEE").alias("day_of_week"))
+
+Employees older than 30:
+
+SELECT * FROM employees WHERE DATEDIFF(CURDATE(), birth_date) / 365 > 30;
+
+from pyspark.sql.functions import datediff, current_date
+employees.filter(datediff(current_date(), col("birth_date")) / 365 > 30)
+
+Employees by salary range:
+
+SELECT CASE
+    WHEN salary BETWEEN 0 AND 20000 THEN '0-20K'
+    WHEN salary BETWEEN 20001 AND 50000 THEN '20K-50K'
+    ELSE '50K+' END AS salary_range, COUNT(*) FROM employees GROUP BY salary_range;
+
+employees.select(
+    when(col("salary").between(0, 20000), "0-20K")
+    .when(col("salary").between(20001, 50000), "20K-50K")
+    .otherwise("50K+").alias("salary_range")).groupBy("salary_range").count()
+
+Employees without bonus:
+
+SELECT * FROM employees WHERE bonus IS NULL;
+
+employees.filter(col("bonus").isNull())
+
+Salary stats by job role:
+
+SELECT job_role, MAX(salary) AS highest_salary, MIN(salary) AS lowest_salary, AVG(salary) AS avg_salary FROM employees GROUP BY job_role;
+
+employees.groupBy("job_role").agg(
+    max("salary").alias("highest_salary"),
+    min("salary").alias("lowest_salary"),
+    avg("salary").alias("avg_salary"))
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------
+
+df = spark.read.format("csv").schema(expected_schema)\
+.option("mode", "PERMISSIVE")\
+.option("header", "true")
+.option("badRecordPath","dbfs://Avinash@FIlepath.dfs.core.window.net/file_name")\
+.load("dbfs:/FIle_Path@avinash.dfs.core.window.net/file_name.csv")
+
+.option("ColumnNameOfCourrptedRecord","Curr_Rec")
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Write a solution to find the daily active user count for a period of 30 days ending 2019-07-27 inclusively.
+
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import *
+
+activity_data = [
+    (1, 1, "2019-07-20", "open_session"),
+    (1, 1, "2019-07-20", "scroll_down"),
+    (1, 1, "2019-07-20", "end_session"),
+    (2, 4, "2019-07-20", "open_session"),
+    (2, 4, "2019-07-21", "send_message"),
+    (2, 4, "2019-07-21", "end_session"),
+    (3, 2, "2019-07-21", "open_session"),
+    (3, 2, "2019-07-21", "send_message"),
+    (3, 2, "2019-07-21", "end_session"),
+    (4, 3, "2019-06-25", "open_session"),
+    (4, 3, "2019-06-25", "end_session")]
+
+activity_columns = ["user_id", "session_id", "activity_date", "activity_type"]
+
+activity_df = spark.createDataFrame(activity_data, activity_columns)
+activity_df.display()
+
+filtered_df = activity_df.filter((col("activity_date") > date_sub(lit("2019-07-27"),30)) & (col("activity_date") <= lit("2019-07-27")))
+filtered_df.display()
+
+result_df = filtered_df.groupBy("activity_date").agg(countDistinct("user_id").alias("active_users")).withColumnRenamed("activity_date","day")
+result_df.show()
+
+----
+Write a solution to find the percentage of immediate orders in the first order of all customers, rounded to 2 decimal places.
+
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import *
+from pyspark.sql.types import *
+
+schema = StructType([
+    StructField("delivery_id", IntegerType(), True),
+    StructField("customer_id", IntegerType(), True),
+    StructField("order_date", StringType(), True),
+    StructField("customer_pref_delivery_date", StringType(), True)])
+
+# Define the data
+data = [
+    (1, 1, "2019-08-01", "2019-08-02"),
+    (2, 2, "2019-08-02", "2019-08-02"),
+    (3, 1, "2019-08-11", "2019-08-12"),
+    (4, 3, "2019-08-24", "2019-08-24"),
+    (5, 3, "2019-08-21", "2019-08-22"),
+    (6, 2, "2019-08-11", "2019-08-13"),
+    (7, 4, "2019-08-09", "2019-08-09")]
+
+df = spark.createDataFrame(data,schema)
+df.display()
+
+first_order = df.groupBy(col("customer_id")).agg(min(col("order_date")).alias("first_order_date"))
+first_order.display()
+
+first_order_joined = df.join(first_order, df["customer_id"] == first_order["customer_id"], "inner").select(df['*'])
+first_order_joined.display()
+
+immediate_deliveries = first_order_joined.filter(col("first_order_date") == col("customer_pref_delivery_date"))
+immediate_deliveries.display()
+
+total_orders = df.count()
+immediate_orders = immediate_deliveries.count()
+
+percentage = (immediate_orders/total_orders) * 100 if total_orders > 0 else 0
+percentage.show()
+
+---------------
+
+Write a solution to find the person_name of the last person that can fit on the bus without exceeding the weight limit.
+
+from pyspark.sql.window import Window
+from pyspark.sql.functions import *
+
+data = [
+    (5, "Alice", 250, 1),
+    (4, "Bob", 175, 5),
+    (3, "Alex", 350, 2),
+    (6, "John Cena", 400, 3),
+    (1, "Winston", 500, 6),
+    (2, "Marie", 200, 4)]
+
+columns = ["person_id", "person_name", "weight", "turn"]
+
+queue_df = spark.createDataFrame(data, columns)
+queue_df.display()
+
+window_spec = Window.orderBy("turn")
+accumulated_df = queue_df.withColumn("accumulated_weight", sum("weight").over(window_spec))
+accumulated_df.display()
+
+filtered_df = accumulated_df.filter(col("accumulated_weight") <= 1000)
+filtered_df.display()
+
+result_df = filtered_df.orderBy(col("turn").desc()).limit(1)
+result_df.display()
+
+------------------------------
+Write a solution to find the number of times each student attended each exam.
+
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import *
+
+students_data = [
+    (1, "Alice"),
+    (2, "Bob"),
+    (13, "John"),
+    (6, "Alex")
+]
+students_columns = ["student_id", "student_name"]
+
+subjects_data = [
+    ("Math",),
+    ("Physics",),
+    ("Programming",)
+]
+subjects_columns = ["subject_name"]
+
+examinations_data = [
+    (1, "Math"),
+    (1, "Physics"),
+    (1, "Programming"),
+    (2, "Programming"),
+    (1, "Physics"),
+    (1, "Math"),
+    (13, "Math"),
+    (13, "Programming"),
+    (13, "Physics"),
+    (2, "Math"),
+    (1, "Math")]
+
+examinations_columns = ["student_id_e", "subject_name_e"]
+
+students_df = spark.createDataFrame(students_data, students_columns)
+subjects_df = spark.createDataFrame(subjects_data, subjects_columns)
+examinations_df = spark.createDataFrame(examinations_data, examinations_columns)
+
+cross_join_df = students_df.crossjoin(subjects_df)
+cross_join_df.display()
+
+joined_df = cross_join_df.join(examinations_df, (cross_join_df["student_id_e"]) & (cross_join_df["subject_name"] == examinations_df["subject_name_e"]), "left")
+joined_df.display()
+
+result_df = joined_df.groupBy("student_id", "student_name", "subject_name").agg(count(col("student_id_e")).alias("attended_exams")).orderBy("student_id","subject_name")
+result_df.display()
+-----------------------
+Write a solution to calculate the number of bank accounts for each salary category. The salary categories are:
+
+ "Low Salary": All the salaries strictly less than $20000.
+"Average Salary": All the salaries in the inclusive range [$20000, $50000].
+"High Salary": All the salaries strictly greater than $50000.
+
+from pyspark.sql.functions import *
+
+data = [
+    (3, 108939),
+    (2, 12747),
+    (8, 87709),
+    (6, 91796)]
+
+columns = ["account_id", "income"]
+accounts_df = spark.createDataFrame(data, columns)
+accounts_df.display()
+
+low_salary_count = accounts_df.filter(col("income") < 20000).count()
+average_salary_count = account_df.filter((col("income") >= 20000) & (col("income") <= 50000)).count()
+high_salary_count = account_df.filter(col("income") > 50000).count()
+
+# Combine results into a single DataFrame
+result_data = [
+    ("Low Salary", low_salary_count),
+    ("Average Salary", average_salary_count),
+    ("High Salary", high_salary_count)]
+
+result_df = spark.createDataFrame(result_data, ["category", "accounts_count"])
+
+# Show the result
+result_df.display()
+
+accounts_df.display()
+
+df_low_salary = account_df.withColumn("income_count", when(col("income") < 20000, 1).otherwise(0)).select("income_count","category")
+df_low_salary.display()
+
+df_avg_salary = accounts_df.withColumn("income_count", when(col("income") >= 20000) & (col("income") <= 50000), 1)
+.withColumn("category", lit("Average Salary")).select("income_count","category")
+df_avg_salary.display()
+
+df_high_salary = accounts_df.withColumn("income_count", when(col("income") > 50000, 1).otherwise(0))
+.withColumn("category",lit("High Salary")).select("income_count","category")
+df_high_salary.display()
+
+df_salary_union = df_low_salary.union(df_avg_salary).union(df_high_salary)
+df_salary_union.display()
+
+df_final = df_salary_union.groupBy("category").agg(sum(col("income_count")).alias("income_count"))
+df_final.display()
+-------------------------
+Write a solution to report the fraction of players that logged in again on the day after the day they first logged in, rounded to 2 decimal places.
+
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import *
+import math
+
+data = [
+    (1, 2, "2016-03-01", 5),
+    (1, 2, "2016-03-02", 6),
+    (2, 3, "2017-06-25", 1),
+    (3, 1, "2016-03-02", 0),
+    (3, 4, "2018-07-03", 5)]
+
+columns = ["player_id", "device_id", "event_date", "games_played"]
+
+# Create DataFrame
+df = spark.createDataFrame(data, schema=columns)
+df.display()
+
+first_login_df = df.groupBy("player_id").agg(min("event_date").alias("first_login_date"))
+first_login_df.display()
+
+login_after_first = first_login_df.withColumn("day_after_first_login", date_add(col("first_login_date"), 1)).withColumnRenamed("player_id","login_player_id")
+login_after_first.display()
+
+filtered_df = df.join(login_after_first, (df["player_id"] == login_after_first["login_player_id"]) & (df["event_date"] == login_after_first["day_after_first_login"]),"inner")
+filtered_df.display()
+
+filtered_player_df = filtered_df.select("player_id").distinct().display()
+
+total_players = df.select("player_id").distinct().count()
+matching_players = filtered_df.count()
+
+fraction = matching_players/total_players * 100 if total_players > 0 else 0
+print(fraction)
+
+filtered_df = df.join(login_after_first, (df["player_id"] == login_after_first["login_player_id"]) & (df["event_date"] == login_after_first["day_after_first_login"]), "left")
+filtered_df.display()
+
+final_df = filtered_df.agg(round(countDistinct(col("login_player_id"))/countDistinct(col("player_id")) * 100,2).alias("fraction"))
+final_df.show()
+-----------------------------
+Write a solution to find managers with at least five direct reports.
+
+from pyspark.sql.functions import *
+
+data = [
+    (101, "John", "A", None),
+    (102, "Dan", "A", 101),
+    (103, "James", "A", 101),
+    (104, "Amy", "A", 101),
+    (105, "Anne", "A", 101),
+    (106, "Ron", "B", 101)]
+
+columns = ["id", "name", "department", "managerId"]
+
+employee_df = spark.createDataFrame(data, columns)
+employee_df.createOrReplaceTempView("v_employee_df")
+employee_df.display()
+
+manager_counts = employee_df.groupBy("managerID").agg(count("*").alias("direct_reports"))
+manager_counts.display()
+
+manager_with_5_or_more_reports = manager_counts.filter(col("direct_reports") >= 5)
+manager_with_5_or_more_reports.display()
+
+results_df = employee_df.join(managers_with_5_or_more_reports, employee_df["id"] == managers_with_5_or_more_reports["managerID"], "inner")
+.select("id","name","department""direct_reports")
+result_df.display()
+-----------------------------------------
+For a given department find which employee got the highest salary**
+
+win = Window.partitionBy(col("department")).orderBy(col("Salary").desc())
+resultDf = emp_df.withColumn("rn", row_number().over(win))
+
+For a given department list the employees whose salaries are higher than department average**
+
+dept_avg = emp_df.groupBy(col("department")).agg(round(avg("salary"), 2).alias("avg_dept_salary"))
+dept_avg.display()
+
+# COMMAND ----------
+
+colslist = ["employee_id", "full_name", "job", "department", "salary", "avg_dept_salary"]
+result_df = emp_df.join(dept_avg, (emp_df["department"]==dept_avg["department"]) & (emp_df["salary"]>=dept_avg["avg_dept_salary"]), "inner")\
+                    .select(emp_df["*"], dept_avg["avg_dept_salary"])
+result_df.select(colslist).display()
+
+For a given department list the employees whose salaries are lower than department average
+
+colslist = ["employee_id", "full_name", "job", "department", "salary", "avg_dept_salary"]
+result_df = emp_df.join(dept_avg, (emp_df["department"]==dept_avg["department"]) & (emp_df["salary"]<=dept_avg["avg_dept_salary"]), "inner")\
+                    .select(emp_df["*"], dept_avg["avg_dept_salary"])
+result_df.select(colslist).display()
+
+For a given department list the employees who have been working for more than 2 years
+
+resultDf = emp_df\
+    .withColumn("hire_date", to_date(col("hire date"), "dd-MM-yyy"))\
+    .withColumn("noOfYears", round(months_between(current_date(), col("hire_date"))/lit(12), 1))
+
+resultDf.filter(col("noOfYears")>=2).display()
+
+What is the total count of employee in each department that are not managers:
+
+non_manager = emp_df.filter(col("job")!="Manager")
+non_manager.display()
+resultDf = non_manager.groupBy(col("department")).count()]
+resultDf.display()
+
+How to find out and format current date or timestamp
+
+df_sales_src.withColumn("current_date",current_date()) \
+    .withColumn("current_timestamp", current_timestamp()) \
+    .select(col("current_date"), col("current_timestamp"))\
+    .display()
+
+How to change the format of date and timestamp - getting null issue
+
+df_sales = df_sales_src.withColumn("new_order_date_str", date_format(col("order_date"),"yyyy-MM-dd"))
+df_sales\
+    .select("*",
+            current_date().alias("current_date"), 
+            current_timestamp().alias("current_timestamp")).display()
+    
+df_sales = df_sales\
+    .withColumn("new_order_date", to_date(col("new_order_date_str"))) \
+    .withColumn("order_timestamp", to_timestamp(col("order_date")))
+
+df_sales.select(col("order_date"),col("new_order_date_str"), col("new_order_date"), col("order_timestamp")).display()
+
+
+# What happens when you apply to_date to invalid date strings
+df_sales\
+    .select(col("order_date"),
+            col("new_order_date_str"),
+            date_format(col("new_order_date_str"), "MM-dd-yyyy").alias("new_order_date_str2"),
+            to_date(col("new_order_date_str2")).alias("new_order_date2"),
+            col("new_order_date"), 
+            col("order_timestamp")).display()
+
+How to add or substract from a date field
+
+df_sales.withColumn("add_2_months", add_months(col("new_order_date"), 2))\
+    .withColumn("sub_3_months", add_months(col("new_order_date"), -3))\
+    .withColumn("add_2_days", date_add(col("new_order_date"), 2))\
+    .withColumn("sub_4_days", date_sub(col("new_order_date"), 4))\
+    .select("new_order_date", "add_2_months", "sub_3_months", "add_2_days", "sub_4_days")\]
+    .display()
+
+How to find the difference between two dates
+
+df_sales.withColumn("current_date_diff", datediff(current_date(), col("new_order_date")))\
+    .select("current_date_diff", current_date().alias("current_date"), "new_order_date")\
+    .display()
+
+How to find the months beteen two dates
+
+df_sales.withColumn("current_months_diff", months_between(current_date(), col("new_order_date")))\
+    .select(round("current_months_diff").alias("current_months_diff"), current_date().alias("current_date"), "new_order_date")\
+    .display()
+
+How to find out specific part of a date
+
+df_sales.select(col("new_order_date"),
+                # day(col("new_order_date")).alias("day"),
+                year(col("new_order_date")).alias("year"),
+                quarter(col("new_order_date")).alias("quarter"),
+                month(col("new_order_date")).alias("month")).display()
+
+How to find out specific day and week of a period
+
+df_sales.withColumn("dayofweek", dayofweek(col("new_order_date")))\
+    .withColumn("dayofmonth", dayofmonth(col("new_order_date")))\
+    .withColumn("dayofyear", dayofyear(col("new_order_date")))\
+    .withColumn("weekofyear", weekofyear(col("new_order_date")))\
+    .withColumn("last_day", last_day(col("new_order_date")))\
+    .select("new_order_date", "dayofweek", "dayofmonth", "dayofyear", "weekofyear", "last_day")\
+    .display()
+
+df_sales = df_sales\
+    .withColumn("unix_time_from_date", unix_timestamp(col("new_order_date")))\
+    .withColumn("unix_time_from_timestamp", unix_timestamp(col("order_timestamp")))\
+    .withColumn("from_unix", from_unixtime(col("unix_time")))\
+    .withColumn("from_unix_format", from_unixtime(col("unix_time"), "yyyy-MM-dd"))
+df_sales.select("new_order_date", "unix_time_from_date", "order_timestamp", "unix_time_from_timestamp", "from_unix", "from_unix_format")\
+    .display()
+
+from pyspark.sql.functions import *
+from pyspark.sql.types import *
+from pyspark.sql.window import Window
+
+df_sales = spark.read.format("csv").option("header", "true").load("dbfs:/FileStore/shared_uploads/sarthakdasgupta1997@gmail.com/sales_short.csv")
+df_sales.display()
+
+df_order = spark.read.format("csv").option("header", "true").load("dbfs:/FileStore/shared_uploads/sarthakdasgupta1997@gmail.com/sales_order_price.csv")
+df_order.display()
+
+Display the total price of each product ordered in 1st and 5th month of 2020
+
+df_product = df.sales.select("order_date","order_id","product").filter("month(order_date") in (1,5) and year(order_date) = 2020")
+df_product.display()
+
+df_price = df_order.select(col("order_id"), lit(col("qty") * col("price_each")).alias("total_price"))
+df_price.display()
+
+df_result = df_product.join(df_price, df_product["order_id"] == df_price["order_id"]).select(df_product["*"], "total_price")
+df_result.groupBy(col("product")).agg(exp(sum(total_price) as total_price")).display()
+
+How many no of days between 1st USB-C Charging Cable and 2nd USB-C Charging Cable sales
+
+df_usb_all = df_sales.filter("product = 'USB-C charging cable'")
+df_usb_all.show()
+
+df_usb_2 = df_usb_all.orderBy("order_date").limit(2)
+df_usb_2.display()
+
+df_usb_2.createOrReplaceTempView("df_usb_2_v")
+
+win = Window.partitionBy("product").orderBy("product")
+# df_usb_prev_date = spark.sql("select *, lag(order_date) over(order by product) as prev_date from df_usb_2_v")
+df_usb_prev_date = df_usb_2.withColumn("prev_date", lag("order_date").over(win))
+df_usb_prev_date.display()
+
+df_result = df_usb_prev_date.withColumn("days_between", datediff(col("order_date"), col("prev_date")))
+df_result.display()
+
+Which month of 2020 has the most no of total sales:
+
+df_2020 = df_sales.filter("year(order_date) == 2020").withColumn("month",month("order_date"))
+df_2020.display()
+
+df_price.display()
+
+df_order_2020 = df_2020.join(df_price, df_2020["order_id"] == df_price["order_id"]).select(df_2020["*"], "total_price")
+df_order_2020.display()
+
+df_result = df_order_2020.groupBy("month").agg(sum("total_price").alias("sum_price"))
+df_result.display()
+
+df_result.orderBy(col("sum_price").desc()).limit(1).display()
+
+Which hour of the day is most favourable for sales in all years of purchase:
+
+df_hour = df_sales.withColumn("hour", hour("order_date")).select("order_id","hour")
+df_hour.display()
+
+df_order_hour = df_hour.join(df_price, df_hour["order_id"] == df_price["order_id"]).select(df_hour["*"], "total_price")
+df_order_hour.display()
+
+df_result = df_order_hour.groupBy("hour").agg(sum("total_price").alias("total_price"))
+df_result.display()
+
+df_result.orderBy(col("total_price").desc()).limit(1).display()
+
+How many months between the purchase of 1st and 3rd 27in FHD Monitor:
+
+df_fhd = df_sales.filter("Product = '27in FHD Monitor'")
+df_fhd.display()
+
+win = Window.partitionBy("product").orderBy("product")
+# df_usb_prev_date = spark.sql("select *, lag(order_date) over(order by product) as prev_date from df_usb_2_v")
+df_fhd_prev_date = df_fhd.withColumn("prev_date", lag("order_date", 2).over(win))
+df_fhd_prev_date.display()
+
+df_result = df_fhd_prev_date.withColumn("months_between", months_between(col("order_date"), col("prev_date")))
+df_result.display()
+
+List down all the weeks of each year with most sales:
+
+df_week = df_sales.withColumn("week_of_year", weekofYear(col("order_date"))).withColumn("year",year(col("order_date")))
+df_week.display()
+
+df_order_week = df_week.join(df_price, df_week["order_id"]==df_price["order_id"]).select("week_of_year", "year", "total_price")
+df_order_week.display()
+
+# 17 2019 389.99
+# 17 2019 150
+
+df_total_week_price = df_order_week.groupBy("week_of_year", "year").agg(sum("total_price").alias("total_price_per_week"))
+df_total_week_price.display()
+# 17 2019 539.99
+
+win = Window.partitionBy("year").orderBy(col("total_price_per_week").desc())
+df_total_week_price.withColumn("rn", row_number().over(win))\
+    # ].filter("rn==1")\
+    .display()
+
+
+Among all the days in a week which one generated the least revenue and what products were impacted:
+
+df_week_day = df_sales.withColumn("day_of_week", dayofweek("order_date"))
+df_week_day.display()
+
+# COMMAND ----------
+
+df_price_week_day = df_week_day.join(df_price, df_week_day["order_id"]==df_price["order_id"]).select("day_of_week", "total_price")
+df_price_week_day.display()
+
+df_price_group = df_price_week_day.groupBy("day_of_week").agg(sum("total_price").alias("sum_price"))
+df_price_group.display()
+
+min_price = df_price_group.select(min("sum_price")).collect()[0][0]
+# min_price = (lambda x: x for x in min_price)
+print(min_price)
+
+df_min_price = df_price_group.filter(f"sum_price=={min_price}".format(min_price))
+df_min_price.display()
+
+df_join = df_week_day.join(df_min_price, df_week_day["day_of_week"]==df_min_price["day_of_week"]).select(df_week_day["*"], "sum_price")
+df_join.display()
+------------------------------------------------------------------------
+dbutils.fs.ls('dbfs:/FileStore/shared_uploads/sarthakdasgupta1997@gmail.com/sherlock_holmes.txt')
+
+rdd_text = spark.sparkContext.textFile("dbfs:/FileStore/shared_uploads/sarthakdasgupta1997@gmail.com/sherlock_holmes.txt")
+rdd_text.collect()
+
+df_text = spark.read.text("dbfs:/FileStore/shared_uploads/sarthakdasgupta1997@gmail.com/sherlock_holmes.txt")
+df_text.display()
+
+r = rdd_text.flatMap(lambda x: x.split(','))
+r.collect()
+
+Calculate the total amount spent by each customer on products within a given year:
+
+the total amount spent by each customer on products within a given year
+identify the top 2 products they spent the most money on. Additionally
+return the overall total spending of each customer across all year.
+
+from pyspark.sql.functions import *
+from pyspark.sql.window import Window
+
+data = [
+    (1, "2023-01-15", "A", 100.0),
+    (1, "2023-03-10", "B", 150.0),
+    (2, "2023-02-05", "A", 50.0),
+    (1, "2023-02-20", "A", 200.0),
+    (2, "2023-04-30", "C", 300.0),
+    (1, "2022-05-12", "B", 120.0),
+    (2, "2022-09-22", "A", 200.0),
+    (1, "2023-05-15", "C", 250.0)]
+
+# Create DataFrame
+columns = ["customer_id", "transaction_date", "product_id", "transaction_amount"]
+df = spark.createDataFrame(data, columns)
+df.display()
+
+
+# Step 1: Filter transactions for the year 2023
+df_2023 = df.filter(year(col("transaction_date")) == 2023)
+
+# Step 2: Calculate total spending by each customer for each product in 2023
+customer_product_spending = df_2023.groupBy("customer_id", "product_id") \
+    .agg(sum("transaction_amount").alias("total_spent"))
+
+customer_product_spending.display()
+
+# Step 3: Find top 2 products by spending for each customer in 2023
+# Using a window function to rank products by spending
+window_spec = Window.partitionBy("customer_id").orderBy(desc("total_spent"))
+
+# Add rank column and filter top 2 products
+ranked_products = customer_product_spending.withColumn("rank", rank().over(window_spec)) \
+    .filter(col("rank") <= 2) \
+    .select("customer_id", "product_id", "total_spent")
+
+print("Top 2 products by spending for each customer in 2023:")
+ranked_products.display()
+
+# COMMAND ----------
+
+
+# Step 4: Calculate total spending for each customer across all years
+total_spending = df.groupBy("customer_id") \
+    .agg(_sum("transaction_amount").alias("total_spent"))
+
+print("Total spending by each customer across all years:")
+total_spending.display()
+
+-----
+
+# MAGIC **1. Calculate total amount spent by each customer**<br>
+# MAGIC **2. Find the most expensive product bought by each customer**<br>
+# MAGIC **3. Calculate the average age of customers who made purchases greater than $300**
+
+# COMMAND ----------
+
+from pyspark.sql.functions import *
+from pyspark.sql.types import *
+
+# COMMAND ----------
+
+data = """
+[
+{
+  "name": "Jane Smith",
+  "age": 28,
+  "purchases": [
+    {
+      "product_id": "B001",
+      "product_name": "Tablet",
+      "price": 399.99,
+      "quantity": 1,
+      "purchase_date": "2023-06-20"
+    },
+    {
+      "product_id": "B002",
+      "product_name": "Smartwatch",
+      "price": 249.99,
+      "quantity": 1,
+      "purchase_date": "2023-07-05"
+    }
+  ]
+},
+{
+  "name": "Alice Johnson",
+      "age": 35,
+  "purchases": [
+    {
+      "product_id": "C001",
+      "product_name": "Bluetooth Speaker",
+      "price": 149.99,
+      "quantity": 1,
+      "purchase_date": "2023-08-10"
+    },
+    {
+      "product_id": "C002",
+      "product_name": "Camera",
+      "price": 199.99,
+      "quantity": 1,
+      "purchase_date": "2023-08-25"
+    },
+    {
+      "product_id": "C003",
+      "product_name": "VR Headset",
+      "price": 299.99,
+      "quantity": 1,
+      "purchase_date": "2023-09-12"
+    }
+  ]
+},
+{
+  "name": "John Doe",
+  "age": 30,
+  "purchases": [
+    {
+      "product_id": "A001",
+      "product_name": "Smartphone",
+      "price": 699.99,]
+      "quantity": 1,
+      "purchase_date": "2023-07-15"
+    },
+    {
+      "product_id": "A002",
+      "product_name": "Laptop",
+      "price": 999.99,
+      "quantity": 1,
+      "purchase_date": "2023-08-02"
+    },
+    {
+      "product_id": "A003",
+      "product_name": "Wireless Headphones",
+      "price": 199.99,
+      "quantity": 2,
+      "purchase_date": "2023-09-10"
+    }
+  ]
+}
+]
+"""
+
+# COMMAND ----------
+
+
+
+# COMMAND ----------
+
+# Create DataFrame from JSON data using a scheme
+json_schema = StructType([
+    StructField("name", StringType()),
+    StructField("age", IntegerType()),
+    StructField("purchases", ArrayType(StructType([
+        StructField("product_id", StringType()),
+        StructField("product_name", StringType()),
+        StructField("price", DoubleType()),
+        StructField("quantity", IntegerType()),
+        StructField("purchase_date", StringType())])))])
+
+df = spark.read.json(spark.sparkContext.parallelize([data]), schema=json_schema)
+df.display()
+
+# Explode the purchases array
+exploded_df = df.select(
+    col("name"),
+    col("age"),
+    explode(col("purchases")).alias("purchase"),
+    col('purchase.product_id').alias('product_id'),
+    col('purchase.product_name').alias('product_name'),
+    col('purchase.price'),
+    col('purchase.quantity'),
+    col('purchase.purchase_date')).drop(col('purchase'))
+
+exploded_df.display()
+
+Calculate total amount spent by each customer
+
+
+total_spent_df = exploded_df\
+    .withColumn("net_amount", col("price") * col("quantity"))\
+    .groupBy("name")\
+    .agg(sum("net_amount").alias("total_amount_spent"))
+
+total_spent_df.display()
+
+Find the most expensive product bought by each customer
+
+# Maximum price paid by each customer
+temp_df = exploded_df\
+    .groupBy(col("name").alias("temp_name"))\
+    .agg(max(col("price")).alias("max_price"))\
+    
+temp_df.display()
+
+# which product has the max price
+most_expensive_product_df = exploded_df\
+    .join(temp_df, (exploded_df["price"] == temp_df["max_price"]) & (exploded_df["name"] == temp_df["temp_name"])) \
+    .select(col("name"), col("max_price"), col("product_name"), col("purchase_date"))
+    
+most_expensive_product_df.display()
+
+Calculate the average age of customers who made purchases greater than $300
+
+
+high_value_customers_df = exploded_df.filter(col("price") > 300) \
+    .select("name", "age").distinct()
+high_value_customers_df.display()
+
+average_age_df = high_value_customers_df.groupBy().agg(avg("age").alias("average_age_high_value_customers"))
+average_age_df.display()
+
+final_report_df = total_spent_df.join(most_expensive_product_df, "name").join(average_age_df)
+
+# Show the results
+final_report_df.display()
+----------------------------------------------
+
+Write a PySpark code to clean up the names by removing any special characters (e.g., @, #, *, etc.)
+
+from pyspark.sql.functions import *
+
+
+data = [
+    ("John@Doe*", "John.Doe@Example.COM"),
+    ("Jane#Smith@", "JaneSmith@EXAMPLE.com"),
+    ("Alice!Johnson$", "AliceJohnson@Example.Com"),
+    ("Bob%Stone&", "BOB.STONE@Gmail.COM")]
+
+
+columns = ["name", "email"]
+df = spark.createDataFrame(data, columns)
+df.display()
+
+
+pattern = r"[^a-zA-Z\s]"
+
+pattern = r"[^a-zA-Z\s]"
+df_cleaned = df.withColumn("cleaned_name", regexp_replace(col("name"), pattern, "")).withColumn("normalized_email", lower(col("email")))
+
+df_cleaned.select("cleaned_name", "normalized_email").display()
+
+-----
+
+Write a pyspark code to check if email is in correct format
+
+from pyspark.sql.functions import *
+
+# Sample input data with some invalid and valid emails
+data = [
+    ("John Doe", "John.Doe@Example.COM"),
+    ("Jane Smith", "JaneSmith@EXAMPLEcom"),
+    ("Alice Johnson", "AliceJohnson@example.co"),
+    ("Bob Stone", "bob_stone@example"),
+    ("Invalid Email", "invalid_email@wrong")]
+
+# Create DataFrame
+columns = ["name", "email"]
+df = spark.createDataFrame(data, columns)
+df.display()
+
+sample = 'sarthak.dasgupta @ example-mail . com'
+
+^: This means the pattern must match from the beginning of the string.
+
+[a-zA-Z0-9._%+-]+:
+    [a-zA-Z0-9]: This allows any letter (a-z, A-Z) or number (0-9).
+    ._%+-: This allows the special characters dot (.), underscore (_), percent (%), plus (+), and dash (-).
+    The + means that this part must repeat one or more times. This defines the local part (the part before the @ symbol) of the email.
+    @: This specifies the @ symbol, which separates the local part of the email from the domain part.
+
+[a-zA-Z0-9.-]+\.:
+    [a-zA-Z0-9]: This allows letters and numbers.
+    .-: This allows dots (.) and dashes (-) to appear in the domain part (the part after the @).
+    The + means this part must repeat one or more times. This is the domain name part of the email.
+    \.: This ensures there is a dot before the top-level domain (TLD) (like .com or .org).
+
+[a-zA-Z]{2,}:
+    This part checks for the TLD (top-level domain), like .com or .org.
+    [a-zA-Z]: This allows only letters.
+    {2,}: This ensures that there are at least two letters in the TLD (like .com has three letters, .co has two).
+    $: This means the pattern must match until the end of the string.
+
+# COMMAND ----------
+
+# Regular expression for email validation
+email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+
+# Add a new column 'valid_email' to check if the email matches the regex pattern
+df_validated = df\
+.withColumn("regex_extract", regexp_extract(col("email"), email_regex, 0))\
+.withColumn("valid_email", regexp_extract(col("email"), email_regex, 0) != "")
+
+# Show the result with the validation column
+df_validated.display()
+-----------------------------------------------------
+Find customers who have placed orders on consecutive days:
+
+from pyspark.sql.functions import *
+from pyspark.sql.window import Window
+
+# Sample data
+data = [
+    (1, '2024-10-01'),
+    (1, '2024-10-02'),
+    (1, '2024-10-04'),
+    (2, '2024-10-03'),
+    (2, '2024-10-05'),
+    (3, '2024-10-01'),
+    (3, '2024-10-02'),
+    (3, '2024-10-03')]
+
+# Create DataFrame
+df = spark.createDataFrame(data, ["customer_id", "order_date"])
+df.display()
+
+# Define a window partitioned by customer and ordered by order_date
+window_spec = Window.partitionBy("customer_id").orderBy("order_date")
+
+# Use lag to get the previous order_date per customer
+df_lag = df.withColumn("previous_order_date", lag("order_date").over(window_spec))
+df_lag.display()
+
+# COMMAND ----------
+
+# Calculate the difference between the current and previous order_date
+df_diff = df_lag.withColumn("date_diff", datediff("order_date", "previous_order_date"))
+df_diff.display()
+
+# Filter for rows where the date difference is 1 (indicating consecutive days)
+consecutive_orders = df_diff.filter(col("date_diff") == 1)
+
+# Show the result
+consecutive_orders.display()
+
+consecutive_orders.select("customer_id").distinct().display()

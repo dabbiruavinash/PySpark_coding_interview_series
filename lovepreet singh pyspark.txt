@@ -1,0 +1,238 @@
+Write a SQL to list employee name along with their manager and senior manager name.
+Senior manager is manager's manager.
+
+Use this below data to create table:-
+create table emp(
+emp_id int,
+emp_name varchar(20),
+department_id int,
+salary int,
+manager_id int,
+emp_age int);
+
+insert into emp values (1, 'Ankit', 100,10000, 4, 39);
+insert into emp values (2, 'Mohit', 100, 15000, 5, 48);
+insert into emp values (3, 'Vikas', 100, 12000,4,37);
+insert into emp values (4, 'Rohit', 100, 14000, 2, 16); 
+insert into emp values (5, 'Mudit', 200, 20000, 6,55);
+insert into emp values (6, 'Agam', 200, 12000,2, 14);
+insert into emp values (7, 'Sanjay', 200, 9000, 2,13);
+insert into emp values (8, 'Ashish', 200,5000,2,12);
+insert into emp values (9, 'Mukesh',300,6000,6,51);
+insert into emp values (10, 'Rakesh',500,7000,6,50);
+
+from pyspark.sql.functions import col
+
+emp_joined_df = emp_df.alias("e").join(emp_df.alias("m"), col("e.manager_id") == col("m.emp_id"), "inner").join(emp_df.alias("sm"), col("m.manager_id") == col("sm.emp_id"), "inner")
+
+final_emp_list_df = emp_joined_df.select(col("e.emp_id"), col("e.emp_name"), col("m.emp_name").alias("manager"), col("sm.emp_name").alias("senior_manager"))
+
+final_emp_list_df.show()
+
+%sql
+
+select e.emp_id, e.emp_name, m.emp_name as manager_name, sm.emp_name as senior_manager from emp e join emp m on e.manager_id = m.emp_id join emp sm on m.manager_id = sm.emp_id;
+------------------------------------------------------------------------
+
+A company wants to hire new employees. The budget of the company for the salaries is $70000. The company's criteria for hiring are:
+Keep hiring the senior with the smallest salary until you can not hire any more seniors.
+Use the remaning budget to hire the junior with the smallest salary.
+Keep hiring the junior with the smallest salary until you can not hire any more junior.
+Write a SQL query to find the seniors and juniors hired under the mentioned criteria.
+
+Use this below data to create table:-
+create table candidates (
+emp_id int,
+experience varchar(20),
+salary int);
+insert into candidates values (1,'Junior',10000),(2,'Junior',15000),(3,'Junior',40000),(4,'Senior',16000),(5,'Senior',20000),(6,'Senior',50000);
+
+
+from pyspark.sql.functions import col,sum,lit
+from pyspark.sql import Window
+
+remaining_budget_window = Window.partitioBy("experience").orderBy("salary")
+
+senior_budget_df = candidate_df.filter(col("experience") == "Senior").withColumn("senior_remaining_budget", lit(7000) - sum("salary").over(remaining_budget_window))
+
+remaining_actual_budget = senior_budget_df.filter(col("senior_remaining_budget") >= 0).selectExpr("MIN(senior_remaining_budget)").collect()[0][0]
+
+junior_budget_df = candidates_df.filter(col("experience") == "junior").withColumn("junior_remaining_budget", lit(remaining_actual_budget) - sum("salary").over(remaining_budget_window))
+
+final_employee_df = senior_budget_df.filter(col("senior_remaining_budget") > 0).select("emp_id", "experience", "salary").union(junior_budget_df.filter(col("junior_remaining_budget") > 0).select("emp_id", "experience","salary")).sort("emp_id")
+
+final_employees_df.show()
+
+%sql
+
+with senior_budget as (
+select *, 7000 - sum(salary) over(partiton by experience order by salary) as remainng_budget from candidates where experience = 'Senior'),
+junior_budget as (
+select * , (select min(remaining_budget) from senior_budget where remaining_budget > 0) - sum(salary) over(order by salary) as junior_remaining_budget from candidates where experience = 'junior')
+
+select emp_id, experience, salary from senior_budget where remaining_budget > 0
+union all
+select emp_id, experience, salary from junior_budget where junior_remaining_budget > 0 order by emp_id;
+------------------------------------------------------------
+
+There is a phonelog table that has information about callers's call history.
+Write a SQL query to find out callers whose first and last call was to the same person on a given day.
+
+Use this below data to create table:-
+create table phonelog(
+ Callerid int, 
+ Recipientid int,
+ Datecalled datetime);
+insert into phonelog(Callerid, Recipientid, Datecalled)
+values(1, 2, '2019-01-01 09:00:00.000'),
+ (1, 3, '2019-01-01 17:00:00.000'),
+ (1, 4, '2019-01-01 23:00:00.000'),
+ (2, 5, '2019-07-05 09:00:00.000'),
+ (2, 3, '2019-07-05 17:00:00.000'),
+ (2, 3, '2019-07-05 17:20:00.000'),
+ (2, 5, '2019-07-05 23:00:00.000'),
+ (2, 3, '2019-08-01 09:00:00.000'),
+ (2, 3, '2019-08-01 17:00:00.000'),
+ (2, 5, '2019-08-01 19:30:00.000'),
+ (2, 4, '2019-08-02 09:00:00.000'),
+ (2, 5, '2019-08-02 10:00:00.000'),
+ (2, 5, '2019-08-02 10:45:00.000'),
+ (2, 4, '2019-08-02 11:00:00.000');
+
+from pyspark.sql.functions import col,min,max
+from pyspark.sql.types import DateType
+
+first_last_call_df = phonelog_df.groupBy("Callerid", col("Datecalled").cast(DateType()).alias("dates")).agg(min(col("Datecalled")).alias("first_call"), max(col("Datecalled")).alias("last_call"))
+
+joined_dates_df = first_last_call_df.alias("f").join(phonelog_df.alias("p1"), col("p1.Callerid") == col("f.Callerid")) & (col("p1.Datecalled") == col("f.first_call")), "inner").join(phonelog_df.alias("p2"), col("p2.Callerid") == col("f.Callerid")) & (col("p2.Datecalled") == col("f.last_call")), "inner")
+
+final_callers_df = joined_dates_df.filter(col("p1.Receipientid") == col("p2.Recipientid")).select(col("f.Callerid"), col("p1.Recipientid"), col("p1.Datecalled"))
+
+final_callers_df.show()
+
+%sql
+
+with cte as (
+select *, cast(Datecalled as DATE) as Dateonly from phonelog),
+cte2 as (
+select *, row_number() over (partiton by Callerid, Dateonly order by Callerid) as rn, count(*) over(parititon by Callerid, Dateonly order by Callerid) as cnt from cte)
+select Callerid, Receipentid, Datecalled from cte2 where rn = 1 and Recipientid in (select Recipentid from cte2 where rn = cnt) order by Callerid, Receipientid;
+
+----------------------------------------------------
+Write an SQL query to report the students (student_id, student_name) being "quiet" in ALL exams.
+A "quiet" student is the one who took at least one exam and didn't score neither the high score nor the low score 
+in any of the exam. Don't return the student who has never taken any exam. Return the result table ordered by student_id.
+
+Use this below data to create table:-
+create table students(
+student_id int,
+student_name varchar(20));
+insert into students values (1,'Daniel'),(2,'Jade'),(3,'Stella'),(4,'Jonathan'),(5,'Will');
+create table exams (
+exam_id int,
+student_id int,
+score int);
+insert into exams values (10,1,70),(10,2,80),(10,3,90),(20,1,80),(30,1,70),(30,3,80),(30,4,90),(40,1,60) ,(40,2,70),(40,4,80);
+
+from pyspark.sql.functions import col,max,min
+
+max_score = exams_df.agg(max(col("score"))).collect()[0][0]
+min_score = exams_df.agg(min(col("score"))).collect()[0][0]
+
+min_max_students_df = exams_df.filter(col("score").isin(max_score, min_score)).select("student_id")
+
+quiet_student_df = exams_df.alias("e").join(min_max_students_df.alias("s"), "student_id","anti")
+
+final_quiet_student_df = (
+quiet_student_df.alias("q").join(students_df.alias("s"), "student_id", "inner").select(col("q.student_id"), col("s.student_name")).distinct())
+
+final_quiet_student_df.show()
+
+%sql
+
+with min_max_score as (
+select *, from exams where score in (select min(score) from exams) or score in (select max(score) from exams))
+select distinct e.student_id, s.student_name from exams e join student s on e.student_id = s.student_id where e.student_id not in (select student_id from min_max_score);
+---------------------------------------------------------------------------------
+Write a SQL query to populate category values to the last non null values.
+
+Use this below data to create table:-
+create table brands (category varchar(20), brand_name varchar(20));
+insert into brands values
+('chocolates','5-star')
+,(null,'dairy milk')
+,(null,'perk')
+,(null,'eclair')
+,('Biscuits','britannia')
+,(null,'good day')
+,(null,'boost');
+
+from pyspark.sql.functions import col,lit,row_number, lead
+from pyspark.sql import Window
+
+row_num_window = Window.orderBy(lit(None))
+
+row_num_df = brands_df.withColumn("row_num", row_number().over(row_num_window))
+
+lead_window = Window.orderBy(col("row_num"))
+
+next_non_null_num_df = row_num_df.filter(col("category").isNotNull()).withColumn("next_non_null_num", (lead(col("row_num"),1,9999).over(lead_window))-1))
+
+final_categories_df = row_num_df.alias("r1").join(next_non_null_num_df.alias("r2"), (col("r1.row_num") >= col("r2.row_num")) & (col("r1.row_num") <= col("r2.next_non_null_num")),"inner").select(col("r2.category"), col("r1.brand_name")))
+
+final_category_df.show()
+
+%sql
+with row_num_cte as (
+select *, row_number() over(order by (select null)) as row_num from brands),
+next_non_null_cte as (
+select *, lead(row_num,1,9999) over(order by row_num) - 1 as next_non_null_num from row_num_cte where category is not null)
+select r2.category ,r1.brand_name from row_num_cte r1 join next_non_null_cte r2 on r1.row_num >= r2.row_num and r1.row_num <= r2.row_num <= r2.next_non_null_num;
+----------------------------------------------
+Write a SQL to determine phone numbers that satisfy the below conditions:
+1) The numbers have both incoming and outgoing calls.
+2) The sum of duration of outgoing calls should be greater than sum of duration of incoming calls.
+
+Use this below data to create table:-
+create table call_details (
+call_type varchar(10),
+call_number varchar(12),
+call_duration int);
+insert into call_details values ('OUT','181868',13),('OUT','2159010',8)
+,('OUT','2159010',178),('SMS','4153810',1),('OUT','2159010',152),('OUT','9140152',18),('SMS','4162672',1)
+,('SMS','9168204',1),('OUT','9168204',576),('INC','2159010',5),('INC','2159010',4),('SMS','2159010',1)
+,('SMS','4535614',1),('OUT','181868',20),('INC','181868',54),('INC','218748',20),('INC','2159010',9)
+,('INC','197432',66),('SMS','2159010',1),('SMS','4535614',1);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

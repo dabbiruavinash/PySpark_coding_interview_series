@@ -1,0 +1,639 @@
+Previous 
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import *
+from pyspark.sql.window import Window
+
+data = []
+columns = []
+spark = SparkSession.builder.appName("10").getOrCreate()
+
+df = spark.createDataFrame(data,columns)
+df.display()
+
+window = Window.orderBy(col('period'))
+df1 = df.withColumn('temp_column', lag(col('actual_revenue').over(window))
+df2 = df1.withColumn('Monthly_revenue_change', df1['actual_revenue'] - df1['temp_column'])
+df2.select('actual_revenue','period','monthly_revenue_change').display()
+
+calculate cumulative sales for each salesperson
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import *
+from pyspark.sql.window import Window
+
+spark = SparkSession.builder.appName("10").getOrCreate()
+
+data = []
+columns = []
+df = spark.createDataFrame(data, columns)
+df.display()
+
+window = Window.partitionBy(col("salesperson")).orderBy(asc(col("sales_date")))
+df1 = df.withColumn("cumulative_sales', sum(col("sales_amount")).over(window))
+df1.display()
+
+calculate the percentage contribution of each item to the total sales
+from pyspark.sql import SparkSession
+from pyspark.sql import functions as F
+
+spark = SparkSession.builder.appName("p").getOrCreate()
+
+data = []
+columns = []
+df = spark.createDataFrame(data, columns)
+df.display()
+
+total_sales_df = df.agg(F.sum("Sales").alias("Total_Sales"))
+result_df = df.withColumn("PercentageContribution", (F.col("Sales")/total_sales_df["Total_sales"]) * 100)
+result_df.select("Item","F.round("PercentageContribution",2).alias("PercentageContribution")).show()
+
+fill the missing(null) values in the value columns usig forward fill method
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import *
+from pyspark.sql.window import Window
+
+schema = []
+data = []
+spark = SparkSession.builder.appName("A").getOrCreate()
+
+df = spark.createDataFrame(data, schema)
+
+window = Window.orderBy(asc(col("Date"))
+df_with_newcolumn = df.select('Date',coalesce(col('Value'),lag(col('Value')).over(window)).alias("temp_column"))
+df_with_newcolumn.display()
+
+remove duplicates based on the name, keeping only latest entry based on a given timestamp column timestamp
+
+from pyspark.sql import SparkSession
+from pyspark.sql import Window
+from pyspark.sql.functions import *
+
+spark = SparkSession.builder.appName("6").getOrCreate()
+
+data = []
+schema = []
+df = spark.createDataFrame(data, schema)
+df.display()
+
+df1 = df.groupBy(col("name")).agg(max("timestamp").alias("timestamp"))
+df1.display()
+df_joined = df_selected_field.join(df1.on = "tiimestamp", how = "inner")
+df_joined.display()
+
+---
+You are given a PySpark DataFrame that records weekly closing prices for a stock.
+Your task is to determine, for each row, whether the current week's closing price is the highest in the last 52 weeks (including this week).
+
+columns - stock,date,price
+
+from pyspark.sql import SparkSession
+from pyspark.sql.window import Window
+form pyspark.sql.functions import *
+
+spark = SparkSession.builder.appName("unique").getOrCreate()
+
+data = []
+schema = []
+df = spark.createDataFrame(data, schema)
+df = df.withColumn("date", to_date(col("date"), "yyyy-mm-dd"))
+window_spec = Window.partitionBy("stock").orderBy("date").rowsBetween(-51,0)
+df = df.withColumn("52_week",max("price").over(window_spec))
+df = df.withColumn("is_highest", when(col("price") == col("52_week"), "yes").otherwise("no"))
+
+---
+You're given a dataset of sensor readings from multiple devices, structured as follows:
+| device_id (string) | timestamp (timestamp) | reading (double) |
+
+Each device reports readings every few seconds. Some readings can be NULL due to device failures.
+Your task is to compute, for each reading, the moving average of the last 3 non-null readings (including the current one) for each device, ordered by timestamp.
+
+from pyspark.sql.functions import *
+from pyspark.sql.window import Window
+from pyspark.sql.types import StructType, StructField, StringType, TimeStampType, DoubleType
+
+schema = StructType([
+StructField("device_id", StringType(), True),
+StructField("timestamp", TimeStampType(), True),
+StructField("reading", DoubleType(), True)])
+
+data = []
+schema = []
+df = spark.createDataFrame(data, schema)
+df.display()
+
+window_spec = Window.partitionBy("device_id").orderBy("timestamp").rowBetween(-2,0)
+df = df.withColumn("moving_avg_for_the_last_three_including_current", avg(col("reading")).over(window_spec))
+df.show()
+----
+You have the following dataset containing log entries of users' activities:
+Write PySpark code to find the session duration (in minutes) for each user, assuming a session is from login to logout.
+
+columns - user_id, action, timestamp, page
+
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import col, unix_timestamp
+data = [
+ ("1", "2025-05-09 10:00:00", "login"),
+ ("1", "2025-05-09 10:45:00", "logout"),
+ ("2", "2025-05-09 11:00:00", "login"),
+ ("2", "2025-05-09 11:30:00", "logout"),
+]
+df = spark.createDataFrame(data, ["user_id", "timestamp", "event"])
+df = df.withColumn("timestamp", unix_timestamp(col("timestamp"), "yyyy-MM-dd HH:mm:ss"))
+
+timedf = df.alias("login").join(df.alias("logout"),
+ (col("login.user_id") == col("logout.user_id")) &
+ (col("login.event") == "login") &
+ (col("logout.event") == "logout") &
+ (col("login.timestamp") < col("logout.timestamp")),
+ "inner").select(col("login.user_id"),(col("logout.timestamp") - col("login.timestamp")) / 60.alias("session_duration_minutes"))
+timedf.show()
+
+---------
+You are given a transaction DataFrame with the following schema:
+
+transaction_id | customer_id | amount | timestamp
+
+Write PySpark code to calculate the total amount spent by each customer in their most recent transaction date.
+-----------------------------------------------------------------------------------------
+Task: Identify high-risk patients in Q4 2024 (Oct–Dec) who had ≥3 critical vital readings (outside safe ranges for specific vitals) and received ≥2 distinct treatments. Calculate their total critical vitals, average vital_value for critical readings, and distinct treatment count. Exclude null vital values or treatment codes, handle duplicate records, and ensure measure_date aligns with Q4 2024. Return patient_id, total_critical_vitals, avg_vital_value, distinct_treatments, ordered by total_critical_vitals descending.
+Safe Ranges: 
+Vital ‘TEMP’ (Temperature): 36.1–37.2°C 
+
+Vital ‘O2’ (Oxygen Saturation): 95–100%
+
+SQL CREATE TABLE Statements
+
+-- Table: vital_records
+CREATE TABLE vital_records (
+ record_id VARCHAR(50) PRIMARY KEY, -- Unique record identifier
+ patient_id INT NOT NULL, -- Patient identifier
+ measure_date DATE NOT NULL, -- Measurement date
+ vital_type VARCHAR(10) NOT NULL, -- Vital type (e.g., TEMP, O2)
+ vital_value FLOAT NOT NULL -- Vital value
+);
+
+-- Table: treatment_plans
+CREATE TABLE treatment_plans (
+ plan_id VARCHAR(50) PRIMARY KEY, -- Unique plan identifier
+ patient_id INT NOT NULL, -- Patient identifier
+ plan_date DATE NOT NULL, -- Plan date
+ treatment_code VARCHAR(10) NOT NULL -- Treatment code
+);
+SQL INSERT Statements
+sql
+
+-- Insert into vital_records
+INSERT INTO vital_records (record_id, patient_id, measure_date, vital_type, vital_value) VALUES
+('R1', 101, '2024-10-10', 'TEMP', 38.0),
+('R2', 101, '2024-10-10', 'TEMP', 38.0), -- Duplicate
+('R3', 101, '2024-10-20', 'O2', 92.0),
+('R4', 101, '2024-11-05', 'TEMP', 35.8),
+('R5', 102, '2024-11-15', 'O2', 94.0),
+('R6', 103, '2024-12-01', 'TEMP', 36.5),
+('R7', 104, '2025-01-10', 'O2', 90.0), -- Not in Q4
+('R8', 101, '2024-12-20', 'O2', 93.0);
+
+-- Insert into treatment_plans
+INSERT INTO treatment_plans (plan_id, patient_id, plan_date, treatment_code) VALUES
+('T1', 101, '2024-10-11', 'TR001'),
+('T2', 101, '2024-10-21', 'TR002'),
+('T3', 101, '2024-11-06', 'TR003'),
+('T4', 102, '2024-11-16', 'TR001'),
+('T5', 103, '2024-12-02', 'TR002'),
+('T6', 101, '2024-12-21', NULL);
+
+%sql
+with cleanvitals as (
+select distinct record_id, patient_id, measure_date, vital_type, vital_value from vital_records where measure_date between '2024-10-01' and '2024-12-31'and vital_type in ('temp','02') and vital_value is not null),
+
+cleamplans as (
+select plain_id, patient_id, plan_date, treatment_code from treatment_plans where treatment_code is not null),
+
+critiicalvital as (
+select patient_id, record_id, vital_type, vital_value from cleanvitals where (vital_type = 'TEMP' and (vital_value < 36.1 or vital_value > 37.2)) or (vital_type = '02' and (vital_value < 95 or vital_value >100))),
+
+HighRiskPatients as (
+select v.patient_id from criticalvitals v join cleanplans p on v.patient_id = p.patient_id group by v.patient_id having count(distinct v.record_id) >= 3 and count(distinct p.treatment_code) >= 2),
+
+vitalstats as (
+select v.patient_id, count(distinct v.record_id) as total_critical_vitals. avg(v.vital_value) as avg_vital_value from criticalvitals v join highriskpatients h on v.patient_id = h.patient_id group by v.patient_id),
+
+TreatmentStats as (
+select p.patient_id, count(distinct p.treatment_code) as distinct_treatments from cleanPlans p join Highriskpatients h on p.patient_id = h.patient_id group by p.patient_id)
+
+select v.patient_id, v.total_critical_vitals, round(v.avg_vital_value, 2) as avg_vital_value, t.distinct_treatments from vitalstats v join treatmentStats t on v.patient_id = t.patient_id order by v.total_critical_vitals desc;
+
+%python
+cleaned_vital_df = vital_df.dropDuplicates(["record_id", "patient_id", "measure_date", "vital_type", "vital_value"]).filter(col("measure_date").between("2024-10-01", "2024-12-31") & col("vital_type").isin("temp","02") & col("vital_value").isNotNull()).select("record_id", "patient_id", "measure_date", "vital_type", "vital_value")
+
+cleaned_plan_df = plans_df.filter(col("treatment_code").isNotNull()).select("plan_id","patient_id", "plan_date", "treatment_code")
+
+critical_vitals_df = cleaned_vitals_df.filter(((col("vital_type") == "temp") & ((col("vital_value") < 36.1) | (col("vital_value") > 37.2))) | ((col("vital_type") == "02") & ((col("vital_value") < 95) | (col("vital_value") > 100)))).select("patient_id", "record_id", "vital_type", "vital_value")
+
+high_risk_patients_df = critical_vitals_df.join(cleaned_plans_df, "patient_id").groupBy("patient_id").agg(count_distinct("record_id").alias("vital_count"), count_distinct("treament_code").alias("treatment_count")).filter((col("vital_count") >= 3) & (col("treatment_count") >=2)).select("patient_id")
+
+vital_stats_df = critical_vitals_df.join(high_risk_patients_df, "patient_id").groupBy("patient_id").agg(count_distinct("record_id").alias("total_critical_vitals").avg("vital_value").alias("avg_vital_value"))
+
+treatment_stats_df = cleaned_plans_df.join(high_risk_patients_df,"patient_id").groupBy("patient_id").agg(count_distinct("treatment_code").alias("distinct_treatments"))
+
+result_df = vital_stats_df.join(treatment_stats_df,"patient_id").select("patient_id","total_critical_vitals",round("avg_vital_value",2).alias("avg_vital_value"), "distinct_treatments").orderBy(col("total_critical_vitals").desc())
+
+result_df.show()
+-----------------------------------
+Task: Identify frequent visitors in Q1 2024 (Jan–Mar) who had ≥5 visits in specific departments (‘CAR’, ‘END’). Calculate their total number of unique diagnoses and average days between visits. Exclude null ICD codes, handle duplicate visits, and ensure valid dates. Return patient_id, total_diagnoses, avg_days_between, ordered by total_diagnoses descending.
+
+SQL CREATE TABLE Statements
+
+-- Table: hospital_visits
+CREATE TABLE hospital_visits (
+ visit_id VARCHAR(50) PRIMARY KEY,   -- Unique visit identifier
+ patient_id INT NOT NULL,        -- Patient identifier
+ visit_date DATE NOT NULL,       -- Visit date
+ department_code VARCHAR(10) NOT NULL  -- Department code (e.g., CAR, END)
+);
+
+-- Table: diagnoses
+CREATE TABLE diagnoses (
+ diagnosis_id VARCHAR(50) PRIMARY KEY, -- Unique diagnosis identifier
+ visit_id VARCHAR(50) NOT NULL,     -- References visit_id
+ diagnosis_date DATE NOT NULL,     -- Diagnosis date
+ icd_code VARCHAR(10),         -- ICD diagnosis code
+ FOREIGN KEY (visit_id) REFERENCES hospital_visits(visit_id)
+);
+
+SQL INSERT Statements
+sql
+
+
+-- Insert into hospital_visits
+INSERT INTO hospital_visits (visit_id, patient_id, visit_date, department_code) VALUES
+('V1', 101, '2024-01-05', 'CAR'),
+('V2', 101, '2024-01-05', 'CAR'), -- Duplicate
+('V3', 101, '2024-01-15', 'CAR'),
+('V4', 101, '2024-02-01', 'CAR'),
+('V5', 101, '2024-02-15', 'CAR'),
+('V6', 102, '2024-02-10', 'END'),
+('V7', 103, '2024-03-01', 'CAR'),
+('V8', 104, '2024-04-01', 'CAR');
+
+-- Insert into diagnoses
+INSERT INTO diagnoses (diagnosis_id, visit_id, diagnosis_date, icd_code) VALUES
+('D1', 'V1', '2024-01-06', 'I10'),
+('D2', 'V3', '2024-01-16', 'E11'),
+('D3', 'V4', '2024-02-02', 'I10'), -- Same ICD as D1
+('D4', 'V5', '2024-02-16', 'E11'),
+('D5', 'V6', '2024-02-11', 'E10'),
+('D6', 'V7', '2024-03-02', NULL),
+('D7', 'V1', '2024-01-07', 'J45');
+
+PySpark Sample data
+visits_data = [
+ ("V1", 101, datetime(2024, 1, 5), "CAR"),
+ ("V2", 101, datetime(2024, 1, 5), "CAR"),
+ ("V3", 101, datetime(2024, 1, 15), "CAR"),
+ ("V4", 101, datetime(2024, 2, 1), "CAR"),
+ ("V5", 101, datetime(2024, 2, 15), "CAR"),
+ ("V6", 102, datetime(2024, 2, 10), "END"),
+ ("V7", 103, datetime(2024, 3, 1), "CAR"),
+ ("V8", 104, datetime(2024, 4, 1), "CAR")]
+
+diagnoses_data = [
+ ("D1", "V1", datetime(2024, 1, 6), "I10"),
+ ("D2", "V3", datetime(2024, 1, 16), "E11"),
+ ("D3", "V4", datetime(2024, 2, 2), "I10"),
+ ("D4", "V5", datetime(2024, 2, 16), "E11"),
+ ("D5", "V6", datetime(2024, 2, 11), "E10"),
+ ("D6", "V7", datetime(2024, 3, 2), None),
+ ("D7", "V1", datetime(2024, 1, 7), "J45")]
+
+%python
+clean_visits_df = visits_df.dropDuplicates(["visits_id", "patient_id", "visit_date", "department_code"]).filter(col("visit_date").between("2024-01-01","2024-03-31") & col("department_code").isin("CAR","END")).select("visit_id","patient_id","visit_date","department_code")
+
+cleaned_dignoses_df = diagnoses_df.filter(col("icd_code").isNotNull()).select("diagnosis_id","visit_id","diagnosis_date","icd_code")
+
+cleaned_visits_df = df.groupBy("partient_id").agg(count_distinct("visit_id").alias("visit_count")).filter(col("visit_count") >= 5).select("patient_id")
+
+frequent_visitors_df = cleaned_visits_df.groupBy("patient_id").agg(count_distinct("visit_id").alias("visit_count")).filter(col("visit_count") >= 5).select("patient_id")
+
+window_spec = Window.partitionBy("patient_id").orderBy("visit_date")
+days_between_df = cleaned_visit_df.join(frequent_visitors_df,"patient_id").withColumn("prev_date", lag("visit_date").over(window_spec)).filter(col("prev_date"))).groupBy("patient_id").agg(avg("days_diff").alias("avg_days_between"))
+
+diagnosis_stats_df = cleaned_visits_df.join(cleaned_diagnoses_df, "visit_id").join(frequent_visitors_df,"patient_id").groupBy("patient_id").agg(count_distinct("icd_code").alias("total_diagnoses"))
+
+result_df = diagonsis_stats_df.join(days_between_df, "patient_id").select("patient_id","total_diagnoses",round("avg_days_between",2)).orderBy(col("total_diagnoses").desc())
+
+result_df.show()
+
+%sql
+with cleanvisits as (
+select distinct visit_id, patient_id, visit_date, department_code from hospital_visits where visit_date between '2024-01-01' and '2024-03-31' and department_code in ('CAR','END')),
+
+CleanDiagnoses as (
+select diagnosis_id, visit_id, diagnosis_date, icd_code from diagnose where icd_code is not null),
+
+Frequentvisitors  as (
+select patient_is from cleanvisits group by patient_id having count(distinct visit_id) >= 5),
+
+Daysbetween as (
+select v.patient_id, avg(datediff(v.visit_date, lag(v.visit_date) over (partition by v.patient_id order by v.visit_date))) as avg_days_between from cleanvisits v join frequentvisitors f on v.patient_id = f.patient_id group by v.patient_id),
+
+DiagnosisStats as (
+select v.patient_id, count(distinct d.icd_code) as total_diagnoses from cleanvisits v join cleandiagnoses d on v.visit_id = d.visit_id join frequentvisitors f on v.patient_id = f.patient_id group by v.patient_id)
+
+select d.patient_id, d.total_diagnoses, round(b.avg_days_between, 2) as avg_days_between from diagnosisStatus d join DaysBetween b on d.patient_id = b.patient_id order by d.total_diagnoses desc;
+
+--------------------------
+Problem Statement:
+orders: Stores order details (order_id, customer_id, order_date, total_amount). 
+returns: Stores return details (return_id, order_id, return_date, return_amount).
+Task: Find the top 5 customers who placed orders in 2024 with the highest net spend (total_amount minus return_amount), excluding orders with null amounts or returns after 30 days from the order date. Ensure customers have at least 3 orders, and handle duplicate orders/returns.
+
+with cleanorders as (
+select distinct order_id , customer_id, order_date, total_amount from orders where total_amount is not null and year(order_date) = 2024),
+cleanreturns as (
+select distinct return_id,order_id,return_date,return_amount from returns where return is not null),
+validreturns as (
+select r.return_id, order_id, r.return_amount from cleanreturns r join cleanorders o on r.order_id = o.order_id where datediff(r.return,o.order_date)<=30),
+ordercounts as (
+select customer_id, count(*) as order_count from cleanorders group by customer_id having order_count>=3),
+netspend as (
+select o.customer_id, sum(o.total_amount)-coalese(sum(vr.return_amount),0) as net_spend from cleanorders o left join validreturns vr on o.order_id = vr.order_id group by o.customer_id),
+rankedcustomer as (
+select n.customer_id, n.net_spend, row_number() over(order by n.net_spend desc) as rn from netspend n join ordercounts oc on n.customer_id = oc.customer_id)
+select customer_id, round(net_spend,2) as net_spend form rankedcustomers where rn <= 5 order by net_spend desc;
+
+%python
+clean_orders = orders.dropDuplicates(["order_id","customer_id","order_date","total_amount"]).filter(col("total_amount").isNotNull() & (year(col("order_date")) = 2024)).select("order_id","customer_id","order_date","total_amount")
+clean_returns = returns.dropDuplicates(["return_id","order_id","return_date","return_amount"]).filter(col("return_amount").isNOtNull()).select("return_id","order_id","return_date",'return_amount")
+valid_returns = clean_returns.join(clean_orders, "order_id").filter(F.datediff(col("return_date"), col("order_date")) <= 30).select("order_id","return_amount")
+order_counts = clean_orders.groupBy("customer_id").agg(count('*').alias("order_count")).filter(col("order_count") >= 3)
+net_spend = clean_orders.join(valid_returns, "order_id","left").groupBy("customer_id").agg((sum("total_amount") - coalesce(sum("return_amount"),0)).alias("net_spend"))
+window_spec = Window.orderBy("net_spend").desc()
+ranked_customers = net_spend.join(order_counts,"customer_id").withColumn("rn", F.row_number().over(window_spec)).filter(col("rn") <=5)
+result = ranked_customers.select("customer_id",round(col("net_spend"),2).alias("net_spend")).orderBy(col("net_spend").desc())
+result.show()
+----------------------
+Problem Statement:
+ 
+orders: Customer order details (order_id, customer_id, order_date, total_amount). 
+returns: Return requests (return_id, order_id, return_date, return_reason).
+
+Task: Identify active customers who placed orders in January 2024 but had no returns in the last 30 days (from Feb 1, 2024). Calculate their total order amount and average order amount per customer. Exclude orders with null amounts and handle duplicate orders. Return customer_id, total_amount, avg_amount, ordered by total_amount descending.
+
+%sql
+WITH CleanOrders AS (
+SELECT DISTINCT order_id, customer_id, order_date, total_amount FROM orders WHERE total_amount IS NOT NULL AND order_date BETWEEN '2024-01-01' AND '2024-01-31'),
+RecentReturns AS (
+SELECT DISTINCT order_id FROM returns WHERE return_date >= ‘2024-01-02'),
+ActiveCustomers AS (
+SELECT o.customer_id FROM CleanOrders o LEFT JOIN RecentReturns r ON o.order_id = r.order_id WHERE r.order_id IS NULL GROUP BY o.customer_id),
+OrderStats AS (
+SELECT o.customer_id, SUM(o.total_amount) AS total_amount, AVG(o.total_amount) AS avg_amount FROM CleanOrders o JOIN ActiveCustomers a ON o.customer_id = a.customer_id GROUP BY o.customer_id)
+SELECT customer_id, ROUND(total_amount, 2) AS total_amount, ROUND(avg_amount, 2) AS avg_amount FROM OrderStats ORDER BY total_amount DESC;
+
+%python
+clean_orders = orders_df.dropDuplicates(["order_id","customer_id","order_date","total_amount"]).filter(col("total_amount").isNotNull()).filter(col("order_date").between("2024-01-01","2024-01-31")).select("order_id","customer_id","order_date","total_amount")
+recent_returns = returns_df.filter(col("return_date") > = "2024-01-02").select("order_id").distinct()
+active_customers = clean_orders.join(recent_returns, "order_id","left").filter(col("order_id").isNull()).groupBy("customer_id").agg(F.first("customer_id").alias("customer_id")).select("customer_id")
+order_stats = clean_orders.join(active_customers,"customer_id").groupBy("customer_id").agg(sum("total_amount").alias("total_amount").avg("total_amount").alias("avg_amount"))
+result = order_stats.select("customer_id",round("total_amount",2).alias("total_amount"), round("avg_amount",2).alias("avg_amount")).orderBy(col("total_amount").desc())
+result.show()
+----------------------------
+
+Task: Identify overcrowded wards in Q1 2025 (Jan–Mar) where the number of active patients (patients admitted but not discharged) on any day exceeded the ward’s max_beds. For each overcrowded ward, calculate: 
+Total overcrowded days (days when active patients > max_beds). 
+Average excess patients per overcrowded day. 
+Rank of the ward by total overcrowded days (using window function, descending order).
+Exclude null dates, handle overlapping admissions, and ensure capacity_date aligns with Q1 2025. Return ward_id, total_overcrowded_days, avg_excess_patients, ward_rank, ordered by ward_rank.
+
+SQL CREATE TABLE Statements
+
+-- Table: patient_admissions
+CREATE TABLE patient_admissions (
+ admission_id VARCHAR(50) PRIMARY KEY, -- Unique admission identifier
+ patient_id INT NOT NULL, -- Patient identifier
+ admission_date DATE NOT NULL, -- Admission date
+ discharge_date DATE NOT NULL, -- Discharge date
+ ward_id VARCHAR(10) NOT NULL -- Ward identifier
+);
+
+-- Table: ward_capacity
+CREATE TABLE ward_capacity (
+ ward_id VARCHAR(10) NOT NULL, -- Ward identifier
+ capacity_date DATE NOT NULL, -- Capacity date
+ max_beds INT NOT NULL, -- Maximum beds
+ PRIMARY KEY (ward_id, capacity_date)
+);
+
+%sql
+with datarange as (
+select distinct capacity_date as check_date from ward_capacity where capacity_date between '2025-01-01' and '2025-03-31'),
+activepatients as (
+select, c.check_date, a.ward_id, count(distinct a.admission_id) as active_patients from daterange c join patient_admissioins a on c.check_date between a.admission_date and a.discharge_date and a.admission_date between '2025-01-01' and '2025-03-31' group by c.check_date, a.ward_id),
+overcrowdeddays as (
+select a.check_date, a.ward_id, a.active_patients, w.max_beds,(a.active_patients - w.max_beds) as excess_patients from activepatients a join w.capacity_date where a.active_patients > w.max_beds),
+wardstats as (
+select ward_id,count(*) as total_overcrowded_days, avg(excess_patients) as avg_excess_patients from overcrowdeddays group by ward_id),
+rankedwards as (
+select ward_id, total_overcrowded_days avg_exces_patients, rank() over(order by total_overcrowded_days desc) as ward_rank from wardstats)
+select ward_id, total_overcrowded_days , round(avg_excess_patients, 2) as avg_excess_patients, ward_rank from rankedwards order by ward_rank;
+
+%python
+date_range_df = capacity_df.select("capacity_date").alias("check_date")).filter(col("check_date").between("2025-01-01", "2025-03-31")).distinct()
+
+active_patients_df = date_range_df.join(admission_date").between("2025-01-01","2025-03-31")), col("check_date").between(col("admission_date"), col("discharge_date"))).groupBy("check_date","ward_id").agg(count_distinct("admission_id").alias("active_patients"))
+
+overcrowded_days_df = active_patients_df.join(capacity_df, (active_patients_df.ward_id == capacity_df.ward_id) & (active_patients_df.check_date == capacity_df.capacity_date)).filter(col("active_patients") > col("max_beds")).select("check_date",active_patients_df.ward_id,"active_patients","max_beds", (col("active_patients") - col("max_beds")).alias("excess_patients"))
+
+ward_stats_df = overcrowded_days_df.groupBy("ward_id").agg(F.count("*").alias("total_overcrowded_days"), avg("excess_patients").alias("avg_excess_patients"))
+
+window_spec = Window.orderBy(col("total_overcrowded_days").desc())
+ranked_wards_df = ward_stats_df.withColumn("ward_rank", rank().over(window_spec))
+
+result_df = ranked_wards_df.select("ward_id","total_overcrowded_days",round("avg_excess_patients",2).alias(avg_excess_patients"),"ward_rank").orderBy("ward_rank")
+
+result_df.show()
+----------------------------
+Task: Identify overcrowded wards in Q1 2025 (Jan–Mar) where the number of active patients (patients admitted but not discharged) on any day exceeded the ward’s max_beds. For each overcrowded ward, calculate: 
+Total overcrowded days (days when active patients > max_beds). 
+Average excess patients per overcrowded day. 
+Rank of the ward by total overcrowded days (using window function, descending order).
+Exclude null dates, handle overlapping admissions, and ensure capacity_date aligns with Q1 2025. Return ward_id, total_overcrowded_days, avg_excess_patients, ward_rank, ordered by ward_rank.
+
+SQL CREATE TABLE Statements
+
+-- Table: patient_admissions
+CREATE TABLE patient_admissions (
+ admission_id VARCHAR(50) PRIMARY KEY, -- Unique admission identifier
+ patient_id INT NOT NULL, -- Patient identifier
+ admission_date DATE NOT NULL, -- Admission date
+ discharge_date DATE NOT NULL, -- Discharge date
+ ward_id VARCHAR(10) NOT NULL -- Ward identifier
+);
+
+-- Table: ward_capacity
+CREATE TABLE ward_capacity (
+ ward_id VARCHAR(10) NOT NULL, -- Ward identifier
+ capacity_date DATE NOT NULL, -- Capacity date
+ max_beds INT NOT NULL, -- Maximum beds
+ PRIMARY KEY (ward_id, capacity_date)
+);
+
+%sql
+with cleantrades as (
+select distinct trade_id, trader_id, trade_date, stock_symbol, trade_volume from stock_trades where trade_date between '2025-01-01' and '2025-03-31' and trade_volume is not null),
+dailyvalues as (
+select t.trader_id, t.trade_date, sum(t.trade_volume * p.closing_price) as daily_value from cleantrades t join stock_prices p on t.stock_symbol = p.stock_symbol and t.trade_date = p.price_date group by t.trader_id, t.trade_date),
+highvaluedays as (
+select trader_id, trade_date, daily_value from dailyvalues where daily_value > 10000),
+traderstats as (
+select trader_id, count(*) as total_high_value_days, avg(daily_value) as avg_daily_value from highvaluedays group by trader_id having count(*) >= 5),
+rankedtraders as (
+select trader_id, total_high_value_days, avg_daily_value, rank() over(order by total_high_value_days desc) as trader_rank from traderstats)
+select trader_id, total_high_value_days, round(avg_daily_value,2) as avg_daily_value, trader_rank from rankedtraders order by trader_rank;
+
+%python
+cleaned_trades_df = trades_df.dropDuplicates(["trade_id","trader_id","trade_date", "stock_symbol","trade_volume"]).filter(col("trade_date").between("2025-01-01","2025-03-31") & col("trade_volume").isNotNull).select("trade_id","trader_id","trade_date", "stock_symbol","trade_volume")
+daily_values_df = cleaned_trades_df.join(price_df, (clean_trades_df.stock_symbol == prices_df.stock_symbol) & (cleaned_trades.df_trade_date == prices_df.price_date).groupBy("trader_id","trade_date").agg(sum(col("trade_volume) * col(closing_price")).alias("daily_value"))
+high_value_days_df = daily_values_df.filter(col("daily_value") > 10000).select("trader_id","trade_date","daily_value")
+trader_stats_df = high_value_days_df.groupBy("trader_id").agg(F.count("*").alias("total_high_value_days"), avg("daily_value").alias("avg_daily_value")).filter(col("total_high_value_days") >=5)
+window_spec = Window.orderBy(col("total_high_value_days").desc())
+ranked_traders_df = trader_stats_df.withColumn("trader_rank", rank().over(window_spec))
+result_df = ranked_traders_df.select("total_high_value_days", round("avg_daily_value", 2).alias("avg_daily_value"), "trader_rank").orderBy("trader_rank")
+result_df.show()
+
+-------------------
+Task: Identify customers with high-value orders in Q2 2025 (Apr–Jun) where their total daily order value (quantity × unit_price) exceeds $200 for at least 3 days. For each customer, calculate: 
+Total high-value days (days with order value > $200). 
+Average daily order value across high-value days. 
+Customer rank by total high-value days (using window function, descending order).
+Exclude null values, handle duplicate items, and ensure price_date aligns with order_date. Return customer_id, total_high_value_days, avg_daily_value, customer_rank, ordered by customer_rank.
+
+SQL CREATE TABLE Statements
+
+-- Table: order_items
+CREATE TABLE order_items (
+ item_id VARCHAR(50) PRIMARY KEY, -- Unique item identifier
+ order_id VARCHAR(50) NOT NULL, -- Order identifier
+ customer_id INT NOT NULL, -- Customer identifier
+ order_date DATE NOT NULL, -- Order date
+ product_id VARCHAR(10) NOT NULL, -- Product identifier
+ quantity INT NOT NULL -- Quantity ordered);
+
+-- Table: product_prices
+CREATE TABLE product_prices (
+ product_id VARCHAR(10) NOT NULL, -- Product identifier
+ price_date DATE NOT NULL, -- Price date
+ unit_price FLOAT NOT NULL, -- Price per unit
+ PRIMARY KEY (product_id, price_date));
+
+%sql
+with cleanitems as (
+select distinct item_id, order_id, customer_id, order_date, product_id, quantity from order_items where order_date between '2025-04-01' and '2025-06-30' and quantity is not null),
+dailyvalues as (
+select i.customer_id, i.order_date, sum(i.quantity * p.unit_price) as daily_value from cleanitems i join product_prices p on i.product_id = p.product_id and date_trunc('month', i.order_date) = date_trunc('month',p.price_date) group by i.customer_id, i.order_date),
+highvaluesdays as (
+select customer_id, order_date, daily_value from dailyvalues where daily_value > 200),
+customerstats as (
+select customer_id, count(*) as total_high_value_days, avg(daily_value) as avg_daily_value from highvaluedays group by customer_id having count(*) >=3),
+rankedcustomers as (
+select customer_id, total_high_value_days, avg_daily_value, rank() over(order by total_high_value_days desc) as customer_rank from customerstats)
+select customer_id, total_high_value_days, round(avg_daily_value,2) as avg_daily_value , customer_rank from rankedcustomers order by customer_rank;
+
+%python
+cleaned_items_df = items_df.dropDuplicates(["item_id","order_id","customer_id","order_date","product_id","quantity"]).filter(col("order_date").between("2025-04-01","2025-06-30") & col("quantity").isNotNull()).select("item_id","order_id","customer_id",'order_date","product_id","quantity")
+daily_values_df = cleaned_item_df.join(prices_df, (cleaned_items_df.product_id == prices_df.product_id) & (date_trunc("month", cleaned_items_df.order_date) == date_trunc("month",prices_df.price_date)).groupBy("customer_id","order_date").agg(sum_agg(col("quantity") * col("unity_price")).alias("daily_value"))
+high_value_days_df = daily_values_df.filter(col("daily_value") > 200).select("customer_id", "order_date","daily_value")
+customer_stats_df = high_value_days_df.groupBy("customer_id").agg(F.count('*').alias("total_high_value_days"), avg("daily_value").alias("avg_dally_value")).filter(col("total_high_value_days") >= 3)
+window_spec = Window.orderBy(col("total_high_value_days").desc())
+ranked_customer_df = customer_stats_df.withColumn("customer_rank().over(window_spec))
+result_df = ranked_customer_df.select("customer_id","total_high_value_days", round("avg_daily_value",2).alias("avg_daily_value"),"customer_rank").orderBy("customer_rank")
+result_df.show()
+------------------------
+
+Write a SQL Query to find the total amount by year. Make sure to check the period_end date column to understand like when exactly the period is ending.
+Use this below data to create table:-
+create table sales (
+product_id int,
+period_start date,
+period_end date,
+average_daily_sales int);
+
+%python
+from pyspark.sql.functinos import col,explode,sequence,expr,date_format,sum
+
+product_explode_df = sales_df.select("product_id", explode(sequence(col("period_start"), col("period_end"), expr("interval 1 day"))).alias("dates"), "average_daily_sales")
+final_product_by_year_df = product_explode_df.groupBy("product_id", date_format(col("dates"), "yyyy").alias("report_year")).agg(sum("average_daily_sales").alias("total_amount")).sort("product_id","report_year")
+final_product_by_year_df.show()
+
+%sql
+with expanding_product as (
+select product_id, period_start as dates, period_end , average_daily_sales from sales union all
+select product_id, sysdate + 1, period_end, average_daily_sales from expanding_product where sysdate+1 <= period_end)
+select product_id , to_char(dates,'yyyy') as report_year, sum(average_daily_sales) as total_amount from expanding_product group by product_id, to_char(dates,'yyyy') order by product_id option(maxrecursion 32767);
+
+--------------------------
+Write a SQL Query to find the product pairs most commonly purchased together.
+
+create table orders (
+order_id int,
+customer_id int,
+product_id int,);
+
+%python
+from pyspark.sql.functions import col,concat_ws, count
+
+orders_joining_df = orders_df.alias("o1").join(orders_df.alias("o2"), (col("o1.order_id") == col("or2.order_id")) & (col("o1.product_id") < col("o2.product_id")), "inner").join(product_df.alias("p"), col("o1.product_id") == col("p.id"), "inner").join(products_df.alias("p1"), col("o2.product_id") == col("p1.id"))
+final_pairs_df = orders_joining_df.select(concat_ws(' ',col("p,name"), col("p1.name")).alias("pair")).groupBy("pair").agg(count("*").alias("purchase_freq")).sort(col("purchase_freq").desc())
+final_pairs_df.show()
+
+%sql
+with product_pairing_cte as (
+select o1.product_id as first_product_id, o2.product_id as second_product_id, count(*) as purchase_freq from orders o1 join orders o2 on o1.order_id = o2.orde_id and o1.product_id < o2.product_id group by o1.product_id , o2.product_id)
+select concat(p.name, ' ', p1.name) as pair, purchase_freq from product_pairing_cte c join product p on c.first_product_id = p.id join products p1 on c.second_product_id = p1.id;
+----------------
+Given the following two tables, return the fraction of users, rounded to two decimal places, who accessed Amazon music and upgraded to prime membership within the first 30 days of signing up. 
+
+create table users (
+user_id integer,
+name varchar(20),
+join_date date);
+
+create table events(
+user_id integer,
+type varchar(10),
+access_date date);
+
+%python
+from pyspark.sql.function import col,when,sum,countDisitnct,datediff,round
+
+users_in_events = events_df.filter(col("type") == "Music").select("user_id").rdd.flatMap(lambda x : x).collect()
+filtered_user_df = user_df.filter(col("user_id").isin(users_in_events)).alias("u").join(events_df.alias("e"), "user_id","inner")
+final_users_df = filtered_user_df.agg(countDistinct("user_id").alias("total_users"), sum(when(col("type") == "P") & (datediff(col("access_date"), col("join_date")) < 30), 1).otherwise(0)).alias("user_under_30_days_purchase"), round(100.0 * sum(when(col("type") == "p") & (datediff(col("access_date"),col("join_date")) < 30), 1).otherwise(0)).countDistinct("user_id"),2).alias("fraction"))
+final_users_df.show()
+
+%sql
+with filtered_users as (
+select * from users where user_id in (select user_id from events where type = 'Music'))
+select count(distinct f.user_id) as total_users, sum(case when type = 'P' and datediff(day, join_date,access_date) < 30 then 1 then 1else 0 end) as user_under_30_days_purchase, case(100.00 * sum(case when type = 'P' and datediff(day, join_date, 'access_date') < 30 then 1 else 0 end)/count(distinct f.user_id) as decimal(10,2)) as fraction from filtered_users f join events e on f.user_id = e.user_id;
+-------------------
+Write a SQL Query to find the number of retained customers on a monthly basis.
+
+create table transactions(
+order_id int,
+cust_id int,
+order_date date,
+amount int);
+
+%python
+from pyspark.sql.functions import col,datediff,round,date_format,countDistinct
+
+transactions_join_df = transactions_df.alias("t1").join(transaction_df.alias("t2"), (col("t1.cust_id") == col("t2.cust_id")) & (round(datediff(col("t1.order_date"), col("t2.order_date"))/30, 0) == 1), "left")
+final_transactions_df = transactions_join_df.groupBy(date_format(col("t1.order_date"), "M").alias("months").agg(countDistinct(col("t2.cust_id")).alias("retained_customers")
+final_transactions_df.show()
+
+%sql
+select month(t1.order_date) as month, count(distinct t2.cust_id) as retained_customer from transactions t1 left join transactions t2 on t1.cust_id = t2.cust_id and datediff(month, t2.order_date, t1.order_date) = 1 group by month(t1.order_date);
+
+
+

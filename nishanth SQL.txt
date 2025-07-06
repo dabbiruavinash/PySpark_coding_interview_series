@@ -1,0 +1,153 @@
+A group of travelers embark on world tours starting with their home cities. Each traveler has an undecided itinerary that evolves over the course of the tour. Some travelers decide to abruptly end their journey mid-travel and live in their last destination.
+
+Given the dataset of dates on which they travelled between different pairs of cities, can you find out how many travellers ended back in their home city? For simplicity, you can assume that each traveler made at most one trip between two cities in a day.
+
+𝐒𝐜𝐡𝐞𝐦𝐚 𝐚𝐧𝐝 𝐃𝐚𝐭𝐚𝐬𝐞𝐭
+CREATE TABLE travel_history (date DATE, start_city VARCHAR(50), end_city VARCHAR(50), traveler VARCHAR(50));
+
+with ranked_trips as (
+select traveler, start_city, end_city, date, row_number() over (partition by traveller order by date asc) as trip_start, row_number() over (partition by traveler order by date desc) as trip_end from travel_history),
+first_last_cities as (
+select traveler, max(case when trip_start = 1 then start_city end) as home_city, max(case when trip_end = 1 end_city end) as final_city from ranked_trips group by traveler)
+select count(*) as travelers_back_home from first_last_cities where home_city = final_city;
+
+Each Employee is assigned one territory and is responsible for the Customers from this territory. There may be multiple employees assigned to the same territory.
+
+Write a query to get the Employees who are responsible for the maximum number of Customers. Output the Employee ID and the number of Customers.
+
+𝐒𝐜𝐡𝐞𝐦𝐚 𝐚𝐧𝐝 𝐃𝐚𝐭𝐚𝐬𝐞𝐭
+CREATE TABLE map_employee_territory (empl_id VARCHAR(10), territory_id VARCHAR(10));
+
+with employee_customer_count as (
+select e.empl_id, count(c.cust_id) as customer_count from map_employee_territory e join map_customer_territory c on e.territory_id = c.territory_id group by e.empl_id),
+max_count as (
+select max(customer_count) as max_customers from employee_customer_count)
+select ecc.empl_id, ecc.customer_count from employee_customer_count ecc join max_count mc on ecc.customer_count = mc.max_customers;
+
+--Q. Write a SQL Query to swap the employeee department
+
+drop table if EXISTS employee;
+create table employee(id int identity,name varchar(15),department varchar(15));
+
+insert into employee values('John','Sales')
+insert into employee values('Tom','IT')
+insert into employee values('Rohit','IT')
+insert into employee values('shubham','Marketing')
+insert into employee values('kavya','Management')
+insert into employee values('Rohan','Sales')
+insert into employee values('Shivani','IT')
+
+with cte as (
+select *, row_number() over(order by (select null)) as rn from employee)
+select *, case when rn % 2 = 1 then lead(department,1,department) over (order by rn), when rn % 2 = 0 then lag(department,1,department) over(order by rn) end as NewDepartment from cte;
+
+--Q. Write a SQL query to find the employee names who have the same salary as another employee in the same department.
+create table emp_info(id int, name varchar(10),dept varchar(10),salary int);
+
+insert into emp_info values(1,'Akash','Sales',100)
+insert into emp_info values(2,'John','Sales',110)
+insert into emp_info values(3,'Rohit','Sales',100)
+insert into emp_info values(4,'Tom','IT',200)
+insert into emp_info values(5,'Subham','IT',205)
+insert into emp_info values(6,'Vabna','IT',200)
+insert into emp_info values(7,'Prativa','Marketing',150)
+insert into emp_info values(8,'Rahul','Marketing',155)
+insert into emp_info values(9,'yash','Marketing',160)
+
+select a.*, from emp_info as a inner join emp_info as b on a.dept = b.dept and a.salary = b.salary and a.name <> b.name;
+
+Find Product Details in Highest Sales Year 🚀 | SQL Query Challenge
+
+drop table if EXISTS products;
+drop table if EXISTS sales;
+create table products(product_id int,product_name varchar(10))
+
+insert into products values(1,'mobile')
+insert into products values(2,'computer')
+insert into products values(3,'tv')
+
+create table sales(product_id int,year int,quantity int,price int)
+
+insert into sales values(1,2022,10,1000)
+insert into sales values(1,2023,12,1000)
+insert into sales values(1,2024,11,1000)
+insert into sales values(2,2022,15,1300)
+insert into sales values(2,2023,18,1300)
+insert into sales values(3,2022,13,1500)
+
+with cte as (
+select a.*, a.product_name, a.quantity * a.price as salesTotal from sales as a inner join products as b on a.product_id = b.product_id)
+select product_id, product_name, year, salesTotal from (
+select *, row_number() over(partition by product_id order by salesTotal as ranks from cte) a where ranks = 1;
+
+-- Write a SQL query to find the percentage of immediate orders in the first orders of all customers.
+-- Note: order_date andJdelivery date same is called immediate order
+
+create table delivery(id int,customer_id int,order_date date,delivery_date date)
+
+insert into delivery values(1,1,'2024-12-01','2024-12-02')
+insert into delivery values(2,2,'2024-12-02','2024-12-02')
+insert into delivery values(3,1,'2024-12-10','2024-12-11')
+insert into delivery values(4,3,'2024-12-01','2024-12-01')
+insert into delivery values(5,3,'2024-12-02','2024-12-03')
+insert into delivery values(6,2,'2024-12-10','2024-12-11')
+insert into delivery values(7,4,'2024-12-02','2024-12-02')
+
+with cte as (
+select *, row_number() over(partition by customer_id order by order_date) as orderNo from delivery)
+select *, cast(cast(sum(case when order_date = delivery_date then 1 else 0 end) * 100/sum(orderNo) as decimal(5,2)) as varchar(max)) * '%' as Percetage from cte where orderNo = 1;
+
+product_name in lowercase without leading or trailing white spaces. 
+sale_date in the format ('YYYY-MM'). 
+total the number of times the product was sold in this month.
+Return the result table ordered by product_name in ascending order. 
+In case of a tie, order it by sale_date in ascending order. 
+
+CREATE TABLE Sales_ (
+    sale_id INT PRIMARY KEY,
+    product_name VARCHAR(50),
+    sale_date DATE);
+
+select lower(trim(product_name)) as product_name, substring(cast(sale_date as varchar),1,7) as sale_date, count(lower(trim(product_name))) as counts from sales_ group by lower(trim(product_name)), substring(cast(sale_date as varchar),1,7) order by lower(trim(product_name)), substring(cast(sale_date as varchar),1,7);
+
+Write a query to find out the company who have atleast 2 users speaks both English and German?
+
+CREATE TABLE Company_user (
+ Company_Id VARCHAR(512),
+ User_Id INT,
+ Language VARCHAR(512));
+
+with cte as (
+select company_id, user_id, count(distinct language) as Countoflanguage from Company_user where language in ('German','English') group by company_id, user_id having count(distinct language) = 2)
+select Company_id from cte group by Company_id having count(Company_id) >= 2;
+
+You are given a table UserVisits that tracks the dates when users visited a platform. 
+Each row in the table represents a visit by a user and contains the following columns:
+
+user_id: The unique identifier of the user.
+visit_date: The date when the user visited the platform.
+Your task is to calculate the maximum number of days between consecutive visits for each user. 
+If a user has only one visit, the gap should be calculated from their visit date to a fixed future date ('2021-01-01').
+
+-- Create the UserVisits table
+CREATE TABLE UserVisits (
+    user_id INT,
+    visit_date DATE);
+
+with cte as (
+select *, lead(visit_date,1 , cast('2021-01-01' as date)) over (partition by user_id order by visit_date) as leadDate, datediff(day, visit_date, lead(visit_date,1,cast('2021-01-01' as date)) over (partition by user_id order by visit_date)) as diff from uservisits)
+select user_id, max(diff) as maxwindow from cte group by user_id;
+
+The problem involves calculating a running total in SQL, which is a common requirement in data analysis and reporting. A running total is the cumulative sum of a column's values as you iterate through the rows of a dataset. 
+
+with cte as (
+select *, row_number() over (order by (select null)) as rowNumbers from students)
+select studentCount, sum(StudentCount) over(order by rowNumbers) as Counts from cte;
+
+Calculate Periodic Sales
+
+drop table if exists sales;
+create table sales(month varchar(50), ytd_sales int, monthnum int)
+
+select *, ytd_sales - lag(ytd_sales,1,0) over(order by monthnum) as periodicSales from sales;
+
