@@ -1,0 +1,4319 @@
+walmart:
+
+Scenario: A team wants to leverage Delta Lake's time travel and versioning features for auditing and rollback purposes.
+How would you set up Delta Lake to enable these features?
+How can users query previous versions of a Delta table?
+What are the storage and performance implications of maintaining multiple table versions?
+
+Scenario: You need to build an end-to-end pipeline where:
+Data is ingested into Azure Data Lake using ADF.
+Databricks performs transformations and saves the data into Delta Lake.
+Processed data is loaded into Azure Synapse for analytics.
+How would you design this pipeline?
+
+Scenario: You receive JSON files with nested structures and need to flatten them before loading into Azure SQL.
+How would you design a pipeline to process hierarchical data?
+What activities would you use to transform and flatten JSON files?
+
+Scenario: You need to build a real-time ETL pipeline where
+ADF ingests data from IoT devices, and Databricks processes the data in real-time.
+How would you design the architecture for this pipeline?
+How would you handle schema drift and late-arriving data?
+
+Scenario: Business users need the ability to trigger specific ADF pipelines on demand via a custom web application.
+How would you integrate ADF pipelines with external triggers like APIs?
+How would you secure the API to ensure only authorized users can execute the pipeline?
+
+Scenario: You’re tasked with anonymizing sensitive PII data in a dataset before sharing it with external teams.
+How would you implement data masking or tokenization in Databricks?
+How would you ensure that the anonymization logic doesn’t break the integrity of the dataset?
+
+Scenario: Your organization wants to implement CI/CD for Databricks notebooks to enable version control and automated deployment.
+How would you use Git to manage Databricks notebooks?
+How would you automate notebook testing and deployment?
+
+Scenario: Multiple teams in your organization need to perform similar data ingestion tasks with minor differences.
+How would you design reusable pipelines in ADF to accommodate team-specific configurations?
+How would you use parameterization and templates for reusability?
+
+Scenario: You need to process transactions in real-time to identify fraudulent activity using Databricks.
+How would you design a real-time streaming pipeline for fraud detection?
+How do you ensure low-latency processing of incoming data?
+
+Scenario: Your Databricks pipeline needs to detect complex patterns in event data, such as detecting when a user performs three failed logins within five minutes.
+How would you use Spark Structured Streaming to handle complex event processing?
+How do you use stateful operations in Spark to track patterns over time?
+
+Scenario: A batch job fails after processing 80% of the data, and you need to resume it without starting from scratch.
+How would you implement checkpointing or recovery mechanisms in Databricks?
+How do you partition the workload to avoid reprocessing completed data?
+How do you debug and fix the issue causing the failure?
+
+Scenario: You’re noticing skewed partitions causing performance bottlenecks in a Mapping Data Flow.
+How would you optimize partitioning and distribution to handle skewed data?
+What tools in ADF allow you to monitor and resolve data flow performance issues?
+
+Scenario: Small file issues are impacting the performance of Delta Lake queries due to frequent updates and inserts.
+How would you implement file compaction in Delta Lake?
+How do you automate compaction to run periodically without manual intervention?
+
+Scenario: Your organization is seeing high costs in Databricks due to inefficient resource usage.
+How would you identify cost drivers in Databricks (e.g., large clusters, idle jobs)?
+How would you use autoscaling and spot instances to reduce costs?
+What governance policies would you recommend to prevent resource misuse?
+
+Scenario: You need to execute a custom Python script for data processing as part of an ADF pipeline.
+How would you use the ADF Custom Activity to run the script?
+What role does Azure Batch play in supporting this activity?
+
+Scenario: Build a real-time anomaly detection pipeline using Databricks to identify outliers in streaming data from IoT sensors.
+How would you preprocess streaming data to detect anomalies in real time?
+How do you balance model accuracy with pipeline latency?
+
+Scenario: ADF pipelines ingest data, and Databricks applies machine learning models for predictions.
+How would you design the integration between ADF and Databricks for dynamic model execution?
+How do you ensure that ADF triggers the correct model based on metadata or configurations?
+
+Scenario: Your organization uses both on-premises and cloud-based data sources.
+How would you integrate on-premises data into Azure using ADF?
+How do you configure the Self-Hosted Integration Runtime for secure connectivity?
+What challenges might you encounter with hybrid setups, and how would you address them?
+
+Scenario: Your data sources span multiple Azure regions, and you need to aggregate this data in near real-time.
+How would you optimize Spark jobs to minimize crossregion latency?
+How do you ensure data consistency across regionsduring aggregation?
+What trade-offs would you consider between real-time and batch processing?
+
+Scenario: You need to implement a custom sink for a streaming job that applies complex business logic before persisting data.
+How would you design a custom streaming sink in Spark Structured Streaming?
+What strategies would you use to scale the sink for high-throughput data?
+
+Scenario: You need to build a real-time dashboard that displays aggregated metrics from streaming data ingested by ADF and processed by Databricks.
+How would you design the data pipeline to support low-latency updates for the dashboard?
+How do you ensure scalability and fault tolerance in the pipeline?
+What visualization tools or services (e.g., Power BI, Databricks SQL) would you integrate?
+
+Scenario: You are tasked with handling slowly changing dimensions (SCD Type 1 and Type 2) in ADF while loading data into a data warehouse.
+How would you implement SCD logic using ADF Mapping Data Flows?
+How do you design pipelines to handle high data volumes and frequent updates?
+
+Scenario: You need to design a workflow in Databricks that dynamically adjusts based on the input data characteristics.
+How would you use Databricks Workflows to build a dynamic pipeline?
+How do you incorporate conditional branching or retries into your workflow?
+
+Scenario: Your organization needs to share Delta Lake datasets with an external partner securely.
+How would you configure Delta Sharing to enable secure data sharing?
+How do you ensure the external partner only accesses the data they are authorized to see?
+
+----------------------------------------------------------------------------------------------------------------------------------------
+
+EY
+
+Scenario:
+Your organization operates in a multi-cloud environment, with data spread across Azure, AWS, and GCP. You need to build a pipeline in Databricks that aggregates this data for analytics.
+Questions:
+How would you design a Databricks pipeline to fetch and process data from multiple cloud platforms?
+What challenges might you face in integrating data across cloud providers, and how would you address them?
+How do you manage data security during multicloud integration?
+
+Scenario:
+Your real-time data pipeline processes a massive stream of clickstream data from a popular ecommerce site. Recent traffic surges have led to delays in processing.
+Questions:
+How would you optimize the streaming pipeline in Databricks to handle increased traffic?
+How do you scale the pipeline dynamically based on the data ingestion rate?
+How would you leverage Azure features like Event Hub, Synapse, or Cosmos DB to complement Databricks scalability?
+
+Scenario:
+Your pipeline ingests semi-structured data in JSON format with deeply nested schemas.
+Questions:
+How would you process and flatten nested JSON data in Databricks?
+How do you manage schema evolution in nested data structures over time?
+What challenges arise when querying deeply nested fields, and how would you optimize those queries?
+How would you use Delta Lake to store semistructured data for analytics?
+
+Scenario:
+A Delta Lake table with frequent updates has accumulated many small files, degrading performance.
+Questions:
+How would you compact small files in Delta Lake to improve performance?
+What trade-offs arise when configuring the frequency of Delta compaction?
+How would you automate compaction without disrupting production workloads?
+
+Your organization requires a disaster recovery plan for mission-critical Databricks pipelines in case of regional failures.
+Questions:
+How would you implement disaster recovery for Databricks pipelines across Azure regions?
+What Azure services would you use to replicate data and configurations for failover?
+How do you test the failover process to ensure minimal downtime during a disaster?
+
+Scenario:
+Your organization has multiple business units that need to securely share data while complying with regulations.
+Questions:
+How would you implement secure data sharing using Databricks and Unity Catalog?
+What role do Azure services like Private Link and Key Vault play in securing data sharing?
+How do you audit and monitor access to shared datasets?
+
+Scenario:
+Your ML pipeline in Databricks is showing degraded performance due to data drift in the input datasets.
+Questions:
+How would you detect and monitor data drift in your Databricks pipeline?
+What techniques would you use to retrain the ML model when significant drift is detected?
+How do you ensure that retraining does not disruptthe production pipeline?
+
+Scenario:
+Your team runs resource-intensive ML training workloads on Databricks, but the jobs often exceed budget and run inefficiently.
+Questions:
+How would you optimize cluster configurations for ML training workloads?
+How do you manage feature engineering and data preprocessing at scale?
+How would you use Azure Machine Learning in conjunction with Databricks to track experiments?
+
+Scenario:
+Your organization wants to implement a retention policy where data is automatically purged after a specified time based on an event timestamp.
+Questions:
+How would you implement automated data retention in Delta Lake tables?
+What Azure services (e.g., Data Factory, Logic Apps) would you use to schedule data cleanup?
+How do you ensure compliance with data retention requirements without impacting active datasets?
+
+Scenario:
+You need to backfill historical data for a pipeline while continuing to process new incoming data in real-time.
+Questions:
+How would you implement an incremental backfill process in Databricks?
+How do you ensure the backfill does not interfere with real-time data processing?
+How would you track progress and handle partial failures during backfill?
+
+Scenario:
+Your organization needs to implement versioning for datasets to support reproducibility in analytics and ML workflows.
+Questions:
+How would you implement data versioning in Delta Lake for your pipelines?
+How do you use Delta Lake's time travel feature to access historical data versions?
+How would you handle scenarios where older versions of data are no longer needed?
+
+Scenario:
+Your organization promises customers data availability within seconds of an event occurring. You need to design a real-time pipeline to meet these SLAs.
+Questions:
+How would you design a real-time data pipeline in Databricks that meets strict SLAs?
+What techniques would you use to reduce pipeline latency (e.g., structured streaming optimizations)?
+How do you monitor SLAs in real-time and alert if thresholds are breached?
+
+Scenario:
+Your company serves multiple clients and needs a multi-tenant data lake architecture where each tenant’s data is isolated but accessible based on permissions.
+Questions:
+How would you design a multi-tenant data lake using Azure Data Lake and Databricks?
+How do you enforce tenant-level data isolation in storage and compute?
+
+----------------------------------------------------------------------------------------------------------------------------
+
+L&T technology services
+
+Scenario:
+You are tasked with designing a data lake on Azure to handle both structured and unstructured data. The solution should support batch and real-time analytics.
+Questions:
+What role does Databricks Delta Lake play in managing data in this scenario?
+How would you design the folder structure for Azure Data Lake to ensure scalability and efficient querying?
+How do you choose between Azure Data Lake Gen2 and other storage options?
+How do you optimize storage and compute costs for the solution?
+How would you implement access controls and data governance in the data lake?
+
+Scenario:
+Your company processes financial transactions in real time and needs to detect fraudulent activity. The data is ingested from Azure Event Hub into Databricks.
+Questions:
+How would you design a real-time streaming pipeline in Databricks to detect anomalies?
+What machine learning or statistical techniques can you apply to identify fraudulent transactions?
+How would you handle spikes in data volume to ensure the pipeline remains stable?
+
+Scenario:
+Your Databricks workspace has multiple teams working on shared data assets, and you need to enforce role-based access control to prevent unauthorized access.
+Questions:
+How would you configure RBAC for Azure Databricks?
+How do you manage access to Azure Data Lake based on roles?
+What are the differences between Azure RBAC and Databricks workspace permissions?
+
+Scenario:
+Your organization uses multiple Databricks workspaces for different teams (e.g., engineering, analytics). You need to share Delta Tables securely between these workspaces.
+Questions:
+How would you implement cross-workspace data sharing in Databricks?
+How do you leverage Delta Sharing to securely provide access to data?
+What are the challenges of maintaining consistent access control across multiple workspaces?
+How would you monitor and audit data-sharing activities?
+
+Scenario:
+You need to perform complex joins and aggregations on large datasets stored in Delta Tables, but the queries are slow.
+Questions:
+How would you optimize Spark jobs for join-heavy workloads?
+What are broadcast joins, and when would you use them?
+How do you manage skewed data to ensure balanced partitioning?
+
+Scenario:
+Your analytics pipeline must calculate metrics that change over time due to data corrections (e.g., updated sales data) or new business rules.
+Questions:
+How would you design your pipeline to support recalculating historical metrics?
+How do Delta Lake’s versioning features assist in managing such requirements?
+How do you balance performance and data accuracy when recalculating metrics?
+
+Scenario:
+A Databricks job that processes billions of records is running slower than expected, impacting downstream processes.
+Questions:
+How would you identify and troubleshoot performance bottlenecks in a Spark job?
+
+Scenario:
+You need to create an automated testing framework for your Databricks pipelines to validate data accuracy, performance, and reliability.
+Questions:
+How would you structure unit tests for PySpark transformations?
+How would you implement integration tests for endto-end pipeline validation?
+What tools or frameworks would you use for automated pipeline testing?
+
+Scenario:
+You have multiple interdependent Databricks pipelines that must run in a specific order to ensure data consistency.
+Questions:
+How would you orchestrate pipelines to enforce execution order and manage dependencies?
+What tools (e.g., Azure Data Factory, Airflow) would you integrate with Databricks for orchestration?
+
+Scenario:
+Your company operates across Azure and AWS and requires a pipeline that ingests data from both platforms into Databricks.
+Questions:
+How would you securely ingest data from AWS S3 into Azure Databricks?
+What are the challenges of managing data across multiple cloud platforms, and how would you address them?
+
+Scenario:
+Your team needs to design a multistage ETL pipeline that involves raw data ingestion, cleansing, enrichment, and aggregation for analytics.
+Questions:
+How would you design the pipeline to optimize the transformation stages in Databricks?
+What techniques would you use to ensure that the pipeline is modular and maintainable?
+
+Scenario:
+Your team is building a pipeline to process and store time-series data from IoT sensors for analytics and anomaly detection.
+Questions:
+How would you design a time-series data model in Delta Lake?
+What partitioning and indexing strategies would you use for efficient querying of time-series data?
+
+Scenario:
+Your organization needs to replicate real-time streaming data from one Azure region to another for redundancy and low-latency access.
+Questions:
+How would you implement cross-region data replication in Azure Databricks?
+What Azure services (e.g., Event Hub GeoReplication) would you leverage for this scenario?
+How would you handle potential data consistency issues during replication?
+
+------------------------------------------------------------------------------------
+
+Global Logic
+
+Scenario: A PySpark Structured Streaming application processes high-frequency data. Describe how you would manage backpressure to prevent system overload.
+Scenario: Explain how to handle large-scale geospatial data in PySpark, including operations like spatial joins and distance calculations.
+Scenario: A PySpark pipeline processes sensitive data and must comply with GDPR. How would you ensure data masking or encryption during processing?
+Scenario: You need to enrich real-time stream data by joining it with a static lookup table. Write PySpark code to achieve this with minimal overhead.
+Scenario: A PySpark job processes data from a NoSQL database (e.g., Cassandra). Describe the steps to read, transform, and write data back to the database.
+Scenario: Explain how to implement columnlevel data quality checks (e.g., valid ranges, unique constraints) using PySpark
+Scenario: Describe how you would implement custom metrics and counters in a PySpark application for detailed monitoring.
+Scenario: A PySpark pipeline writes data to multiple partitions, but the output files are unbalanced (some partitions are much larger than others). How would you handle this?
+Scenario: A data pipeline involves multiple transformations, and you need to debug intermediate stages. How would you log and inspect intermediate data in PySpark?
+Scenario: A task requires a complex calculation that is not natively supported in PySpark. Write a custom Python UDF to achieve this and discuss its performance implications.
+Scenario: Write PySpark code to optimize the read and write performance of Parquet files by tuning block size and compression.
+Scenario: Explain how to group data by a custom condition (e.g., group rows where a value difference between consecutive rows is less than a threshold).
+Scenario: Describe how to use PySpark to integrate with Apache Hive to query and process large datasets stored in a data warehouse.
+Scenario: Write PySpark code to merge two Delta Lake tables based on certain conditions while ensuring that the operation is efficient and does not result in unnecessary data duplication.
+Scenario: You are running a PySpark job on a Kubernetes cluster and need to dynamically adjust the resources allocated to each task based on the workload. How would you manage resource allocation?
+Scenario: Describe how you would secure data stored in Delta Lake and ensure encrypted data transfers when using PySpark for ETL pipelines.
+Scenario: A dataset needs to be preprocessed and transformed before using it to train a deep learning model (e.g., using TensorFlow). How would you design this preprocessing pipeline in PySpark?
+Scenario: You need to process incoming data from multiple sensors in real time and aggregate it by region. Write PySpark Structured Streaming code to achieve this with windowed aggregations.
+Scenario: You need to implement a data lineage and traceability system to track the history of data transformations. How would you approach this using PySpark and external tools?
+Scenario: A dataset has records for multiple products, and you need to calculate the cumulative sum of sales per product for each week. Describe how to achieve this using window functions in PySpark.
+Scenario: Implement a PySpark pipeline that identifies and merges overlapping intervals in a time-series dataset.
+Scenario: A PySpark job requires processing zip files directly from HDFS without extracting them. How would you approach this?
+Scenario: A PySpark job is spending most of its time on garbage collection. How would you debug and fix this?
+Scenario: Explain how to design a scalable recommendation system using collaborative filtering in PySpark MLlib.
+Scenario: A PySpark job must process 100+ TB of data with tight SLAs. Discuss strategies to ensure optimal resource utilization and job completion.
+Scenario: A telecommunications company wants to detect dropped calls and generate alerts in real time using streaming logs. How would you design this?
+Scenario: A large-scale dataset requires Monte Carlo simulations. How would you distribute and manage these computations in PySpark?
+Scenario: You need to integrate PySpark with Snowflake for reading and writing data. Describe the steps and optimizations you would use.
+
+----------------------------------------------------------------------------------------------------------------------------------
+Tech Mahindra
+
+Scenario:
+Your organization wants to integrate ADF with an Event Hub to process real-time streaming data.
+Questions:
+How would you set up ADF to process data from an Event Hub?
+What are the limitations of using ADF for real-time processing?
+How does ADF integrate with other Azure services like Stream Analytics for real-time use cases?
+
+Scenario:
+You have a large dataset stored in Azure Data Lake that needs to be processed by date partitions.
+Questions:
+How would you design a pipeline to process data in partitions?
+What are the advantages of data partitioning in ADF?
+How would you use dynamic expressions to process each partition dynamically?
+
+Scenario:
+You have multiple pipelines, and one pipeline should only start after the successful completion of another.
+Questions:
+How would you implement dependencies between pipelines in ADF?
+What are the pros and cons of using execute pipeline activity versus trigger chaining?
+How would you handle scenarios where one pipeline fails but others should continue?
+
+Scenario:
+You have a master pipeline that orchestrates the execution of multiple child pipelines. Some child pipelines are dependent on the output of others.
+Questions:
+How would you design the master pipeline to handle dependencies between child pipelines?
+What are the differences between the "Wait" and "If Condition" activities in this context?
+How would you monitor and troubleshoot issues in a complex pipeline execution?
+
+Scenario:
+Your pipeline needs to be triggered whenever a file is uploaded to a specific container in Azure Blob Storage.
+Questions:
+How would you set up an event-based trigger in ADF?
+What are the advantages and limitations of using eventbased triggers?
+How would you handle scenarios where multiple files are uploaded simultaneously?
+
+Scenario:
+Your pipeline frequently encounters transient network issues when copying data from an on-premises database to Azure SQL Database.
+Questions:
+How would you implement retry logic to handle transient errors?
+What settings in ADF activities allow for retries and delays?
+How would you monitor and alert on excessive retries in pipeline executions?
+
+Scenario:
+You are required to process only the files uploaded in the last 24 hours from Azure Blob Storage.
+Questions:
+How would you filter files based on their upload timestamp?
+What expressions or functions would you use to calculate time-based conditions?
+How would you handle time zone differences when filtering files?
+
+Scenario:
+Your pipeline processes files daily from Azure Blob Storage and loads them into Azure SQL Database. Duplicate files occasionally appear in the storage container.
+Questions:
+How would you design a pipeline to identify and skip duplicate files?
+How would you use metadata (e.g., file names or hashes) to track processed files?
+How would you recover if a duplicate file causes partial data corruption?
+
+Scenario:
+Your pipelines process a daily batch of files, and you need to ensure that if a pipeline fails, it can resume from the last successfully processed file.
+Questions:
+How would you implement state management to track processed files?
+What role do control tables play in this scenario?
+How would you ensure idempotency in pipeline executions?
+
+Scenario:
+You need to process data from multiple Azure regions and consolidate it into a central Azure Data Lake in a cost-efficient manner.
+Questions:
+How would you design a pipeline to handle geo-distributed data?
+What are the cost and performance considerations for cross-region data transfers?
+How can you use regional Integration Runtimes to optimize performance?
+
+Scenario:
+You are responsible for ensuring data quality before loading it into the destination system. This includes null checks, duplicate checks, and threshold-based validations.
+Questions:
+How would you implement data quality checks in ADF?
+What role do Data Flow transformations like Filter, Aggregate, and Exists play in these checks?
+How would you handle rows that fail quality checks?
+
+Scenario:
+Your pipeline processes sensitive financial data that needs to be encrypted during transit and at rest.
+Questions:
+How would you ensure end-to-end encryption for sensitive data in ADF?
+How can you use Azure Key Vault for managing credentials and encryption keys?
+What security best practices would you follow to secure data pipelines?
+
+Scenario:
+You need to process data stored in partitions (e.g., year/month/day folders), but only for specific time ranges based on runtime parameters.
+Questions:
+How would you configure the Copy Activity or Data Flow to read specific partitions dynamically?
+What functions or expressions would you use to skip unnecessary partitions?
+How can you optimize pipeline performance when dealing with highly partitioned data?
+
+Scenario:
+You are tasked with processing unstructured data like log files or free-form text stored in Azure Blob Storage.
+Questions:
+How would you handle unstructured data in ADF?
+What external tools (e.g., Databricks, Cognitive Services) can you integrate with ADF for parsing or extracting insights?
+How would you transform this data into a structured format for downstream processing?
+
+Scenario:
+You have a pipeline with multiple parallel activities, and one of the activities fails intermittently due to source system issues.
+Questions:
+How would you implement exception handling for individual activities in ADF?
+How can you ensure that the pipeline continues processing unaffected branches?
+What strategies would you use to retry or log failed activities?
+
+Scenario:
+Your pipeline needs to process files dynamically based on folder structure and file patterns in Azure Data Lake.
+Questions:
+How would you use wildcard file paths in ADF to process specific files?
+How can you create folders dynamically based on runtime parameters?
+What are the challenges of managing large numbers of folders and files, and how would you address them?
+
+Scenario:
+Your team needs to collaborate with another team to build pipelines that share dependencies and datasets.
+Questions:
+How would you manage shared resources (e.g., Linked Services, Datasets) across teams?
+What strategies would you use to avoid conflicts in pipeline development?
+How can Git integration help streamline collaboration between teams?
+
+Scenario:
+You need to notify stakeholders immediately when a pipeline or activity fails, including error details.
+Questions:
+How would you implement real-time error notifications using Azure Monitor or Logic Apps?
+How can you configure email or SMS alerts for pipeline failures?
+What are the key metrics and logs to monitor for proactive issue detection?
+
+Scenario:
+You are part of a large organization with multiple teams working on separate ADF projects. Central governance is required for Linked Services, triggers, and naming conventions.
+Questions:
+How would you implement centralized governance for ADF projects?
+How can Azure Policy or Resource Manager templates enforce naming conventions?
+What strategies would you use to manage shared Linked Services across teams?
+
+Scenario:
+You need to load data from multiple sources into corresponding tables in a destination, with dynamic schema mapping.
+Questions:
+How would you configure dynamic sink mapping in a Copy Activity?
+How can parameterization help in automating schema mapping?
+What challenges might you encounter when handling mismatched schemas?
+
+Scenario:
+You need to implement data retention policies for your pipelines, ensuring that data older than a certain period is deleted or archived.
+Questions:
+How would you automate data retention policies in ADF?
+What role does the Delete Activity play in this process?
+How can you monitor and validate the successful execution of retention policies?
+
+Scenario:
+You need to process semi-structured data (e.g., JSON files with varying schemas) stored in Azure Blob Storage.
+Questions:
+How would you handle schema variability while processing semi-structured data in ADF?
+What transformations would you use in Mapping Data Flows to parse JSON data?
+How can you flatten hierarchical data structures for downstream consumption?
+
+Scenario:
+Your pipeline processes files in batches based on their upload time, dynamically creating batches for every 24-hour period.
+Questions:
+How would you design a pipeline to identify and process dynamic file batches?
+How can you use metadata from Azure Blob Storage to determine batch boundaries?
+What challenges might arise in handling late-arriving files, and how would you address them?
+
+Scenario:
+Your pipelines need to adapt dynamically based on metadata, such as file names, schema definitions, or transformation rules stored in a database.
+Questions:
+How would you design a metadata-driven pipeline in ADF?
+How can Lookup and ForEach Activities be used to retrieve and apply metadata?
+What are the advantages of a metadata-driven approach in large-scale ETL processes?
+
+------------------------------------------------------------------------------------------------------------
+TCS
+
+Scenario: During execution, your Spark job fails with an "Stage Failure" error. How would you troubleshoot and fix the issue? Follow-up: What tools or techniques do you use to monitor and debug Spark jobs?
+Scenario: You need to process a dataset and generate daily, weekly, and monthly reports. How would you design the Spark pipeline? Follow-up: How do you schedule and monitor these periodic jobs?
+Scenario: You have two datasets—one with user details and another with transactional data. You need to enrich the transactional dataset with user details and flag unmatched records. How would you do this in Spark?
+Scenario: A Spark SQL query involves multiple joins and aggregations. How would you leverage Catalyst Optimizer and Tungsten Engine for optimization?
+Scenario: Your team needs to migrate an existing MapReduce job to Spark. What factors would you consider, and how would you implement the migration?
+Scenario: You have a dataset where columns are heavily correlated. How would you identify redundant data and remove unnecessary columns using Spark?
+Scenario: A streaming application needs to detect anomalies in sensor data with sub-second latency. How would you approach this in Spark?
+Scenario: A large Spark job runs out of executor memory. What configuration changes would you make to fix this?
+Follow-up: How do you calculate the ideal values for executorMemory and executorCores?
+Scenario: A job involves several dependent transformations (e.g., filtering, joining, and aggregating). How do you determine where to apply caching or persistence?
+Scenario: A Spark application has very tight latency requirements and needs to process data in under 100 ms. Would you use Spark for this, or suggest an alternative? Why?
+Scenario: You are tasked with aggregating a dataset by multiple hierarchical levels (e.g., country → state → city). How would you structure the pipeline to make it scalable and efficient?
+Scenario: You need to implement a pipeline that monitors log files in real-time and triggers alerts based on specific patterns. How would you design this pipeline using Spark Streaming?
+Scenario: A Spark job processes billions of rows but has uneven partition sizes, causing some tasks to run much longer than others. How would you repartition the data?
+Follow-up: How do you choose between coalesce() and repartition()?
+Scenario: A Spark application with many stages has a slow driver due to excessive metadata collection. How would you optimize this?
+Scenario: You are asked to process a large dataset stored in Avro files and write the results in Parquet format. What considerations would you take into account?
+Scenario: You need to analyze social media data to determine trending topics in real-time. Design a Spark pipeline for this use case.
+Scenario: You are asked to implement a Spark pipeline that reads data from a transactional database, applies transformations, and writes the output to a data warehouse. What challenges might you face?
+Scenario: You need to process a dataset with over 1 trillion rows. How would you design a scalable Spark pipeline for this use case?
+Scenario: A Spark Structured Streaming application handles out-of-order events. How would you design the pipeline to handle latearriving data?
+Follow-up: What are the trade-offs of using larger watermark intervals?
+Scenario: A Spark job requires processing graph data (e.g., social network analysis). How would you leverage GraphX to compute metrics like PageRank or connected components?
+Follow-up: How does GraphX handle iterative computations in a distributed environment?
+Scenario: A retail dataset contains product sales data, and you need to find the top-selling products by category over the past 30 days. How would you implement this in Spark?
+Scenario: A Spark job runs fine in the development environment but fails in production with "Out of Memory" errors. What could be causing this, and how would you resolve it?
+Scenario: You need to group a dataset by a combination of columns and compute complex aggregations. How would you implement this pipeline?
+Scenario: Your Spark streaming job needs to output real-time data to a database that cannot handle high write throughput. How would you manage this bottleneck?
+Scenario: A Spark job requires a self-join on a large dataset to calculate pairwise metrics. How would you optimize this operation?
+Scenario: Your team needs to calculate customer lifetime value (CLTV) from transactional data. How would you design and optimize this pipeline in Spark?
+Scenario: You observe significant skew in intermediate data when calculating large-scale aggregations. How would you mitigate this issue?
+Scenario: You need to handle a multi-terabyte dataset with incremental updates while maintaining data freshness in a downstream system. How would you achieve this in Spark?
+Scenario: You are tasked with writing a large dataset into Hive but encounter “small files” issues. How would you optimize this process?
+Scenario: You need to calculate percentile values for a dataset grouped by a specific column. How would you implement this in Spark?
+Scenario: Your Spark application throws a "Driver Memory Exhausted" error when processing large datasets. What steps would you take to diagnose and resolve this?
+Scenario: A Spark job has increasing execution time with data volume growth. How would you scale the job to handle exponential data growth?
+Scenario: You need to train and tune a machine learning model on Spark, but cross-validation takes too long. How would you optimize this process?
+Scenario: A Spark job takes up all available cluster resources, starving other applications. How would you enforce fair resource allocation?
+
+--------------------------------------------------------------------------------
+Concentrix
+
+Scenario: You are given a dataset with duplicate rows. Write PySpark code to remove duplicates based on specific columns.
+Follow-up: How would you identify and count the duplicates instead of removing them?
+Scenario: You are building a data pipeline that needs to ingest 1TB of daily logs, process them, and store them in a data lake. Outline the PySpark-based solution you would design.
+Scenario: Explain how you would connect PySpark to an Elasticsearch cluster to perform real-time data indexing.
+Scenario: Explain the difference between groupBy() and reduceByKey() in PySpark. When would you choose one over the other?
+Scenario: While writing a large dataset to S3, you encounter frequent write failures. How would you debug and optimize the writing process?
+Scenario: Your pipeline needs to read data from a MongoDB collection, process it in PySpark, and write the output to a Redshift table. How would you implement this?
+Scenario: Explain how you would debug a
+scenario where some partitions in your output data are empty.
+Scenario: You receive data with a mix of time zones. How would you normalize all timestamps to UTC in PySpark?
+Scenario: You need to implement a watermarking mechanism to handle latearriving data in a streaming application. How would you configure and test this?
+Scenario: You are tasked with identifying communities in a social network dataset. How would you approach this using GraphFrames in PySpark?
+Scenario: A retail company requires an ETL pipeline that reads data from an FTP server, processes it, and writes the output to a Snowflake database. Describe how you would build this pipeline.
+Scenario: Your team processes JSON files, but the parsing performance is poor. How would you optimize reading and processing JSON data in PySpark?
+Scenario: Explain how you would integrate PySpark with Apache Kafka for real-time streaming and ensure fault tolerance.
+Scenario: An insurance company wants to calculate risk scores for its customers based on multiple data sources. Describe how you would preprocess and combine the data using PySpark.
+Scenario: A PySpark job must enforce rolebased access control (RBAC) for processing and writing data. How would you configure this?
+Scenario: Explain how you would use PySpark to train a model on imbalanced data, ensuring the minority class is adequately represented.
+Scenario: Explain how you would calculate moving averages and exponential moving averages for stock price data using PySpark.
+Scenario: How would you integrate custom Python functions as UDFs or Pandas UDFs in PySpark, and when would you prefer each?
+Scenario: You need to extract geospatial insights from a large dataset of GPS logs. How would you use PySpark to cluster and visualize location hotspots?
+Scenario: Describe how you would handle situations where a PySpark job fails midexecution while processing streaming data.
+Scenario: Write PySpark code to dynamically infer and apply transformations based on metadata provided as input.
+Scenario: How would you integrate a pretrained deep learning model into a PySpark pipeline for distributed inference?
+Scenario: A PySpark pipeline must ensure referential integrity across datasets. How would you validate and enforce this?
+Scenario: A transportation company wants to cluster GPS data points to identify hotspots. Describe how you would do this using PySpark.
+Scenario: Write PySpark code to implement a rolling join where you join two datasets based on the nearest timestamp.
+Scenario: Write PySpark code to identify communities in a graph using the Louvain modularity algorithm.
+Scenario: Explain how you would implement column pruning and predicate pushdown for a large dataset stored in Parquet.
+Scenario: Write PySpark code to log detailed statistics (e.g., record counts, errors) for each stage of processing.
+Scenario: A real-time stream contains overlapping time windows. Write PySpark code to aggregate these windows without duplication.
+Scenario: Write PySpark code to transform sensor data into a wide format for machine learning model training.
+Scenario: Write PySpark code to consume a REST API in real time and enrich the stream with external data.
+Scenario: A knowledge graph must be enriched with new relationships extracted from unstructured text data. Explain how you would design this system in PySpark.
+Scenario: Explain how you would implement checkpointing in PySpark Structured Streaming to ensure fault tolerance.
+Scenario: Describe how to implement exactlyonce semantics in PySpark Structured Streaming, ensuring no data is missed or duplicated during processing.
+Scenario: Write PySpark code to merge two Delta Lake tables based on certain conditions while ensuring that the operation is efficient and does not result in unnecessary data duplication.
+Scenario: A pipeline processes logs, and some logs arrive out of order. Explain how you would design your PySpark workflow to maintain correct order without losing efficiency.
+Scenario: A PySpark application runs into frequent task failures due to speculative execution. How would you disable or tune speculative execution to optimize performance?
+Scenario: Explain how to perform efficient set operations (e.g., union, intersection, difference) on two large datasets in PySpark.
+Scenario: A data pipeline involves multiple transformations, and you need to debug intermediate stages. How would you log and inspect intermediate data in PySpark?
+
+------------------------------------------------------------------------------------------
+BAJAJ FINSERV
+
+Scenario: You are working with JSON files where the structure of each file is slightly different. How would you handle such inconsistent data in PySpark?
+Scenario: A PySpark job is failing due to a TaskNotSerializableException. How would you debug and resolve this issue?
+Scenario: You need to process a large dataset that doesn’t fit into a single machine's memory. How would you design a distributed PySpark pipeline to perform ETL on this data?
+Scenario: Your output data needs to be written to HDFS with specific partitioning (e.g., partitioned by year and month). Write PySpark code to achieve this.
+Scenario: You need to join two large datasets, but one dataset frequently changes while the other remains static. What approach would you use to optimize this scenario?
+Scenario: A Spark job reads data from an S3 bucket, but you encounter frequent S3AccessDenied errors. What steps would you take to resolve this issue?
+Scenario: Your PySpark job needs to process data stored across multiple cloud regions. How would you handle latency and optimize cross-region data processing?
+Scenario: You have a dataset with timestamps, and you need to calculate the time difference between consecutive rows for each user. How would you implement this in PySpark?
+Scenario: Your PySpark job is running on a cluster with limited resources, and you need to optimize memory usage. What configurations or coding techniques would you use?
+Scenario: Explain how you would decide between caching a DataFrame in memory (cache()) versus persisting it to disk (persist()).
+Scenario: A job needs to handle multiple small files in HDFS, which is causing overhead. How would you optimize this in Spark?
+Scenario: Explain the difference between groupBy() and reduceByKey() in PySpark. When would you choose one over the other?
+Scenario: How would you ensure schema enforcement while reading a semi-structured dataset in PySpark?
+Scenario: Your dataset has billions of rows, and the PySpark job runs out of memory while performing a groupBy operation. How would you troubleshoot and resolve this?
+Scenario: Your streaming application processes logs in real-time. You need to send an alert if the error rate exceeds a threshold in the last 10 minutes. How would you implement this?
+Scenario: Your PySpark job is stuck in the "Pending" state on the cluster. How would you debug and identify the root cause?
+Scenario: A client wants to predict customer churn using historical data. Outline how you would build a pipeline for this using PySpark MLlib.
+Scenario: You need to implement a distributed algorithm (e.g., PageRank) for a large dataset in PySpark. How would you approach this?
+Scenario: You need to build a data pipeline that supports both batch and real-time processing. Outline the architecture and PySpark’s role in the pipeline.
+Scenario: A dataset contains event logs. Write PySpark code to group logs by user and sort them by timestamp within each group.
+Scenario: Explain how you would handle schema drift when processing a stream of data where the schema may change over time.
+Scenario: How would you decide on the appropriate number of partitions for a PySpark DataFrame, and what tools or methods would you use to evaluate partitioning efficiency?
+Scenario: How would you efficiently process data stored in Delta Lake, ensuring ACID compliance and high query performance?
+Scenario: You encounter Job aborted due to stage failure in a shuffle-heavy job. Explain how you would identify and fix the problem.
+Scenario: A PySpark job is deployed in production but needs real-time monitoring of its progress. What tools and techniques would you use to achieve this?
+Scenario: Explain how you would partition and process data for a real-world application like building heatmaps for geospatial data.
+Scenario: How would you design a pipeline to dynamically adjust resources based on workload using PySpark and YARN/EMR?
+Scenario: You are tasked with splitting a single large dataset into train, test, and validation datasets with random sampling. How would you do this while ensuring reproducibility?
+Scenario: How would you merge incremental data into a Delta Lake table while ensuring ACID compliance and versioning?
+Scenario: Explain how you would integrate PySpark with Apache Kafka for real-time streaming and ensure fault tolerance.
+Scenario: A shuffle-intensive job is failing due to OutOfMemoryError. How would you troubleshoot and optimize shuffle operations in PySpark?
+Scenario: Explain how you would build a PySpark pipeline to calculate weighted averages for a dataset with complex hierarchical weights.
+Scenario: How would you implement a custom join algorithm in PySpark for a dataset that doesn’t fit the typical join patterns?
+Scenario: How would you build a pipeline to detect duplicate records across multiple datasets with no unique identifiers?
+Scenario: A PySpark job processing 1 TB of data spends most of its time in garbage collection. Explain how to diagnose and mitigate this issue.
+Scenario: How would you implement a pivot table with PySpark and compute additional aggregated columns (e.g., percentage changes)?
+Scenario: Explain how you would implement a PySpark job that processes real-time IoT sensor data while merging it with historical data for insights.
+Scenario: A genomic dataset needs to be processed for sequence alignment and aggregation. Describe how you would handle this in PySpark.
+Scenario: A dataset contains time-stamped events. How would you detect anomalies based on deviations from historical patterns?
+Scenario: Your PySpark streaming application has lag in processing due to high watermark delays. How would you debug and resolve this?
+Scenario: You need to extract geospatial insights from a large dataset of GPS logs. How would you use PySpark to cluster and visualize location hotspots?
+Scenario: Your ETL pipeline involves expensive transformations that are applied multiple times. Explain how to persist intermediate results efficiently.
+Scenario: A financial dataset has hierarchical aggregation requirements (e.g., regional, national). How would you design a pipeline to compute these aggregates?
+Scenario: You need to implement a sliding window aggregation (e.g., last 5 minutes) on a real-time stream. How would you achieve this using PySpark Structured Streaming?
+Scenario: How would you enforce schema validation and manage schema evolution in Delta Lake?
+Scenario: Write PySpark code to generate a data quality report that highlights anomalies in distribution and schema.
+Scenario: A telecom company needs to monitor and predict network outages based on real-time logs. How would you design this system in PySpark?
+Scenario: Write PySpark code to efficiently find overlapping time intervals across multiple data streams.
+Scenario: Write PySpark code to implement a rolling join where you join two datasets based on the nearest timestamp.
+Scenario: How would you process a dataset of GPS logs to identify routes frequently traveled by vehicles?
+Scenario: Write PySpark code to identify communities in a graph using the Louvain modularity algorithm.
+Scenario: A logistics company needs to optimize delivery routes using historical and real-time traffic data. How would you implement this in PySpark?
+Scenario: Write PySpark code to process petabytes of data and generate hierarchical aggregates (e.g., country, region, city) efficiently.
+Scenario: Explain how to handle distributed hyperparameter tuning for a gradient-boosted tree model using PySpark.
+
+--------------------------------------------------------------------------
+BARCLAYS
+
+Scenario: Generative AI output in your pipeline is inconsistent and introduces hallucinations. How would you handle this?
+Scenario: A legacy pipeline lacks proper documentation. How would you reverse-engineer and migrate it without downtime?
+Scenario: Your pipeline must generate synthetic rare event data for fraud detection. How would you ensure it aligns with real-world distributions?
+Scenario: A weather forecasting system requires a pipeline to process multi-terabyte daily weather data. How would you ensure efficiency?
+Scenario: Regulators require proof that data in your pipeline complies with HIPAA and GDPR. How would you implement and demonstrate compliance?
+Scenario: A no-code pipeline created by nontechnical users is inefficient and unscalable. How would you refactor it?
+Scenario: How would you handle schema drift in a pipeline that integrates heterogeneous data sources?
+Scenario: A government organization requires publishing open data pipelines for public access. How would you ensure security and reliability?
+Scenario: A pipeline must aggregate and analyze data from multiple robots in a warehouse. How would you ensure efficiency and low latency?
+Scenario: How would you design pipelines to enable interoperability in a multi-cloud ecosystem?
+Scenario: Stakeholders demand a sustainabilityfocused data architecture. How would you implement pipelines optimized for energy consumption?
+Scenario: A virtual reality system requires lowlatency processing of motion and interaction data. How would you implement this?
+Scenario: A pipeline must generate dynamic schemas at runtime based on incoming data. How would you design this?
+Scenario: A distributed ML pipeline faces issues with parameter synchronization. How would you resolve this?
+Scenario: A predictive maintenance pipeline struggles with false positives. How would you finetune it?
+Scenario: Stakeholders report long wait times for queries against a large dataset. How would you redesign the pipeline?
+Scenario: A pipeline requires dynamic scheduling based on real-time triggers and dependencies. How would you implement this?
+Scenario: How would you optimize a pipeline schedule to balance resource utilization across a cluster?
+Scenario: A pipeline needs to process events from a Kafka topic in near real-time. How would you ensure fault tolerance?
+Scenario: How would you design a pipeline to process and visualize real-time data from a constellation of satellites?
+Scenario: How would you implement role-based access controls for shared pipelines across crossfunctional teams?
+Scenario: How would you handle irregular time intervals in a time-series pipeline to ensure consistency?
+Scenario: How would you optimize pipelines for interactive querying in a highly concurrent environment?
+Scenario: Stakeholders request insights based on point-in-time data snapshots. How would you design the pipeline?
+Scenario: Different business units follow conflicting data governance policies. How would you enforce consistency in a shared pipeline?
+Scenario: Data scientists need isolated environments to experiment with ML pipelines. How would you enable this while maintaining production stability?
+Scenario: How would you design a pipeline that identifies and resolves bottlenecks autonomously?
+Scenario: How would you integrate ML models to predict pipeline failures and prevent downtime?
+Scenario: Geospatial joins in a pipeline are computationally expensive. How would you optimize this?
+Scenario: How would you design a pipeline to analyze IoT device logs for predictive maintenance?
+Scenario: Stakeholders request cost breakdowns by pipeline stage and resource usage. How would you design this reporting?
+Scenario: A pipeline faces inconsistencies due to varying encodings in multi-language text data. How would you resolve this?
+Scenario: A pipeline must process holographic data streams for next-generation communication systems. How would you design this?
+Scenario: Quantum computing results are probabilistic and need post-processing. How would you integrate these outputs into a classical data pipeline?
+Scenario: Stakeholders demand a pipeline that allows human intervention during anomaly detection. How would you design this?
+Scenario: How would you design a fully serverless pipeline for a large-scale data ingestion and processing system?
+Scenario: Multi-modal pipelines often suffer from synchronization issues. How would you manage alignment across data types?
+Scenario: A generative AI-enhanced pipeline must provide real-time responses. How would you design this for low latency?
+Scenario: User preferences change frequently, requiring dynamic updates to a personalization pipeline. How would you handle this?
+Scenario: How would you integrate AR content pipelines with geospatial data for location-based experiences?
+Scenario: How would you address challenges in pipeline interoperability across multiple domains in a data mesh?
+Scenario: A streaming pipeline experiences backpressure due to high data rates. How would you optimize processing?
+Scenario: A sustainability-focused pipeline must integrate global datasets with varying schemas. How would you handle this?
+Scenario: How would you optimize a federated pipeline for low-latency analytics across distributed nodes?
+Scenario: How would you design a pipeline that integrates sentiment analysis with operational data for customer insights?
+Scenario: An RPA-enhanced pipeline must handle high-frequency triggers without bottlenecks. How would you approach this?
+Scenario: A pipeline must prioritize ethical considerations while processing user data. How would you balance this with performance?
+Scenario: How would you integrate explainable AI techniques into a pipeline that delivers predictive analytics?
+
+----------------------------------------------------------------------------------------------------------
+PWC
+
+Scenario: A retailer wants to process batch and
+streaming data to update inventory levels in real-time.
+What strategies would you use to handle latearriving data in streaming pipelines?
+Scenario: A company needs to ingest data from
+external APIs and store it in Azure for analysis.
+How would you handle API rate limits and retry
+policies?
+Scenario: A machine learning team requires curated
+datasets stored in Azure Data Lake with specific
+partitioning to optimize training processes.
+How would you design the data structure in Azure
+Data Lake?
+Scenario: A team is training a model that requires
+petabytes of historical data stored in Azure.
+How would you optimize the data pipeline to feed
+the model?
+Scenario: A company wants to implement a data
+lifecycle policy for automatic deletion of outdated data.
+How would you configure such a policy in Azure Data
+Lake or Blob Storage?
+Scenario: A company uses multiple cloud providers and
+needs to integrate data from AWS S3 and Google Cloud
+Storage into Azure Data Lake for analysis.
+Which Azure services would you use for this
+integration?
+
+Scenario: An Azure Synapse Analytics workload is
+running out of capacity during peak hours.
+How would you manage workload distribution to
+avoid bottlenecks?
+Scenario: An organization’s data lake is cluttered with
+unstructured and redundant files, making it difficult to
+maintain.
+How would you implement governance to organize
+and manage the data?
+Scenario: A stock market analytics platform requires an
+alerting system that triggers when market conditions
+meet specific thresholds.
+How would you design this system using Azure
+Stream Analytics or Azure Functions?
+Scenario: A retailer wants to implement a forecasting
+model using Azure Machine Learning and integrate it
+with Synapse Analytics.
+How would you build and deploy the model?
+Scenario: A company wants to build a recommendation
+engine that combines historical customer data and
+real-time interactions stored in Azure Synapse Analytics
+and Azure Event Hubs.
+Which Azure services and tools would you use to
+support the recommendation engine?
+
+Scenario: Your team is using Azure Synapse Analytics,
+but costs are higher than expected because of
+inefficient queries.
+What tools or practices would you use to monitor
+and manage query performance?
+Scenario: A media company wants to use a
+combination of Azure services and third-party AI tools
+for video analytics.
+How would you design the solution to incorporate
+both platforms?
+Scenario: A global organization needs to build a
+complete data analytics platform in Azure, supporting
+batch processing, real-time analytics, and advanced
+AI/ML models.
+How would you design the end-to-end architecture
+for such a platform?
+Scenario: A manufacturing firm needs predictive
+maintenance analytics using data from IoT sensors
+stored in Azure.
+How would you design a pipeline to ingest, store,
+and analyze IoT data?
+Scenario: A social media company wants to analyze
+user sentiment on trending topics using text data in
+Azure.
+How would you design a pipeline using Azure
+Cognitive Services for text analysis?
+
+Scenario: A company requires both real-time and batch
+processing of data for different use cases, including
+fraud detection and historical analysis.
+How would you design a unified architecture in Azure
+to handle both processing types?
+Scenario: A global enterprise needs to synchronize data
+across Azure regions while integrating with on-premises
+systems in multiple locations.
+What Azure tools and architectures would you
+recommend for geo-replication and
+synchronization?
+Scenario: A business intelligence team wants to
+visualize geospatial data for logistics planning.
+What tools and libraries would you use to integrate
+geospatial visualizations in dashboards?
+Scenario: A media company wants to use Azure Video
+Indexer for content analytics on videos stored in Azure
+Blob Storage.
+How would you process large volumes of video data
+efficiently?
+Scenario: A company needs to ingest and process
+weather data from an external API and integrate it with
+internal sales data for analytics.
+How would you design the data ingestion pipeline?
+
+Scenario: A data processing job in Azure Databricks
+takes too long to complete due to skewed data
+distribution.
+How would you diagnose and resolve the data skew
+issue?
+Scenario: A company processes multilingual customer
+feedback and needs to perform language detection
+and sentiment analysis.
+How would you use Azure Cognitive Services in the
+data pipeline?
+Scenario: A bank wants to implement anti-money
+laundering (AML) analytics using Azure.
+How would you build a data pipeline for transaction
+monitoring?
+Scenario: Analysts report slow query performance when
+accessing files in Azure Data Lake.
+Would you recommend moving to a lakehouse
+model? Why or why not?
+Scenario: A logistics company is interested in using
+Azure Digital Twins to model and simulate supply chain
+operations.
+How would you integrate Digital Twins with real-time
+data streams?
+
+Scenario: An online streaming service wants to process
+millions of user interactions per second for content
+recommendations.
+How would you handle events arriving out of order?
+Scenario: An organization needs to automate data
+quality checks for its Azure Data Factory pipelines.
+What tools or frameworks would you use to
+implement automated testing and monitoring?
+Scenario: A company wants to process batch data
+using a serverless approach but also requires
+occasional ad-hoc querying.
+What combination of Azure services would you
+recommend for cost-effective batch processing?
+Scenario: A transportation company needs a real-time
+recommendation system for optimizing delivery routes.
+How would you implement feedback loops to
+continuously improve model performance?
+Scenario: A media company wants to use generative AI
+to create metadata for its vast video archive.
+How would you design a pipeline that leverages
+Azure Video Indexer and Azure OpenAI?
+Scenario: A manufacturing plant uses IoT sensors to
+monitor equipment health and prevent downtime.
+How would you build a predictive maintenance
+solution using Azure Digital Twins and Machine
+Learning?
+
+Scenario: A social media platform requires sub-second
+analytics for trending topics across millions of user
+posts.
+How would you design a real-time streaming
+pipeline using Azure Event Hubs and Stream
+Analytics?
+Scenario: A bank is migrating its on-premises Hadoop
+cluster to Azure Synapse Analytics.
+What tools would you use to transfer large datasets
+securely?
+Scenario: A retailer processes weekly sales data for
+trend analysis across thousands of stores.
+Which Azure tools would you use for efficient batch
+processing?
+Scenario: A financial institution requires anomaly
+detection for fraudulent transactions in real-time.
+How would you design and deploy the model using
+Azure Databricks and Azure ML?
+Scenario: A company needs to anonymize user data
+before feeding it into machine learning models.
+What techniques would you recommend to balance
+privacy and utility?
+
+Scenario: A multinational company uses a hybrid cloud
+setup with Azure and AWS, and wants to unify data
+analytics.
+How would you integrate data from both clouds into
+Azure Synapse Analytics?
+Scenario: A healthcare company needs to comply with
+GDPR for patient data stored in Azure.
+How would you enforce data residency and access
+restrictions in Azure?
+Scenario: A government organization needs to
+anonymize citizen data for public use in analytics
+projects.
+What techniques would you recommend for
+anonymization while preserving utility?
+Scenario: A telecom company needs to provide realtime data usage analytics to its customers via a mobile
+app.
+How would you design the pipeline to process and
+deliver customer-specific analytics?
+Scenario: A global supply chain company processes
+millions of shipping updates every day, and the data
+volume grows exponentially.
+How would you scale Azure Data Factory pipelines to
+handle this increase in data volume?
+
+------------------------------------------------------------------------------------------------------------
+
+Capgemini
+
+Scenario: You need to copy data from an on-premises
+Oracle database to Azure Blob Storage daily.
+Question: How would you configure the ADF pipeline for
+this use case?
+Follow-up: How would you handle failures and ensure
+data consistency?
+Scenario: You encounter a performance bottleneck when
+processing streaming data in Databricks.
+Question: What steps would you take to diagnose and
+resolve the bottleneck?
+Follow-up: How can structured streaming in Databricks
+improve scalability?
+Scenario: A real-time fraud detection system is needed for
+transaction data.
+Question: How would you design this system using Azure
+Stream Analytics?
+Follow-up: How would you scale the system to handle
+spikes in traffic?
+Scenario: A customer requires event-driven data
+processing but wants minimal infrastructure management.
+Question: When would you recommend Azure Functions
+over Logic Apps, and why?
+Follow-up: How would you optimize costs for serverless
+compute?
+
+Scenario: A client wants to integrate Azure Purview into
+their data pipeline.
+Question: How would you use Purview for metadata
+management and lineage tracking?
+Follow-up: What challenges might arise during Purview
+setup, and how would you resolve them?
+Scenario: Data engineers complain about unmanageable
+pipeline complexity.
+Question: How would you simplify and modularize
+complex data pipelines?
+Follow-up: What naming conventions and
+documentation strategies would you recommend?
+Scenario: The business requires insights from multiterabyte datasets stored in Azure Data Lake, with frequent
+updates.
+Question: How would you architect the solution using
+Delta Lake and Databricks for efficient upserts?
+Follow-up: What are the trade-offs between using
+MERGE and optimized writes?
+Scenario: A multi-cloud strategy requires integrating AWS
+S3 data with Azure Synapse Analytics.
+Question: How would you design a cost-effective data
+movement pipeline between AWS and Azure?
+Follow-up: How would you handle data format
+transformations during this integration?
+
+Scenario: You need to secure Personally Identifiable
+Information (PII) while enabling analytics.
+Question: How would you implement encryption and
+tokenization in Azure?
+Follow-up: What tools like Azure Key Vault and Purview
+would you use for managing sensitive data?
+Scenario: A legacy application provides data over FTP,
+which must be ingested daily into Azure.
+Question: How would you set up the data ingestion
+pipeline using Azure Data Factory?
+Follow-up: How would you handle missing or latearriving files?
+Scenario: Your Azure Synapse Analytics workload shows
+unexpected cost increases.
+Question: How would you analyze and optimize the
+workload to reduce costs?
+Follow-up: What role does query telemetry play in cost
+management?
+Scenario: You must recover a specific version of a dataset
+accidentally overwritten in Azure Data Lake.
+Question: How would you use Delta Lake versioning or
+Azure Snapshots to recover the data?
+Follow-up: What preventive measures would you
+implement to avoid such issues?
+
+Scenario: You need to implement data classification and
+tagging for a large Azure Data Lake.
+Question: What tools would you use to automate data
+discovery and classification?
+Follow-up: How would you track data lineage from
+ingestion to consumption?
+Scenario: A business team needs a weekly summary report
+combining data from SQL, Blob Storage, and REST APIs.
+Question: How would you design the ETL pipeline in
+Azure Data Factory?
+Follow-up: What are your strategies for handling API
+rate limits and retries?
+Scenario: A client wants to analyze data from Azure IoT Hub
+in Azure Synapse.
+Question: How would you set up the integration and
+manage data flow?
+Follow-up: How would you optimize the pipeline for
+high-frequency IoT data?
+Scenario: You need to implement a change data capture
+(CDC) solution in Azure Databricks.
+Question: How would you design the pipeline to capture
+and apply incremental changes?
+Follow-up: How would you optimize the CDC pipeline for
+low-latency updates?
+
+Scenario: A client reports unexpected cost overruns in their
+Azure Data Factory usage.
+Question: How would you investigate and optimize the
+cost of ADF pipelines?
+Follow-up: How does Data Flow Debugging affect cost,
+and how would you optimize its use?
+Scenario: A real-time streaming pipeline must guarantee
+exactly-once delivery of data.
+Question: How would you design a fault-tolerant
+solution using Event Hubs and Databricks?
+Follow-up: What role does checkpointing play in
+achieving this guarantee?
+Scenario: You need to design a pipeline to ingest and
+process multi-terabyte data from multiple cloud providers
+into Azure.
+Question: How would you set up cross-cloud data
+ingestion pipelines using Data Factory?
+Follow-up: What cost optimization techniques would
+you apply for inter-cloud data transfer?
+Scenario: You need to integrate Azure Data Factory with a
+non-Azure data source that only supports REST APIs.
+Question: How would you configure an ADF pipeline to
+handle API-based data ingestion?
+Follow-up: What techniques would you use to handle
+pagination and throttling?
+
+Scenario: A Synapse SQL Pool workload must support a
+large multi-tenant application.
+Question: How would you design the system to manage
+data isolation and access control for tenants?
+Follow-up: What is the role of dedicated SQL pools in
+multi-tenant scenarios?
+Scenario: Your Databricks pipeline is processing data with
+highly skewed partitions, causing performance issues.
+Question: How would you identify and resolve partition
+skew in Spark?
+Follow-up: What techniques would you apply for
+repartitioning or data redistribution?
+Scenario: Synapse Analytics costs are rising due to
+frequent storage transactions.
+Question: How would you optimize storage and query
+costs in Synapse?
+Follow-up: How would you determine when to move
+data to a lower-cost storage tier?
+Scenario: Legacy systems export data in fixed-width files,
+which must be ingested into Azure Data Lake.
+Question: How would you parse and transform these
+files for storage in ADLS?
+Follow-up: What challenges could arise, and how would
+you mitigate them?
+
+Scenario: A critical data pipeline failed, and you need to
+backfill missing data.
+Question: How would you recover the pipeline and
+ensure data consistency?
+Follow-up: How would you automate backfill processes
+for similar future scenarios?
+Scenario: A retail business wants to analyze customer
+footfall data aggregated from multiple sources.
+Question: How would you design a pipeline to merge
+real-time and batch data streams in Azure?
+Follow-up: How would you implement predictive
+analytics using Azure Machine Learning in this setup?
+Scenario: A legacy system stores data in Oracle, and the
+client wants to migrate to Azure Synapse.
+Question: How would you plan and execute the
+migration with minimal downtime?
+Follow-up: What challenges might arise in migrating
+stored procedures and views?
+Scenario: An e-commerce business requires a data pipeline
+that integrates with Shopify and Azure ML.
+Question: How would you design the pipeline for realtime analytics and recommendation generation?
+Follow-up: What challenges might arise with API rate
+limits and how would you address them?
+
+---------------------------------------------------------------------------------------------
+
+RECRO
+
+Scenario: Your Spar k job i s running
+s lo w l y due to data s ke w . H o w w ould
+you identif y and addres s the i s sue?
+Scenario: You notice that a data
+w arehouse quer y i s tak ing an unusual l y
+long time. What s teps w ould you take
+to optimi ze it s performance?
+Scenario: A legacy s y s tem prov ides
+critical data in a non- s tandard format.
+H o w w ould you incorporate thi s into a
+modern data pipel ine?
+Scenario: A Kaf ka consumer in your
+pipel ine i s lagging behind s ignificantl y .
+What s teps w ould you take to debug
+and resol ve the lag?
+Scenario: A cl ient’ s on-premi ses
+H adoop clus ter needs to be migrated
+to the cloud. What chal lenges w ould
+you anticipate, and ho w w ould you
+addres s them?
+Scenario: H o w w ould you handle a
+scenario w here your database i s
+nearing it s s torage or throughput
+l imit s ?
+
+Scenario: Your company w ant s to
+reduce the cos t of it s data
+infras tructure w ithout sacrificing
+performance. What s trategies w ould
+you propose?
+Scenario: You’ ve bui lt a real - time
+pipel ine us ing Kaf ka, but you notice
+mes sages are being proces sed out of
+order. H o w w ould you troubleshoot and
+fi x thi s i s sue?
+Scenario: You’ ve di scovered dupl icate
+records in a large dataset that impact
+do w ns tream proces ses . What approach
+w ould you take to dedupl icate and
+prevent future i s sues ?
+Scenario: A data lake has gro w n to a
+point w here quer y performance i s
+degrading s ignificantl y . What s teps
+w ould you take to optimi ze it ?
+Scenario: H o w w ould you des ign acces s
+control s for a multi - tenant data
+platform to ensure data i solation
+bet w een cl ient s ?
+Scenario: H o w w ould you implement
+tiered s torage in a data lake to
+balance performance and cos t ?
+
+Scenario: A machine learning model ' s
+predictions rel y on s treaming data.
+H o w w ould you integrate real - time
+predictions into an ex i s ting pipel ine?
+Scenario: Your team needs to refactor
+a legacy E T L s y s tem for scalabi l it y and
+performance. What approach w ould
+you take?
+Scenario: H o w w ould you w or k w ith
+s takeholder s to define and enforce
+data qual it y s tandards acros s the
+organi zation?
+Scenario: A pipel ine that combines
+data from multiple sources s tart s
+fai l ing after a ne w source i s added.
+H o w w ould you identif y and resol ve the
+i s sue?
+Scenario: A Kaf ka topic has gro w n too
+large, and proces s ing i s fal l ing behind.
+What s teps w ould you take to addres s
+thi s ?
+Scenario: You are tas ked w ith
+des igning a pipel ine to aggregate real -
+time metrics from IoT dev ices . What
+chal lenges do you anticipate, and ho w
+w ould you sol ve them?
+
+Scenario: U ps tream s y s tems frequentl y
+change schemas , caus ing pipel ine
+fai lures . H o w w ould you make your
+pipel ine res i l ient to schema changes ?
+Scenario: Stakeholder s frequentl y
+complain about not under s tanding
+avai lable data fields . H o w w ould you
+make metadata more acces s ible?
+Scenario: A major cus tomer complains
+about delayed data del i ver y during a
+critical bus ines s event. H o w w ould you
+identif y and addres s the root cause?
+Scenario: A s y s tem mus t proces s
+event s that occas ional l y arri ve out of
+order or s ignificantl y delayed. H o w
+w ould you handle these edge cases ?
+Scenario: A dependency on a thirdpart y API introduces unpredictable
+latency in your pipel ine. H o w w ould
+you mitigate thi s ?
+Scenario: A pipel ine proces s ing data
+from multiple Kaf ka topics
+occas ional l y loses mes sages due to
+consumer crashes . H o w w ould you
+ensure mes sage recover y ?
+
+Scenario: A batch job requires highthroughput w rites but faces I / O
+bottleneck s . H o w w ould you addres s
+thi s ?
+Scenario: A high-priorit y use case
+requires near real - time aggregations
+over large s treams . H o w w ould you
+implement thi s ?
+Scenario: In e-commerce, a pipel ine
+mus t recommend product s based on
+real - time user behav ior. What unique
+chal lenges w ould you addres s ?
+Scenario: H o w w ould you back fi l l data
+w hen migrating a hi s torical dataset
+w ithout di s rupting current w or k flo w s ?
+Scenario: You need to s ynchroni ze
+changes acros s t w o s y s tems w ith
+different update frequencies . H o w
+w ould you des ign the s ynchroni zation?
+Scenario: Your team needs real - time
+monitoring for anomal ies in a
+s treaming pipel ine. What tool s and
+techniques w ould you use?
+Scenario: You are tas ked w ith
+des igning a pipel ine that adheres to
+both local and international data la w s .
+What factor s w ould you cons ider ?
+
+Scenario: A mar keting team reques t s a
+unified v ie w of cus tomer data s tored
+acros s CRM, transactional databases ,
+and a third-part y anal y tics tool . H o w
+w ould you approach thi s integration?
+Scenario: A manufacturing company
+w ant s to use edge computing to
+proces s real - time data local l y w hi le
+s yncing to a central s y s tem. H o w w ould
+you des ign thi s ?
+Scenario: A spar se dataset i s caus ing
+inefficiencies in quer y performance.
+H o w w ould you optimi ze it ?
+Scenario: A machine learning team
+reques t s ver s ioned dataset s to track
+model performance acros s different
+data rev i s ions . H o w w ould you support
+thi s ?
+Scenario: H o w w ould you des ign a
+pipel ine that minimi zes the ri s k of
+unauthori zed acces s during a cros s -
+region data trans fer ?
+Scenario: A pipel ine output doesn’t
+match expectations , and you need to
+trace the i s sue back to the source. H o w
+w ould you approach thi s ?
+
+Scenario: A critical data pipel ine fai l s
+during a peak bus ines s event. H o w w ould
+you handle the incident and prevent
+future occurrences ?
+Scenario: A micro-batch proces s ing
+pipel ine occas ional l y overlaps in
+proces s ing time bet w een batches . H o w
+w ould you addres s thi s ?
+Scenario: H o w w ould you integrate
+machine learning model s for real - time
+anomal y detection in a s treaming
+pipel ine?
+Scenario: A pipel ine mus t col lect and
+proces s data from global l y di s tributed
+s y s tems w ith var y ing latency . H o w w ould
+you handle thi s ?
+Scenario: A pipel ine mus t tokeni ze PI I
+(Per sonal l y Identifiable Information) w hi le
+retaining usabi l it y for anal y tics . H o w
+w ould you approach thi s ?
+Scenario: A high- volume batch proces s ing
+job i s highl y resource- intens i ve. H o w
+w ould you make it more energy -efficient ?
+Scenario: A multimedia dataset includes
+v ideos , images , and audio fi les . H o w
+w ould you des ign a pipel ine to proces s
+and anal y ze these data t ypes ?
+
+---------------------------------------------------------------------------------------
+perficient
+
+What is the difference between CHAR and NCHAR data
+types?
+How do you fetch rows that contain a substring in a
+specific column?
+Can a table have multiple unique constraints? Provide
+an example.
+What is the difference between a schema and a
+database?
+Explain the use of the DEFAULT keyword in table
+creation.
+Write a query to find employees whose names start
+with a specific letter.
+Write a query to fetch the first three characters of a
+string.
+Write a query to copy data from one table to another.
+What is the ORDER BY clause used for? Can you sort by
+multiple columns?
+What is the purpose of the COUNT(*) function? How is it
+different from COUNT(column_name)?
+Explain the difference between DISTINCT and GROUP
+BY.
+What is the difference between an alias for a column
+and for a table in SQL?
+Write a query to find rows where a column value
+contains both upper- and lowercase letters.
+How do you handle implicit type conversion in SQL
+queries?
+
+What are the key differences between NOT NULL,
+DEFAULT, and UNIQUE constraints?
+How do you prevent SQL syntax errors in dynamic
+queries?
+Explain the difference between BETWEEN and >=/<=
+operators.
+Write a query to find the highest, lowest, and average
+values of a column in a single query.
+How do you rank data within groups using SQL (RANK()
+vs DENSE_RANK() vs NTILE)?
+How do you handle duplicates during a bulk insert?
+Explain the concept of "dirty reads" and how isolation
+levels prevent them.
+What are roles, and how are they different from
+permissions?
+What are the differences between OLAP and OLTP
+databases?
+How do you transform JSON data into a relational
+format using SQL?
+
+Explain the difference between shared locks and
+exclusive locks.
+What are slowly changing dimensions (SCD), and how
+do you implement them?
+Explain the use of DMVs (Dynamic Management Views)
+for monitoring databases.
+What is the difference between a cross join and a
+Cartesian product?
+Explain how self-joins are used and provide an
+example.
+What is the difference between a Common Table
+Expression (CTE) and a temporary table?
+How would you modify a table to add a check
+constraint for a column?
+How do you calculate the percentage of a total for
+each row in a query?
+Explain the difference between CUBE, ROLLUP, and
+GROUPING SETS.
+Write a query to find the second highest value in a
+column using a subquery.
+
+What is a composite index, and how does it differ from
+a single-column index?
+Write a query to demonstrate a phantom read and
+explain how to prevent it.
+How would you design a table schema for handling a
+hierarchical data structure?
+Write a query to calculate the Z-score of a value within
+a dataset.
+How would you query distributed databases like
+Amazon Redshift or Google BigQuery?
+How do SQL-based databases manage semistructured data compared to NoSQL systems?
+How do you implement row-level security in SQL with a
+detailed example?
+What are the challenges of integrating heterogeneous
+databases in SQL?
+Write a query to create a Markov chain model using
+SQL.
+Write a query to retrieve all records from the last
+working day (excluding weekends)
+
+Write a query to implement a soft delete mechanism
+with a flag column.
+Write a query to compare two tables and find
+mismatched rows across all columns.
+How would you handle a query where an indexed
+column is part of an inequality condition?
+Write a query to calculate rank-based percentiles for
+each row in a dataset.
+Explain how recursive queries differ in performance
+compared to iterative logic in programming
+languages.
+Write a query using a subquery to identify the
+maximum and minimum values in grouped data.
+What are SQL audit logs, and how can they be used for
+monitoring unauthorized access?
+What is the purpose of the TRY_PARSE() function, and
+how is it different from CAST()?
+Write a query to retrieve data from a distributed SQL
+database using FDW (Foreign Data Wrapper).
+
+Write a query that combines SQL and procedural logic
+in a database-agnostic way.
+Explain the trade-offs of using a star schema versus an
+OLTP schema for analytical queries.
+Explain how to use materialized views effectively in a
+reporting system.
+How do you prepare a schema for handling schemaon-read paradigms in SQL databases?
+Write a query to calculate the age of a record based
+on a DATE column.
+Write a query using a Common Table Expression (CTE)
+to calculate a running balance.
+How do you implement a full outer join without using
+the FULL OUTER JOIN keyword?
+Explain the difference between GROUP BY ALL and
+standard GROUP BY (in applicable databases).
+Write a query to identify outliers in a dataset using
+statistical metrics (e.g., 1.5x IQR rule).
+
+What is the difference between hard deletes, soft
+deletes, and purges? How do you implement each?
+Write a query to pivot hierarchical XML data into a flat
+relational format.
+Write a query to reorganize partitions dynamically
+based on usage or row counts.
+Write a query that leverages SQL’s MASKED WITH
+FUNCTION feature (if supported).
+Write a query to calculate the Gini coefficient for
+inequality in a dataset.
+How do you maintain a historical log of changes to a
+table in real-time using SQL triggers?
+Write a query leveraging graph extensions (e.g., for
+finding shortest paths in a graph dataset).
+Write a query to leverage Snowflake’s time-travel
+capabilities to recover deleted data.
+Write a query to analyze user behavior by detecting
+session lengths from a log table.
+
+-------------------------------------------------------------------------------
+
+KPIT
+
+Scenario: The migrated data needs to be validated for
+completeness and accuracy. Question: How would you
+design a post-migration validation process?
+Scenario: A query using multiple joins is taking too long to
+execute. What steps would you take to identify and resolve
+performance issues?
+Scenario: Given a dataset with timestamps and user
+actions, write a query to calculate the average session
+duration per user.
+Scenario: A table contains hierarchical data (e.g.,
+employee-manager relationships). Write a query to
+recursively traverse the hierarchy and find all subordinates
+of a given manager.
+Scenario: You have two tables: employees (with columns id,
+name, salary) and departments (with columns dept_id,
+dept_name). Write a query to find the highest-paid
+employee in each department, along with the department
+name
+
+Scenario: Write a Python script that processes multiple files in a
+directory, extracts specific data points, and aggregates the
+results into a final summary file. The process should be efficient
+and handle large file sizes.
+Scenario: Write a Python program to implement a sliding
+window technique for calculating moving averages over a
+large dataset. The dataset is too large to fit into memory, so
+you must handle this efficiently.
+Scenario: A Python ETL pipeline is dealing with a large number
+of files, and the pipeline often fails due to memory limitations
+when reading the files into memory. How would you refactor
+the pipeline to process the data in a memory-efficient manner?
+Scenario: You are working with a large dataset stored in
+multiple JSON files with nested structures. How would you parse
+these files in Python and store the data in a pandas DataFrame
+for further analysis?
+Scenario: You need to implement a feature extraction pipeline
+that processes a large number of images. The pipeline must
+handle loading, resizing, and transforming the images
+efficiently. How would you structure this pipeline in Python?
+
+Scenario: Write a Spark job that performs a join on two large
+datasets. After the join, you need to calculate the total count
+for each group in the resulting dataset. How would you
+optimize this join operation to minimize shuffling?
+Scenario: You are working with a Spark job that performs
+multiple stages of transformation. After each stage, you need
+to persist intermediate results to disk in a format that will
+optimize subsequent transformations. How would you structure
+the job to manage intermediate results efficiently?
+Scenario: You are processing a large dataset using Apache
+Spark, but the data has skewed partitions (i.e., some partitions
+contain much more data than others). How would you address
+partition skew and ensure that the workload is evenly
+distributed across the cluster?
+Scenario: You are processing time-series data in Apache Spark,
+and you need to calculate the average value for each time
+window of 10 minutes. How would you implement this using
+Spark Streaming or batch processing?
+Scenario: You have a Spark job that processes a large dataset
+and performs a series of transformations, but the job is running
+slow. What are some steps you would take to diagnose and
+optimize the job for better performance? Specifically, consider
+factors such as partitioning, caching, and shuffling.
+
+Scenario: You are working with Azure Data Factory to build an
+ETL pipeline that reads from an on-premises SQL Server,
+performs transformations, and loads data into Azure Synapse
+Analytics. How would you ensure that the pipeline is scalable
+and resilient to errors?
+Scenario: Your team is using Azure Data Lake Storage for raw
+data storage and Azure Synapse Analytics for analytics. How
+would you set up a process to automate data movement from
+the Data Lake to Synapse for analysis, while ensuring the data
+is partitioned and optimized for querying?
+Scenario: You need to implement a monitoring solution for a
+large-scale Azure Data Factory pipeline that processes
+sensitive customer data. What are the key security and
+performance monitoring practices you would follow?
+Scenario: You need to implement a data pipeline that uses
+Snowflake Streams and Tasks to track and load incremental
+data from a transactional system into Snowflake. How would
+you design this process to handle different data types and
+ensure data consistency?
+Scenario: A data pipeline running in Azure Data Factory has a
+sudden failure due to a timeout. How would you handle retries,
+logging, and alerting for such failures?
+
+Scenario: You need to process a dataset incrementally as new
+data arrives. Explain how you would handle incremental
+processing using PySpark.
+Scenario: Write a PySpark job to process streaming data from
+Kafka, perform basic transformations, and save it to a Delta
+Lake.
+Scenario: You need to clean a large dataset by removing rows
+with missing or invalid values. Write a PySpark script to remove
+these rows efficiently.
+Scenario: You are building a PySpark job that needs to join
+multiple datasets with different data distributions. What
+approach would you take to handle data skew and optimize
+the join?
+Scenario: Explain how you would handle late data in a PySpark
+structured streaming job. What strategies would you
+implement to ensure that this data is processed correctly?
+Scenario: You have a PySpark job that processes data in
+streaming mode from Kafka, but the throughput is not meeting
+expectations. How would you optimize this streaming job for
+higher throughput, and how would you monitor its
+performance?
+
+Scenario: Explain how you would use Delta Lake on Databricks to
+implement an upsert (update + insert) operation for a slowly
+changing dataset.
+Scenario: Explain how to use Databricks Jobs to schedule and
+orchestrate multiple notebooks in a production pipeline.
+Scenario: You are using Databricks for machine learning and want
+to automate the training and hyperparameter tuning of models.
+How would you set up this process using Databricks and MLflow?
+Scenario: You need to implement an ETL pipeline using Databricks
+that reads data from Delta Lake, performs transformations, and
+writes the results back to a cloud storage location. How would you
+handle incremental processing and ensure data consistency?
+Scenario: You need to set up a production pipeline in Databricks
+that processes large datasets, applies transformations, and writes
+the results back to a Delta Lake. How would you implement this
+pipeline, and how would you ensure the pipeline scales efficiently?
+Scenario: Your team is using Databricks for collaborative data
+analysis, but there are issues with resource contention. How would
+you handle resource management in Databricks, ensuring that
+multiple users can work simultaneously without impacting
+performance?
+
+Scenario: You need to set up a real-time data processing
+pipeline in Azure Synapse Analytics that reads from an Azure
+Event Hub, processes the data, and stores it in a data lake for
+further analytics. How would you implement this pipeline
+using Azure Synapse and other Azure services?
+Scenario: You need to build a pipeline in Azure Synapse
+Analytics that ingests data from various sources (e.g., Azure
+Blob Storage, APIs, and databases) and stores it in a staging
+area for further processing. How would you design the
+pipeline to handle incremental data loads efficiently?
+Scenario: You need to implement a solution in Azure Synapse
+that enables near real-time data ingestion and querying from
+a wide variety of sources, including IoT devices, log files, and
+relational databases. How would you design this solution to
+ensure minimal latency and scalability?
+Scenario: Your organization is using Azure Synapse Analytics
+for analytics and business intelligence, but you are
+encountering issues with query performance due to large
+datasets. How would you use materialized views, indexing,
+and data partitioning to improve query performance?
+
+------------------------------------------------------------------------------------
+
+PERSISTENT
+
+Scenario:
+You are processing a large dataset with unknown distribution
+and frequent schema changes. How would you leverage Spark’s
+Adaptive Query Execution (AQE) to optimize your queries?
+Expected Answer:
+Enable AQE with spark.sql.adaptive.enabled=true.
+Allow dynamic partition coalescing to optimize shuffle
+partitions.
+Use dynamic join reordering and broadcast join hints to
+improve query execution plans.
+Monitor execution plans dynamically using the Spark UI.
+
+Scenario:
+You are implementing a data lake with raw, cleaned, and
+aggregated layers. How would you design and implement this
+using Spark?
+Expected Answer:
+Store raw data in a low-cost, immutable storage layer (e.g.,
+S3, HDFS).
+Use Spark for ETL to clean and transform data, saving it in a
+cleaned layer with Parquet format.
+Generate aggregated insights and write to a separate layer
+for analytics or machine learning use cases.
+Apply schema validation, versioning, and access controls at
+each layer.
+
+Scenario:
+You are designing a real-time recommendation system for a
+streaming platform. The goal is to recommend movies based on
+user activity, preferences, and recent trends. How would you
+implement this?
+Expected Answer:
+Use Structured Streaming to process user activity logs in realtime.
+Employ collaborative filtering or content-based filtering
+algorithms (e.g., ALS in Spark MLlib).
+Maintain stateful user-session data for contextual
+recommendations.
+Use caching and broadcasting to quickly access
+precomputed similarity metrics.
+
+Scenario:
+Your team uses Spark for data processing and requires
+integration of Python, Scala, and R code in the same pipeline.
+How would you design the application?
+Expected Answer:
+Use PySpark and SparkR for Python and R integration,
+respectively, alongside Scala-based core transformations.
+Exchange intermediate data using Parquet or Delta Lake to
+maintain compatibility across languages.
+Use UDFs to encapsulate language-specific logic and
+execute it in the pipeline
+
+Scenario:
+Multiple teams run Spark jobs on the same shared cluster, and
+your jobs frequently get delayed due to resource contention.
+How would you ensure that your critical jobs get priority?
+Expected Answer:
+Configure YARN resource pools or Kubernetes namespaces
+with higher resource quotas for critical jobs.
+Use job priority settings (spark.yarn.priority) to prioritize jobs.
+Schedule jobs during off-peak hours when resources are less
+contended.
+Monitor cluster usage with tools like Ganglia or Spark UI to
+preemptively scale resources.
+
+Scenario:
+A critical Spark job is prone to executor failures due to
+intermittent issues like node crashes or temporary data
+unavailability. How would you ensure minimal downtime?
+Expected Answer:
+Configure Spark with retry logic using spark.task.maxFailures
+and spark.stage.maxConsecutiveAttempts.
+Use checkpointing in streaming jobs to enable automatic
+recovery.
+Set up a job orchestration tool (e.g., Apache Airflow) to
+monitor and retry failed jobs automatically.
+Use speculative execution (spark.speculation) to handle
+straggler tasks.
+
+Scenario:
+You need to process streaming updates and insert them into a
+Delta Lake table, ensuring that updates and inserts do not
+conflict. How would you approach this?
+Expected Answer:
+Use Delta Lake’s MERGE INTO functionality to handle upserts.
+Configure Structured Streaming with the Delta Lake sink to
+write updates in micro-batches.
+Use partitioning and Z-order indexing in Delta Lake to
+optimize update performance.
+Enable data versioning for auditability and rollback purposes.
+
+Scenario:
+You are tasked with deploying a machine learning pipeline to
+classify events from a Kafka stream. The model is retrained
+periodically. How would you design this pipeline?
+Expected Answer:
+Use Structured Streaming for real-time data ingestion and
+preprocessing.
+Deploy the model as a Spark ML pipeline or load it as a
+serialized artifact.
+Monitor model performance and trigger retraining jobs as
+needed.
+Automate the update of the deployed model using model
+versioning tools.
+
+Scenario:
+You need to maintain a running total of user activity across
+sessions in a streaming application. The application must handle
+session timeouts and data recovery after crashes. How would
+you implement this?
+Expected Answer:
+Use Spark’s stateful transformations, such as
+mapGroupsWithState or flatMapGroupsWithState, to
+maintain session state.
+Define a timeout duration to handle session expirations.
+Enable checkpointing to persist state and ensure fault
+tolerance.
+Use an external store (e.g., HBase or Cassandra) for long-term
+session state persistence if necessary.
+
+Scenario:
+You need to join a live Kafka stream with a large static dataset
+(e.g., product catalog). How would you design this join for
+efficiency?
+Expected Answer:
+Load the static dataset into memory and broadcast it across
+Spark executors using broadcast() for small datasets.
+For larger static datasets, partition the stream and the
+dataset on the join key to avoid excessive shuffling.
+Use Delta Lake or HBase for storing and querying the static
+dataset if updates are frequent.
+Optimize stream throughput by reducing the join frequency
+or using incremental joins.
+
+Scenario:
+You need to calculate a global leaderboard for a gaming
+platform in real-time, ranking players based on their scores. How
+would you implement this?
+Expected Answer:
+Use Structured Streaming to process player score events in
+real-time.
+Perform windowed aggregations
+(groupBy(playerId).sum(score)) to calculate total scores.
+Use stateful transformations to maintain the top N players in
+memory.
+Persist the leaderboard in a fast-access store like Redis for
+external querying.
+
+Scenario:
+You need to retrain a machine learning model continuously using
+streaming data while ensuring minimal disruption to the
+production pipeline. How would you achieve this?
+Expected Answer:
+Collect streaming data in a Delta Lake table or similar for
+periodic batch retraining.
+Use incremental learning algorithms that can update the
+model with new data without full retraining.
+Deploy the updated model seamlessly using versioning and
+hot-swapping techniques.
+Monitor model drift and automate retraining triggers based
+on performance metrics
+
+Scenario:
+Your system needs to parse application logs in real-time and
+trigger alerts when specific patterns (e.g., errors or performance
+thresholds) are detected. How would you implement this?
+Expected Answer:
+Ingest logs using Structured Streaming and parse them with
+regex or from_json().
+Use Spark SQL to define alerting conditions (e.g., error rates,
+thresholds).
+Trigger alerts by writing matched events to a sink like Kafka,
+SNS, or an email service.
+Optimize by filtering unnecessary logs early in the pipeline to
+reduce processing load.
+
+Scenario:
+You observe uneven partitioning in real-time Spark jobs that join
+large datasets. How would you use Adaptive Query Execution
+(AQE) to improve performance?
+Expected Answer:
+Enable AQE (spark.sql.adaptive.enabled=true) in the
+configuration.
+Use AQE’s ability to dynamically adjust shuffle partitions and
+optimize skew joins.
+Monitor Spark UI to verify that partition sizes are balanced
+after AQE optimizations.
+Combine AQE with custom partitioning logic for complex
+scenarios.
+
+Scenario:
+You are processing sensitive data in a real-time pipeline and
+need to ensure encryption at all stages. How would you
+approach this?
+Expected Answer:
+Use TLS/SSL to encrypt data in transit between Kafka, Spark,
+and downstream sinks.
+Enable encryption at rest for storage systems (e.g., HDFS or
+S3).
+Encrypt sensitive fields using transformations (e.g., AES
+encryption in UDFs).
+Ensure compliance with data privacy laws by applying data
+masking or anonymization.
+
+Scenario:
+You are tasked with comparing real-time streaming metrics
+against historical batch metrics to detect anomalies. How would
+you design this?
+Expected Answer:
+Process real-time metrics using Structured Streaming and
+store them in Delta Lake or an in-memory store.
+Load historical batch metrics periodically into Spark using a
+scheduled job.
+Perform real-time comparisons using joins or aggregations.
+Trigger alerts for anomalies detected based on predefined
+thresholds
+
+Scenario:
+Your pipeline writes to multiple sinks (e.g., HDFS, Kafka, and a
+relational database). If one sink fails, you need to avoid partial
+writes. How would you handle this?
+Expected Answer:
+Use transactional writes where supported (e.g., Kafka’s
+exactly-once semantics or Delta Lake transactions).
+Implement a foreachBatch sink to group sink operations and
+rollback on partial failures.
+Use an orchestration layer to retry failed sink writes and
+monitor their states.
+Log metadata about successfully written sinks for recovery
+during restarts.
+
+Scenario:
+Your team uses Python for data processing and Java for
+integrations. How would you design a pipeline that supports both
+languages in Spark?
+Expected Answer:
+Use PySpark for Python processing and leverage Py4J for
+seamless interaction with Java components.
+Use the Spark submit feature to deploy multi-language jobs in
+the same pipeline.
+Serialize data using formats like Avro or Protobuf for
+consistent sharing between languages.
+Modularize the application to separate language-specific
+components for better maintainability.
+
+---------------------------------------------------------------------------------------------
+AMDOCS
+
+Question:
+You are joining two large datasets and need to optimize
+performance. What strategies would you use?
+Answer:
+Broadcast Join:
+Broadcast the smaller dataset to all executors to avoid
+shuffling the larger dataset.
+from pyspark.sql.functions import broadcast
+df = large_df.join(broadcast(small_df), "key")
+Skew Join Optimization:
+Handle skewed data by salting keys to distribute the
+workload evenly.
+df1 = df1.withColumn("salt", rand())
+df2 = df2.withColumn("salt", rand())
+df1.join(df2, (df1["key"] == df2["key"]) & (df1["salt"] == df2["salt"]))
+Partition Pruning:
+Repartition the datasets based on the join key to minimize
+shuffling.
+df1 = df1.repartition("key")
+df2 = df2.repartition("key")
+result = df1.join(df2, "key")
+Sort-Merge Join:
+Use sort-merge joins for large datasets by ensuring they are
+sorted and partitioned by the join key.
+spark.conf.set("spark.sql.join.preferSortMergeJoin", "true")
+Bucketing:
+Use bucketing for repeated joins on the same key to avoid
+shuffling.
+df.write.bucketBy(50, "key").saveAsTable("bucketed_table")
+
+Question:
+How do you design a fault-tolerant streaming pipeline in
+PySpark?
+Answer:
+Checkpointing:
+Enable checkpointing to allow recovery of state in case of
+failures.
+df.writeStream.option("checkpointLocation", "s3://checkpointdir/").start()
+Replay Capability:
+Use systems like Kafka to retain messages for replay in case
+of failure.
+Idempotent Writes:
+Design the sink to handle repeated writes in a way that does
+not result in duplicate records (e.g., using upserts).
+Enable Exactly-Once Semantics:
+Use sinks like Delta Lake that support exactly-once semantics
+for fault tolerance.
+df.writeStream.format("delta").option("checkpointLocation",
+"s3://checkpoint-dir/").start()
+Handle Poison Pills:
+Identify and log problematic records that cause job failures
+instead of retrying endlessly.
+
+Question:
+What is the difference between narrow and wide
+transformations in PySpark? Give examples.
+Answer:
+Narrow Transformations:
+Data is transformed within the same partition; no shuffling
+occurs.
+Examples: map(), filter(), flatMap()
+rdd.map(lambda x: x * 2)
+Wide Transformations:
+Data is redistributed across partitions; involves shuffling.
+Examples: groupByKey(), reduceByKey(), join(), distinct()
+rdd.reduceByKey(lambda x, y: x + y)
+Impact on Performance:
+Narrow transformations are faster since they avoid
+shuffling.
+Wide transformations are expensive due to network I/O
+caused by shuffling
+
+What are adaptive query executions (AQE) in Spark, and how do
+they work?
+Answer:
+What is AQE?
+AQE dynamically adjusts query plans based on runtime
+statistics (e.g., data size, skew).
+Key Features:
+Dynamic Partition Pruning: Skips unnecessary partitions
+during query execution.
+Join Strategy Switching: Automatically switches between
+broadcast join and shuffle join.
+Skew Join Handling: Mitigates skew by splitting large
+partitions.
+How to Enable:
+spark.conf.set("spark.sql.adaptive.enabled", "true")
+Example Use Case:
+AQE improves performance for queries with highly variable
+data distribution.
+
+How would you troubleshoot memory issues in a PySpark job?
+Answer:
+Check Skewed Partitions:
+Identify and resolve skew using the
+df.rdd.glom().map(len).collect() to inspect partition
+sizes.
+Mitigate skew by salting or repartitioning:
+from pyspark.sql.functions import expr, rand
+df = df.withColumn("salt", (rand() * 100).cast("int"))
+Optimize Caching:
+Use appropriate storage levels for caching:
+df.persist(StorageLevel.MEMORY_AND_DISK)
+Memory Configurations:
+Increase spark.executor.memory and
+spark.driver.memory.
+Enable dynamic allocation:
+spark.dynamicAllocation.enabled=true
+Use Efficient Data Formats:
+Optimize storage and memory usage by writing data
+in Parquet or ORC with compression.
+Broadcast Joins:
+Ensure that the broadcast dataset fits into memory:
+broadcast_df = broadcast(df_small)
+
+How do you ensure high availability and scalability in
+PySpark pipelines?
+Answer:
+Cluster Setup:
+Deploy Spark on a cluster manager like YARN,
+Kubernetes, or standalone mode for scalability.
+Auto Scaling:
+Enable dynamic allocation of executors to handle
+varying workloads.
+spark.dynamicAllocation.enabled=true
+Data Partitioning:
+Partition data efficiently based on the volume and
+keys.
+df = df.repartition(100, "key")
+Fault-Tolerant Storage:
+Use HDFS, S3, or Delta Lake for fault-tolerant data
+storage.
+Job Monitoring:
+Integrate monitoring tools like Ganglia, Spark UI, or
+Prometheus.
+Stream Checkpointing:
+Use durable checkpoint locations for stateful
+operations in streaming.
+df.writeStream.option("checkpointLocation",
+"s3://checkpoints/").start()
+
+How do you handle data skew in PySpark joins?
+Answer:
+Detect Skew:
+Analyze the distribution of keys in your dataset using
+groupBy().count().
+Salting Technique:
+Add random "salt" values to skewed keys to spread
+them across partitions.
+from pyspark.sql.functions import lit, col, concat
+salted_df1 = df1.withColumn("salt", lit(rand() * 10).cast("int"))
+salted_df2 = df2.withColumn("salt", lit(rand() * 10).cast("int"))
+joined_df = salted_df1.join(salted_df2, ["key", "salt"])
+Repartition on Skewed Keys:
+Repartition data to balance partition sizes before
+joining.
+df1 = df1.repartition(100, "key")
+Broadcast Joins for Small Tables:
+Broadcast smaller datasets to avoid shuffling.
+from pyspark.sql.functions import broadcast
+joined_df = df1.join(broadcast(df2), "key")
+Use Skew Join Optimization:
+If using Hive, enable skew join optimization:
+set hive.optimize.skewjoin=true;
+
+Explain the importance of broadcast variables in PySpark.
+How do you use them?
+Answer:
+What Are Broadcast Variables?
+Broadcast variables allow you to share read-only
+data across all worker nodes efficiently.
+Why Use Them?
+To reduce network I/O by broadcasting smaller
+datasets to all nodes instead of shuffling large
+datasets.
+How to Create and Use:
+broadcast_var =
+spark.sparkContext.broadcast(small_lookup_table)
+def map_function(row):
+lookup = broadcast_var.value
+return lookup.get(row["key"], "default")
+mapped_rdd = rdd.map(map_function)
+Best Practices:
+Only broadcast small datasets that fit into the
+executor memory.
+Avoid broadcasting large objects.
+
+How do you implement an end-to-end CDC (Change Data
+Capture) pipeline in PySpark?
+Answer:
+Extract Changes:
+Use a source-specific CDC mechanism (e.g., Kafka,
+Debezium, or timestamps in SQL tables).
+Read the Incremental Changes:
+Read only the new or updated data:
+incremental_data = source_df.filter("last_updated > '2024-01-01'")
+Merge with Target Table (Delta Lake):
+Use Delta Lake MERGE for upserts.
+from delta.tables import DeltaTable
+delta_table = DeltaTable.forPath(spark, "/delta/target_table")
+delta_table.alias("target").merge(
+incremental_data.alias("source"),
+"target.id = source.id"
+).whenMatchedUpdateAll() \
+.whenNotMatchedInsertAll() \
+.execute()
+Write CDC Data to Sink:
+Write the updated table back to storage or a database.
+Track Offsets for Continuous Updates:
+Maintain Kafka offsets or update tracking tables.
+
+--------------------------------------------------------------------------------
+PERSISTENT
+
+Question:
+Write PySpark code to count the number of null values for each
+column in a DataFrame.
+Answer:
+python
+from pyspark.sql.functions import col, sum# Sample DataFrame
+data = [
+(1, "A", None),
+(2, None, 100),
+(3, "C", None)
+]
+columns = ["id", "name", "value"]
+df = spark.createDataFrame(data, columns)
+# Count nulls for each column
+null_counts = df.select([sum(col(c).isNull().cast("int")).alias(c) for c
+in df.columns])
+null_counts.show()
+Output:
++---+----+-----+
+| id|name|value|
++---+----+-----+
+| 0| 1| 2|
++---+----+-----+
+
+Question:
+You are given a JSON file with nested fields. Write code to flatten
+the structure into a tabular format.
+Answer:
+python
+from pyspark.sql.functions import col
+# Sample JSON file
+json_data = [
+{"id": 1, "name": "Alice", "address": {"city": "New York", "zip":
+"10001"}},
+{"id": 2, "name": "Bob", "address": {"city": "Los Angeles", "zip":
+"90001"}}
+]
+df = spark.read.json(spark.sparkContext.parallelize(json_data))
+# Flatten nested structure
+flattened_df = df.select(
+col("id"),
+col("name"),
+col("address.city").alias("city"),
+col("address.zip").alias("zip")
+)
+flattened_df.show()
+Output:
++---+-----+-------------+-----+| id| name| city| zip|+---+-----+---
+----------+-----+| 1|Alice| New York|10001|| 2| Bob|Los Angeles
+|90001|+---+-----+-------------+-----+
+
+Question:
+What are narrow and wide transformations in PySpark, and why
+does it matter?
+Answer:
+Narrow Transformations:
+Each partition of the parent RDD/DataFrame contributes to a
+single partition of the child.
+Examples: map, filter, flatMap
+No shuffling required, faster.
+Wide Transformations:
+Data is redistributed across partitions (shuffling).
+Examples: groupBy, join, reduceByKey
+More expensive due to shuffle operations.
+Optimization Tip: Minimize wide transformations or use persist()
+to cache intermediate results.
+
+Question:
+Explain the roles of Tungsten and Catalyst in Spark optimization.
+Answer:
+Catalyst Optimizer:
+A query optimization framework in Spark SQL.
+Converts logical plans into optimized physical execution
+plans.
+Performs optimizations like predicate pushdown, filter
+reordering, and column pruning.
+Example:
+python
+df = spark.read.parquet("s3://data/").filter("age >
+30").select("name")
+Catalyst ensures:
+Predicate pushdown: Filters are applied at the data source.
+Projection pruning: Only required columns (e.g., name) are
+read.
+Tungsten Execution Engine:
+Optimizes in-memory computations by avoiding Java
+object overhead.
+Uses off-heap memory for faster data processing.
+Benefits include bytecode generation and cache-friendly
+data structures
+
+Question:
+What approach do you take when joining two datasets where
+duplicate keys may exist?
+Answer:
+Filter Duplicate Keys Before Joining: Identify and remove
+duplicates using dropDuplicates() before the join.
+1.
+python
+df1 = df1.dropDuplicates(["join_key"])
+df2 = df2.dropDuplicates(["join_key"])
+result = df1.join(df2, "join_key")
+1.Handle Duplicate Matches in the Join Logic:
+Use groupBy and aggregate to retain only one matching
+record.
+2.
+python
+from pyspark.sql.functions import first
+df1_grouped =
+df1.groupBy("join_key").agg(first("value").alias("value"))
+df2_grouped =
+df2.groupBy("join_key").agg(first("value").alias("value"))
+result = df1_grouped.join(df2_grouped, "join_key")
+1.Use Row Numbering for De-duplication:
+2.Leverage window functions to assign unique row numbers.
+python
+from pyspark.sql.window import Window
+from pyspark.sql.functions import row_number
+window_spec =
+Window.partitionBy("join_key").orderBy("timestamp")
+df1 = df1.withColumn("row_num",
+row_number().over(window_spec)).filter("row_num = 1")
+
+Question:
+How does PySpark track operations, and what happens if a task
+fails during execution?
+Answer:
+1.Data Lineage:
+PySpark creates a Directed Acyclic Graph (DAG) that tracks
+the sequence of transformations applied to the data. If a task
+fails, PySpark can recompute lost partitions based on the
+DAG.
+2.
+3.Fault Recovery:
+Tasks: If a task fails, PySpark retries it (default is 4 retries)
+on another node.
+Executors: If an executor crashes, PySpark launches a new
+one and reassigns tasks.
+Checkpointing: For streaming jobs, PySpark uses
+checkpoints to recover from failures.
+Question:
+A PySpark UDF is slowing down your pipeline. How do you debug
+and optimize it?
+Answer:
+1.Avoid Python UDFs:
+Use Spark SQL functions or Vectorized UDFs (pandas_udf)
+instead.
+2.
+3.Profile the UDF:
+Use small sample data to test and optimize the logic in the
+UDF.
+4.
+5.Broadcast Constants:
+6.Broadcast large constants used in the UDF.
+7.Parallelize Operations:
+8.Optimize UDF logic to process data in batches if possible.
+
+Question:
+Explain how you can ensure data is processed exactly once in a
+PySpark structured streaming application.
+Answer:
+Idempotent Sinks: Write output to idempotent sinks such as
+Delta Lake, HDFS, or databases with unique constraints.
+1.
+Use Checkpointing: Enable checkpointing to maintain offsets
+and state recovery.
+2.
+query = df.writeStream \
+.format("delta") \
+.option("checkpointLocation", "s3://checkpoint-dir/") \
+.start("s3://output-dir/")
+Kafka Transactions: Use Kafka’s built-in exactly-once
+semantics for source and sink.
+1.
+Avoid Duplicates on Write: Use unique keys or merge logic
+when writing to target systems.
+2.
+df.writeStream \
+.outputMode("update") \
+.foreachBatch(upsert_to_database) \
+.start()
+
+Question:
+A join operation in PySpark is running slowly. What steps would
+you take to debug and optimize it?
+Answer:
+1.Check Join Type:
+Use broadcast joins for small tables.
+Avoid cross joins unless explicitly needed.
+2.Enable AQE:
+Adaptive Query Execution dynamically optimizes join
+strategies.
+3.
+spark.conf.set("spark.sql.adaptive.enabled", "true")
+1.Skew Handling:
+2.Detect and mitigate skewed keys using salting or skew hints.
+Partitioning: Repartition datasets by the join key to optimize
+parallelism.
+3.
+df1 = df1.repartition("join_key")
+df2 = df2.repartition("join_key")
+1.Use Join Hints:
+2.Specify hints like broadcast, shuffle_hash, or merge.
+result = df1.hint("broadcast").join(df2, "join_key")
+1.Profiling and Debugging:
+Use the Spark UI to analyze stages, tasks, and skewed
+partitions.
+
+-------------------------------------------------------------------------------------
+FRACTAL
+
+Q: You are given a dataset where a column contains a list of
+items (e.g., ["item1", "item2"]). Write PySpark code to:
+Explode the list into individual rows.
+Count the occurrences of each unique item across all rows.
+Q: You are asked to calculate the cumulative sum of a column
+grouped by another column (e.g., cumulative sales by region).
+How would you do this in PySpark?
+Q: Design a PySpark workflow to process a dataset through the
+following steps:
+1.Data cleaning.
+2.Aggregation.
+3.Writing to Hive with dynamic partitioning.
+Q: You need to preprocess a dataset in PySpark before feeding it
+into a machine learning pipeline in MLlib. Describe the steps you
+would take.
+Q: A dataset has nested arrays and maps. Write PySpark code to
+extract specific elements from the arrays and keys from the
+maps.
+Q: How would you ensure your PySpark job writes data to HDFS or
+S3 with optimal file sizes (e.g., avoiding too many small files)?
+Q: If data skew occurs during a join operation, how would you
+implement salting to resolve the issue? Write PySpark code to
+demonstrate this.
+Q: Explain the difference between partitioning and bucketing in
+PySpark. When would you use bucketing over partitioning?
+
+Q: Write PySpark code to validate the schema of a DataFrame
+before performing any transformations. What would you do if the
+schema is invalid?
+Q: How would you integrate PySpark with Apache Airflow to
+manage dependencies and retries in your data pipeline?
+Q: Write PySpark code to tokenize sensitive fields in a dataset
+while preserving referential integrity.
+Q: Describe how you would preprocess a dataset with millions of
+records for training a machine learning model using PySpark.
+Q: You are tasked with creating an ETL pipeline that joins two
+datasets with different update frequencies. How would you
+design this pipeline?
+Q: Describe how you would implement late data handling in a
+batch processing PySpark job.
+Q: Describe how you would implement a dependency-aware
+pipeline where each PySpark job depends on the output of the
+previous job.
+Q: You are processing a dataset where certain partitions are
+significantly larger than others. How would you redistribute data
+evenly across partitions?
+Q: You are tasked with computing a daily retention metric (e.g.,
+returning users) for a website. How would you approach this
+using PySpark?
+
+Q: Write a PySpark pipeline that dynamically processes files
+based on the file type (e.g., JSON, CSV, Parquet) and applies
+schema-specific transformations.
+Q: Write PySpark code to perform aggregation on a column of
+key-value pairs (e.g., sum values for each unique key).
+Q: You need to calculate session durations for users from
+streaming data with timestamps. How would you use PySpark
+Structured Streaming to do this?
+Q: Write PySpark code to perform a full outer join where nulls are
+replaced with default values for each column.
+Q: How would you use PySpark GraphFrames to identify the
+shortest path between two nodes in a graph dataset?
+Q: Explain how to implement feature scaling (e.g., normalization
+or standardization) for a numeric column in PySpark MLlib.
+Q: Write PySpark code to group events by user and calculate the
+average time between consecutive events.
+Q: You need to enrich a dataset by performing lookups in a large
+reference dataset. How would you handle this efficiently in
+PySpark?
+Q: Write PySpark code to extract data from nested arrays and
+structs in a JSON dataset
+
+Q: Explain how to manage late-arriving data in PySpark
+Structured Streaming when writing to a database.
+Q: You are working on a multi-cluster Spark setup. How would
+you ensure consistent configurations and job execution across
+clusters?
+Q: Your job needs to read multiple files from a nested directory
+structure. How would you use PySpark to process all files
+recursively?
+Q: You have a dataset partitioned by date, but queries often
+filter by month. How would you optimize the dataset for this use
+case?
+Q: Write PySpark code to dynamically partition a dataset by both
+date and region.
+Q: Write PySpark code to convert a dataset from CSV to ORC and
+discuss any optimizations you would implement during the
+conversion.
+Q: What is the role of serialization in PySpark, and how does it
+affect job performance? Explain the difference between Java
+and Kryo serialization.
+Q: How would you handle a situation where the fraud detection
+logic evolves over time, requiring updates to the pipeline?
+
+Q: How would you read data from a MongoDB collection into a
+PySpark DataFrame?
+Q: Explain how the number of partitions impacts the parallelism
+of a PySpark job. How would you decide on the optimal number
+of partitions?
+Q: Your dataset contains personally identifiable information (PII).
+How would you implement masking or pseudonymization in
+PySpark?
+Q: Write PySpark code to tokenize sensitive fields using a
+reversible hash function.
+Q: Write PySpark code to rank rows within each group based on
+multiple columns (e.g., secondary sorting).
+Q: How would you implement percentile calculations for grouped
+data in PySpark?
+Q: Write PySpark code to split a large dataset into evenly sized
+batches for independent processing.
+Q: Your dataset contains geospatial coordinates. Write PySpark
+code to calculate the distance between two points using the
+Haversine formula.
+
+--------------------------------------------------------------------------------------------------
+L&T
+
+Scenario:
+Your business needs to process real-time transactional data
+coming from multiple systems and load it into Azure Synapse for
+immediate analysis. How would you design an architecture for
+real-time data ingestion and processing using Azure Synapse?
+Follow-up Questions:
+What services or tools in the Azure ecosystem can help with
+real-time data ingestion (e.g., Azure Stream Analytics, Azure
+Event Hubs)?
+How would you ensure the data pipeline handles both batch
+and real-time data in Synapse?
+How would you address potential latency issues in real-time
+data processing?
+What methods would you use to integrate and analyze both
+real-time and historical data in Synapse?
+Scenario:
+Your team needs to track the versioning of datasets and maintain
+a clear data lineage in Azure Synapse Analytics for auditing and
+compliance purposes. How would you implement a solution that
+allows for version control of data and enables you to trace its
+lineage?
+Follow-up Questions:
+How would you implement data lineage tracking in Synapse for
+transformation pipelines?
+What methods would you use to track data versioning when
+data is ingested, transformed, and loaded into Synapse?
+How would you ensure that your data pipeline maintains
+lineage while complying with industry regulations?
+
+Scenario:
+Your team is working on a data warehouse that is expected to
+scale to hundreds of terabytes of data. How would you design the
+Synapse SQL Data Warehouse to handle such massive data
+volumes while ensuring query performance remains optimal?
+Follow-up Questions:
+How do you design the schema (e.g., star schema, snowflake
+schema) for scalability in Synapse?
+How would you manage partitioning of tables to ensure highperformance queries?
+What strategies would you use to ensure your data warehouse
+can handle future growth?
+How would you scale Synapse SQL Pools to accommodate
+growing data demands?
+Scenario:
+You need to create an automated data pipeline that ingests,
+cleans, transforms, and loads data into Azure Synapse Analytics.
+The pipeline must be orchestrated, run on a schedule, and ensure
+data quality. How would you design and implement this pipeline
+using Azure Synapse Pipelines?
+Follow-up Questions:
+How would you use Azure Synapse Pipelines for orchestrating
+the entire ETL process?
+What are the best practices for ensuring data quality and
+consistency in the pipeline?
+How would you implement data transformations within
+Synapse Pipelines (e.g., using Data Flows)?
+How do you handle error handling and retries within Synapse
+Pipelines?
+
+Scenario:
+Your company needs to ingest real-time data from various
+sources, such as sensor data and social media streams, into Azure
+Synapse for analysis. The data must be processed immediately for
+near-real-time analytics. How would you design the data ingestion
+pipeline to handle this scenario?
+Follow-up Questions:
+Which Azure services would you use to capture and stream
+real-time data (e.g., Azure Event Hubs, Azure Stream Analytics)?
+How would you integrate real-time data streams with Azure
+Synapse Analytics for real-time querying and analytics?
+How would you manage potential data lag and ensure lowlatency data processing?
+What is the impact of real-time streaming on resource usage
+and cost in Azure Synapse?
+Scenario:
+Your organization is processing large datasets with Azure Synapse
+Analytics, but the costs associated with storage, compute, and
+data movement are rising. How would you optimize your Azure
+Synapse environment to lower costs while maintaining
+performance?
+Follow-up Questions:
+How would you optimize the use of dedicated SQL Pools and
+serverless SQL Pools to manage costs efficiently?
+How would you use Azure Cost Management tools to monitor
+and optimize the cost of Synapse resources?
+What strategies would you recommend to optimize data
+storage in Synapse, especially for large datasets (e.g.,
+partitioning, compression)?
+How would you optimize your Spark pool configurations to
+ensure cost-effective processing?
+
+Scenario:
+Your company uses Azure Synapse Analytics in a distributed data
+environment, where data comes from multiple sources, including
+on-premises systems and various cloud services. How would you
+ensure data consistency and reliability across these sources?
+Follow-up Questions:
+How would you use Azure Data Factory or Synapse Pipelines to
+synchronize data across these sources?
+What techniques would you use to handle eventual consistency
+when syncing data across different systems?
+How would you implement data validation to ensure
+consistency across distributed sources?
+What strategies would you use to prevent data duplication
+during the synchronization process?
+Scenario:
+Your team has been developing multiple data pipelines in Azure
+Synapse Analytics, but you are facing challenges in managing
+versions of these pipelines as they evolve. How would you
+implement version control for your data pipelines?
+Follow-up Questions:
+How would you use Git integration in Azure Synapse Pipelines to
+manage pipeline versions?
+How would you handle deployment and promotion of different
+pipeline versions across environments (e.g., dev, test,
+production)?
+How would you ensure rollback functionality in case a pipeline
+change causes an issue?
+How do you manage versioning for other resources like
+datasets, linked services, and triggers in Synapse?
+
+Scenario:
+Your team is processing data in Azure Synapse from multiple
+sources, and you’ve noticed that some records are being
+duplicated in the data warehouse. How would you identify and
+eliminate data duplication to ensure data accuracy?
+Follow-up Questions:
+How would you use data deduplication techniques (e.g.,
+partitioning, ROW_NUMBER or DISTINCT queries) to eliminate
+duplicates in Synapse SQL Pools?
+How would you identify the root cause of the duplication (e.g.,
+in source systems, during data extraction, or transformation)?
+What strategies would you implement in Synapse Pipelines to
+ensure deduplication occurs during data transformation?
+How would you ensure data quality after deduplication and
+prevent future occurrences?
+Scenario:
+You need to synchronize data across multiple environments in
+Azure Synapse (e.g., development, testing, production) for
+seamless testing and deployment. How would you implement data
+synchronization to ensure consistency across environments?
+Follow-up Questions:
+How would you use Azure Synapse Pipelines to automate data
+synchronization between environments?
+How would you handle data masking or sanitization to protect
+sensitive information while testing in non-production
+environments?
+How do you ensure that changes made in one environment are
+reflected correctly in the others, especially when schema
+changes are involved?
+What strategies would you use for promoting ETL workflows
+across different environments in Azure Synapse?
+
+Scenario:
+Your team is working with a large dataset in Azure Synapse
+Analytics, but the storage costs for data in the dedicated SQL pool
+are becoming high. How would you optimize the storage costs
+without sacrificing query performance?
+Follow-up Questions:
+How would you utilize serverless SQL pools to reduce storage
+costs while maintaining access to large datasets?
+What are the best practices for partitioning and compressing
+data to optimize storage in dedicated SQL pools?
+How would you manage data retention by archiving older data
+to Azure Blob Storage or Data Lake and keeping only active
+data in Synapse?
+How would you configure indexing and statistics in Synapse to
+reduce the storage footprint and improve query performance?
+Scenario:
+Your organization needs to implement data governance policies
+for Azure Synapse Analytics to ensure data quality, compliance,
+and lineage. How would you implement a governance framework
+that ensures transparency and traceability of the data used in
+analytics?
+Follow-up Questions:
+How would you track and manage data lineage within Azure
+Synapse using tools like Azure Purview?
+What steps would you take to ensure data quality in Synapse,
+and how would you automate these checks in ETL processes?
+How would you integrate data cataloging and metadata
+management within Synapse to facilitate governance and
+compliance?
+How would you set up role-based access control (RBAC) in
+Synapse to ensure that only authorized personnel have access
+to sensitive or regulated data?
+
+Scenario:
+Your organization needs to enable ad-hoc querying of large
+datasets for business analysts without requiring dedicated
+resources in Azure Synapse Analytics. How would you implement a
+serverless solution for ad-hoc analysis?
+Follow-up Questions:
+How would you use serverless SQL pools in Azure Synapse to
+allow business analysts to run ad-hoc queries on large
+datasets without the need for provisioning dedicated
+resources?
+How would you ensure that the queries run efficiently,
+especially for complex joins and aggregations, in a serverless
+environment?
+What are the advantages and limitations of using serverless
+SQL pools in comparison to dedicated SQL pools for ad-hoc
+analysis?
+How would you manage costs associated with serverless
+querying, especially for large or frequent ad-hoc queries?
+Scenario:
+Your company is adopting a Lakehouse architecture in Azure and
+wants to use Azure Synapse Analytics for both structured and
+unstructured data. How would you design this solution to take
+advantage of Synapse for analytics while integrating data from
+both your data lake and data warehouse?
+Follow-up Questions:
+How would you design a unified storage solution to store
+structured, semi-structured, and unstructured data (e.g., using
+Azure Data Lake or Delta Lake)?
+How would you handle data quality, schema evolution, and
+data consistency in a Lakehouse environment?
+What would your approach be for using Synapse Spark Pools to
+process both structured and unstructured data?
+How would you ensure that query performance is optimized
+when working with large datasets from both the lake and the
+warehouse?
+
+Scenario:
+Your organization needs to integrate data stored in AWS S3 with
+Azure Synapse Analytics. The data includes a mix of structured,
+semi-structured, and unstructured files. How would you design the
+solution to ensure smooth integration between AWS and Azure
+Synapse?
+Follow-up Questions:
+What tools and services would you use to connect AWS S3 with
+Azure Synapse Analytics (e.g., Azure Data Factory, Synapse
+Pipelines)?
+How would you handle data transformation for files stored in S3
+and bring them into Synapse for analysis?
+How would you manage data transfer costs and optimize the
+transfer speed when moving large datasets between AWS and
+Azure?
+How would you ensure data consistency and monitor the
+integration process for potential issues?
+Scenario:
+Your organization is facing performance issues with large-scale
+queries on Azure Synapse Analytics. The dataset has grown
+significantly, and some queries are taking longer than expected.
+How would you approach troubleshooting and optimizing
+performance?
+Follow-up Questions:
+How would you analyze query performance using Synapse SQL
+Pools and SQL Server Management Studio (SSMS) or Azure Data
+Studio?
+How would you implement partitioning, indexing, and
+columnstore indexing to improve performance on large tables?
+What role does data distribution play in query performance,
+and how would you optimize data distribution for large
+datasets in Synapse?
+How would you utilize caching or materialized views to speed
+up performance for repetitive queries?
+
+Scenario:
+Your organization needs to keep track of historical versions of data
+in Azure Synapse Analytics for compliance and auditing purposes.
+The data needs to be accessible at any point in time to analyze
+changes. How would you implement this?
+Follow-up Questions:
+How would you use Delta Lake in Synapse to enable time travel
+and version control of data?
+How would you configure data retention policies to ensure that
+historical versions of the data are preserved without consuming
+excessive storage?
+How would you ensure query performance when working with
+large datasets with multiple versions over time?
+How would you implement audit logs to track all data changes
+and ensure data integrity for compliance?
+Scenario:
+Your team is performing data transformations in Azure Synapse
+Analytics, and there are concerns about ensuring data integrity
+throughout the ETL pipeline, especially during data loads and
+transformations. How would you design a solution to guarantee
+data integrity?
+Follow-up Questions:
+How would you use checksums or hash functions to validate
+data integrity during the ETL process?
+How would you implement data validation rules to ensure data
+quality and integrity before loading it into Synapse?
+What steps would you take to prevent data corruption during
+migration, transformation, or data load processes?
+How would you handle data integrity checks in real-time data
+pipelines to ensure that data is correctly ingested and
+transformed?
+
+Scenario:
+Your company is implementing a hybrid cloud architecture with
+data stored in both Azure Synapse Analytics and on-premises
+systems. The goal is to enable seamless analytics across both
+environments. How would you design this hybrid architecture for
+efficient data access and processing?
+Follow-up Questions:
+How would you implement Azure Data Factory or Synapse
+Pipelines to integrate on-premises data with Synapse
+Analytics?
+What methods would you use to ensure data consistency and
+synchronization between cloud and on-premises data stores?
+How would you optimize query performance when accessing
+hybrid data sources, especially when data is stored onpremises?
+How would you handle data security when integrating data
+from on-premises and cloud environments?
+Scenario:
+You are working with a large table in Azure Synapse Analytics, and
+queries are taking too long to run due to inefficient data
+distribution and partitioning. How would you optimize the table for
+better performance?
+Follow-up Questions:
+How would you choose the appropriate distribution method
+(e.g., hash, round-robin, or replicated) for the table in Synapse
+SQL Pools?
+How would you implement data partitioning to split the table
+into manageable chunks for improved query performance?
+What strategies would you use to ensure that queries
+accessing large tables scan only relevant partitions to minimize
+I/O?
+How would you monitor the query performance and evaluate
+the effectiveness of your partitioning and distribution strategy?
+
+-----------------------------------------------------------------------------------------------------
+L&T
+
+Scenario: You need to schedule multiple
+pipelines in Azure Data Factory with
+dependencies between them. How would you
+configure a master pipeline to orchestrate the
+execution of dependent pipelines?
+Scenario: What would you do if one
+dependent pipeline runs slower than
+expected, delaying the execution of
+subsequent pipelines?
+Scenario: You are required to store sensitive
+customer data in Azure Data Lake. How would
+you ensure data security and comply with
+GDPR or other data privacy regulations?
+Follow-up: How would you implement
+encryption for data at rest and in transit in
+Azure?
+Scenario: A new policy requires finegrained access control to specific data
+subsets in Azure Synapse Analytics. How
+would you implement Row-Level Security
+or Column-Level Security?
+
+Scenario: You are tasked with building a
+pipeline that integrates Azure Machine
+Learning to train and deploy predictive
+models using data stored in Azure Data Lake.
+How would you design this end-to-end
+pipeline?
+Scenario: The data scientists in your
+organization want to use Databricks to
+preprocess data for machine learning
+models. How would you facilitate the
+integration while ensuring scalability?
+Scenario: A project requires retaining
+transaction logs for seven years while ensuring
+they are accessible when needed. How would
+you implement this using Azure Data Lake or
+Azure Storage?
+Scenario: How would you design a data
+archival process in Azure Data Factory
+while keeping the data discoverable for
+regulatory audits?
+
+Scenario: Your organization requires all data
+stored in Azure to be encrypted using
+customer-managed keys. How would you
+configure and manage encryption using Azure
+Key Vault?
+Scenario: A key rotation policy requires
+updating encryption keys every year. How
+would you handle this without disrupting
+existing workflows?
+Scenario: In your real-time data pipeline,
+events from some sources arrive late due to
+network or system delays. How would you
+handle late-arriving data in a way that does
+not disrupt aggregations, analytics, or realtime dashboards?
+Follow-up: What frameworks or features
+(e.g., watermarking in Apache Flink or
+Spark Structured Streaming) would you
+use, and how would you tune them?
+
+Scenario: Your company is receiving
+unstructured data (e.g., logs, images, videos,
+or text) from various sources, and you need to
+process it for analytics. How would you design
+a pipeline to handle this unstructured data
+effectively?
+Follow-up: What tools (e.g., Apache Solr,
+ElasticSearch) and storage systems (e.g.,
+Hadoop, S3) would you use to enable
+search and analytics on unstructured data?
+Scenario: Your company deploys IoT sensors in
+a factory, collecting data on machine
+performance in real-time. You need a pipeline
+to detect anomalies and raise alerts
+immediately. How would you design the
+pipeline for scalability and low-latency
+anomaly detection?
+Follow-up: What algorithms or models
+would you use to detect anomalies, and
+how would you optimize the pipeline for
+real-time processing?
+
+Scenario: Your company monitors social media
+feeds for brand mentions, sentiment analysis,
+and trending topics. How would you design a
+real-time data pipeline that can scale to
+process millions of posts per day?
+Follow-up: What techniques would you use
+for natural language processing (NLP) and
+sentiment analysis at scale?
+Scenario: Your company wants to implement a
+Change Data Capture (CDC) pipeline to
+replicate updates from an OLTP database to
+an OLAP system for analytics. How would you
+design the pipeline to capture and propagate
+changes in near real-time?
+Follow-up: What tools (e.g., Debezium, AWS
+DMS) would you use, and how would you
+handle schema changes in the source
+database?
+
+Scenario: Your company stores terabytes of
+data in a data lake, but querying performance
+has degraded over time due to unoptimized
+file layouts. How would you optimize the
+pipeline to improve query latency without
+restructuring the entire data lake?
+Follow-up: What techniques (e.g., file
+compaction, columnar storage, Z-ordering)
+would you implement to optimize storage
+and access?
+Scenario: Your pipeline processes sensitive
+user data (e.g., PII) that needs to be masked or
+anonymized before being used for analytics.
+How would you implement data masking
+without impacting data utility for downstream
+applications?
+Follow-up: How would you handle tradeoffs between data privacy and data utility?
+
+Scenario: Your pipeline processes missioncritical data, and occasional failures occur due
+to network issues or node outages. How would
+you design fault-tolerant pipelines to recover
+gracefully and continue processing without
+data loss?
+Follow-up: What features of distributed
+frameworks (e.g., Spark, Flink) would you
+use to achieve fault tolerance?
+Scenario: Your pipeline performs complex
+transformations (e.g., aggregations, joins,
+lookups) that are consuming significant
+resources and taking too long to execute. How
+would you optimize this pipeline for better
+performance?
+Follow-up: How would you decide between
+optimizing transformations at the
+framework level (e.g., Spark optimization)
+or storage level (e.g., indexing)?
+
+Scenario: Your global company requires data
+pipelines to replicate data across multiple
+regions to support low-latency analytics and
+disaster recovery. How would you design such
+a system to handle network latency and data
+consistency issues?
+Follow-up: What tools and strategies (e.g.,
+CRDTs, eventual consistency) would you
+use to ensure correctness across regions?
+Scenario: Your pipeline writes data to multiple
+systems (e.g., a data warehouse and a NoSQL
+database), but partial failures cause
+inconsistencies between the systems. How
+would you ensure atomicity in such a multisystem data pipeline?
+Follow-up: Would you use transactional
+guarantees or a compensating mechanism
+to resolve inconsistencies?
+
+Scenario: You’re tasked with designing a
+pipeline to process stock market data in realtime for analytics and trading decisions. How
+would you ensure low-latency processing and
+accurate results?
+Follow-up: How would you handle market
+anomalies like stock splits or missing data
+during trading hours?
+Scenario: Your data pipeline processes user data
+that needs to comply with GDPR/CCPA. Users
+must be able to request data deletion and access
+their personal data. How would you design the
+pipeline to meet these compliance requirements?
+Follow-up: How would you handle data
+retention policies and ensure data deletion
+propagates to all downstream systems?
+
+Scenario: Your streaming pipeline frequently
+receives late-arriving events, which are
+disrupting your aggregations and analytics.
+How would you handle late-arriving data while
+maintaining pipeline efficiency?
+Follow-up: What strategies, such as
+watermarking or speculative processing,
+would you use to solve this?
+Scenario: Your pipeline requires real-time
+aggregations (e.g., counts, averages) of
+streaming events from Kafka. How would you
+implement this using Kafka Streams?
+Follow-up: How would you handle state
+management and fault tolerance for these
+aggregations?
+Scenario: Your dashboards rely on preaggregated metrics (e.g., daily totals) to
+improve query performance. How would you
+design a pipeline to generate and store these
+pre-aggregates?
+Follow-up: How would you handle cases
+where historical aggregates need to be
+recomputed after upstream corrections?
+
+-------------------------------------------------------------------------
+
+PWC
+
+Scenario: You have multiple pipelines that
+depend on one another (e.g., Pipeline A loads
+data, and Pipeline B transforms it).
+Question: How would you design the pipelines
+and manage their dependencies in ADF?
+Follow-up: How would you monitor and handle
+failures in one of the dependent pipelines?
+Scenario: Your organization is migrating from an
+on-premises Hadoop cluster to ADLS Gen2.
+Question: What tools and techniques would you
+use for this migration?
+Follow-up: How would you validate that the data
+migration was successful?
+Scenario: A client requests a data pipeline for
+both real-time streaming data ingestion and
+nightly batch loads into ADLS.
+Question: How would you design this hybrid
+pipeline using ADF and other Azure services?
+Follow-up: How would you decide which part of
+the data should be real-time and which should
+remain batch?
+
+Scenario: Your data pipeline integrates data from
+an on-premises Oracle database and cloud-based
+APIs.
+Question: How would you design the ADF
+pipeline for this hybrid setup?
+Follow-up: What challenges could arise with onpremises data, and how would you address
+them?
+Scenario: You have a business requirement to
+retain raw data in ADLS for 5 years and processed
+data for 1 year.
+Question: How would you implement data
+retention policies in ADLS to automate the
+deletion process?
+Follow-up: What challenges might arise, and how
+would you ensure data compliance?
+Scenario: You need a single pipeline that can
+dynamically copy data from multiple tables (with
+different schemas) into ADLS.
+Question: How would you use parameters and
+metadata-driven processing to achieve this in
+ADF?
+Follow-up: How would you handle schema
+mismatches during execution?
+
+Scenario: Your ADF pipeline processes data in
+batches, but a specific batch fails due to a
+transient issue.
+Question: How would you design the pipeline to
+reprocess only the failed batch?
+Follow-up: How would you track batch
+processing to ensure no data is missed or
+duplicated?
+Scenario: Your current data pipeline consumes
+excessive resources, leading to high costs in both
+ADF and ADLS.
+Question: How would you analyze and optimize
+the pipeline for cost efficiency?
+Follow-up: Would you recommend switching file
+formats or restructuring data for cost benefits?
+Scenario: Regulators require you to track all user
+activities, including reads, writes, and
+modifications, in ADLS for compliance.
+Question: How would you set up activity logging
+and monitor access to ADLS?
+Follow-up: What Azure services would you
+integrate for a centralized governance solution?
+
+Scenario: A data copy activity in your ADF
+pipeline fails occasionally due to transient
+network issues.
+Question: How would you implement a custom
+error-handling mechanism in ADF pipelines to
+retry failed activities automatically?
+Follow-up: How would you log and analyze failure
+patterns to improve pipeline stability?
+Scenario: Your ADF pipeline has undergone
+multiple updates, and a recent change caused
+unintended behavior.
+Question: How would you implement version
+control and rollback mechanisms for ADF
+pipelines?
+Follow-up: What DevOps tools and practices
+would you recommend for managing ADF
+pipelines in production?
+Scenario: Your pipeline ingests raw data into
+ADLS, but some records fail to meet quality
+standards (e.g., missing fields).
+Question: How would you design the pipeline to
+identify and isolate bad data during ingestion?
+Follow-up: How would you notify the team and
+automate the correction process?
+
+Scenario: You need to enforce fine-grained
+access controls in ADLS, where different teams
+have read/write access only to specific folders
+and subfolders.
+Question: How would you implement POSIX-style
+permissions in ADLS?
+Follow-up: How would you test these permissions
+to ensure no unauthorized access occurs?
+Scenario: Your organization handles data for
+multiple clients in ADLS. Each client's data must
+be logically separated for privacy and security.
+Question: How would you design the ADLS folder
+structure and access controls for multi-tenancy?
+Follow-up: How would you handle shared
+datasets between tenants?
+Scenario:
+You need to integrate an external API to fetch
+data and display it within an LWC component.
+Questions:
+How would you securely make an HTTP request
+from an LWC to an external API?
+How would you handle API rate limits or
+pagination when dealing with large datasets from
+the external API?
+How would you manage error handling and
+ensure the component displays appropriate error
+messages to the user?
+
+Scenario:
+You need to implement custom pagination for
+displaying large datasets in a paginated table.
+Questions:
+How would you implement custom
+pagination in LWC?
+How would you handle fetching data for
+specific pages to avoid loading the entire
+dataset at once?
+How would you manage UI elements like
+next/previous buttons and page numbers?
+Scenario:
+You are building a component that includes
+custom action buttons that perform specific
+operations when clicked (e.g., create record,
+update record, delete record).
+Questions:
+How would you implement custom action
+buttons in LWC?
+How would you handle operations like
+creating, updating, or deleting records
+asynchronously?
+How would you manage permissions to
+ensure only users with the right access can
+perform these actions?
+
+Scenario: You have a pipeline that ingests data
+from 10 tables, but processing them in parallel
+overwhelms downstream systems.
+Question: How would you configure parallelism
+in ADF to balance pipeline efficiency and system
+performance?
+Follow-up: How would you monitor resource
+utilization during execution?
+Scenario: You need to optimize data stored in
+ADLS for Power BI, which has performance issues
+querying raw files directly.
+Question: How would you design ADF pipelines to
+transform and store data for optimal Power BI
+performance?
+Follow-up: What file formats and partitioning
+strategies would you use?
+Scenario: For compliance, all data in ADLS must
+be encrypted with customer-managed keys
+(CMKs), and key rotation is required every six
+months.
+Question: How would you implement and
+manage key rotation without disrupting access to
+existing data?
+Follow-up: How would you monitor and audit key
+usage in ADLS?
+
+Scenario: You manage data for multiple clients,
+and each tenant requires logical separation of
+their data while maintaining shared access for
+aggregated datasets.
+Question: How would you design folder
+structures and access control mechanisms in
+ADLS for multi-tenancy?
+Follow-up: What auditing strategies would you
+use to ensure no unauthorized cross-tenant
+access?
+Scenario: You’re ingesting data from a source
+system into ADF, but the schema of the
+incoming data changes occasionally.
+Question: How would you detect and handle
+schema drift dynamically in ADF pipelines?
+Follow-up: How would you ensure that schema
+drift doesn’t interrupt downstream
+processing?
+Scenario: Your ADF pipeline processes 1,000
+source tables, but the number of tables can vary
+over time. You want the pipeline to dynamically
+adjust the level of parallelism.
+Question: How would you configure dynamic
+parallelism in ADF?
+Follow-up: How would you monitor and manage
+resource utilization for highly parallel pipelines?
+
+---------------------------------------------------------------------------------------------
+TCS
+
+Scenario:
+You have a DataFrame with the schema:
+id (int), name (string), department (string), salary
+(int)
+Write a PySpark job to perform the following
+transformations in a single chain:
+1.
+Filter employees with salary > 50000.
+Group by department and calculate the
+average salary.
+Sort the results in descending order of
+average salary.
+Scenario:
+Your PySpark job is frequently failing due to
+executor memory issues.
+1.What steps would you take to debug the issue?
+List specific Spark configurations you would
+tweak (e.g., spark.executor.memory,
+spark.driver.memory).
+2.
+Scenario:
+You are working with sensitive financial data and
+need to encrypt the data while saving it to disk.
+Write a PySpark job to encrypt the data using a
+library like PyCrypto or PyArrow.
+1.
+Explain how to manage encryption keys
+securely in a Spark application.
+
+Scenario:
+You are tasked with building an ETL pipeline to
+process daily transaction data stored as JSON files.
+1.Write a PySpark pipeline to:
+Extract: Read the JSON files into a
+DataFrame.
+Transform: Calculate the total transaction
+amount per customer and filter customers
+with transactions above ₹10,000.
+Load: Save the output as partitioned
+Parquet files based on transaction_date.
+Ensure the pipeline is modular and reusable for
+future datasets.
+2.
+Scenario:
+You have a DataFrame with the schema:
+user_id (int), orders (array<struct<product_id: int,
+quantity: int, price: float>>)
+Write a PySpark job to calculate the total
+revenue per user by summing up (quantity *
+price) for all products in the orders array.
+
+
+Scenario:
+You are performing an aggregation operation on a
+large dataset with a skewed key distribution (e.g.,
+90% of records have the same key).
+Explain techniques to handle skewed keys
+during aggregations (e.g., salting, map-side
+combine).
+1.
+Write a PySpark script to implement salting for
+a group-by operation.
+2.
+Scenario:
+You have two DataFrames with slightly different
+schemas:
+DataFrame1: id (int), name (string), age (int)
+DataFrame2: id (int), name (string), salary
+(float)
+Write a PySpark job to union these DataFrames
+by adding missing columns with null values
+where necessary.
+1.
+Scenario:
+You have a partitioned dataset stored in Parquet
+format with the structure:
+year=2024/month=12/day=14/part-00000.parquet.
+Write a PySpark job to read data only for
+year=2024 and month=12.
+1.
+Explain how partition pruning improves query
+performance.
+
+
+Scenario:
+You need to apply a custom transformation to
+standardize phone numbers in a DataFrame
+column.
+Write a PySpark job using a custom function to
+clean and format phone numbers.
+1.
+Apply the transformation as a reusable
+function for multiple DataFrames.
+2.
+Scenario:
+You have a sales DataFrame:
+product_id (int), region (string), sales_amount
+(float), sales_date (date)
+1.Write a PySpark pipeline to calculate:
+Total sales per product_id and region.
+Daily average sales for each product across
+all regions.
+Scenario:
+You are tasked with cleaning and transforming a
+dataset using the following rules:
+Drop duplicate rows.
+Replace null values in numeric columns with
+the column mean.
+Add a new column that calculates a weighted
+score using existing columns.
+Write a PySpark job to perform these
+operations in a chained manner.
+
+
+Scenario:
+You are running a streaming job that processes
+Kafka messages, but there are delays in
+processing.
+Write a PySpark job to monitor the lag in
+processing Kafka offsets.
+1.
+Explain how you would optimize the job to
+reduce lag.
+2.
+Scenario:
+You want to test the reliability of your Structured
+Streaming application with checkpointing
+enabled.
+Write a PySpark script that simulates a failure
+during execution.
+1.
+Demonstrate how the application recovers
+from the last checkpoint.
+2.
+Scenario:
+You are working with customer data where
+updates include new values for existing records
+(Type 2 Slowly Changing Dimensions).
+Write a PySpark job to manage SCD Type 2 for
+a dataset, adding new records for changes
+while marking old records as inactive.
+1.
+Explain how to merge this data into a Delta
+Lake table for easy tracking.
+
+Scenario:
+You are processing streaming transaction data
+with the schema:
+transaction_id (int), user_id (int), amount (float),
+timestamp (timestamp)
+Write a PySpark Structured Streaming job to
+flag transactions exceeding a user’s average
+transaction amount by 3x within the last 1 hour.
+1.
+Save the flagged transactions to a NoSQL
+database.
+2.
+Scenario:
+You are processing a stream of events with the
+schema:
+event_id (int), event_type (string), timestamp
+(timestamp)
+Write a PySpark Structured Streaming job to
+process events, ensuring they are ordered by
+timestamp within a sliding window.
+1.
+2.Use watermarks to manage late data.
+Scenario:
+You are tasked with running multiple streaming
+queries:
+Query 1 aggregates data from Kafka and writes
+to a Delta Lake table.
+Query 2 reads from the Delta Lake table and
+writes to an external database.
+Write a PySpark script to chain these queries
+and ensure consistency between them.
+
+Scenario:
+You have IoT data with the schema:
+sensor_id (int), metric (float), timestamp
+(timestamp)
+Write a PySpark job to detect anomalies where
+the metric deviates from its rolling average by
+more than 20%.
+1.
+Save detected anomalies to a separate
+DataFrame.
+2.
+Scenario:
+You need to implement automated data quality
+checks for a pipeline.
+1.Write a PySpark job to check:
+Column uniqueness.
+Null value percentage for each column.
+Save the results in a structured format (e.g.,
+JSON).
+2.
+Scenario:
+You frequently join two large datasets on
+customer_id.
+Write a PySpark job to bucket the datasets on
+customer_id and optimize the join operation.
+1.
+Explain the difference between bucketing and
+partitioning for this case
+
+Scenario:
+You are monitoring a stream of sensor data to
+detect temperature readings exceeding a
+threshold.
+Write a PySpark Structured Streaming job to
+trigger alerts for readings above the threshold.
+1.
+Save the alerts to a Kafka topic for downstream
+consumers.
+2.
+Scenario:
+You are analyzing a social network dataset:
+user_id (int), friend_id (int)
+1.Write a PySpark job to calculate:
+Total friends per user.
+Mutual friends between two users.
+Discuss the limitations of PySpark for graph
+processing and alternatives like GraphFrames.
+2.
+Scenario:
+You have a dataset with deeply nested JSON
+structures.
+Write a PySpark job to extract specific fields,
+flatten the structure, and save the result to a
+Delta Lake table.
+1.
+Discuss the performance impact of processing
+deeply nested data.
+
+Scenario:
+You have a DataFrame with columns:
+city (string), product (string), sales_amount (float)
+1.Write a PySpark job to calculate:
+Total sales by city.
+Top 3 products by sales for each city.
+2. Optimize the job to handle large datasets.
+Scenario:
+You have a data pipeline where historical data is
+processed in batch mode and new incoming data
+in streaming mode.
+Write a PySpark job to process historical data
+in batch and merge the results with streaming
+data in near real-time.
+1.
+Use a common sink (e.g., Delta Lake) to ensure
+consistent outputs.
+2.
+Scenario:
+You need to apply a machine learning model
+written in Python to a Spark DataFrame but are
+using the Scala API.
+Explain how to use PySpark’s pandas_udf to
+apply the Python model from Scala.
+1.
+Discuss alternatives like MLlib or using a REST
+API for integration.
+
+---------------------------------------------------------------------------
+
+SQL
+
+Question:
+A table users(user_id, email, created_at) has duplicate
+email addresses. Write a query to delete duplicates,
+keeping only the latest record for each email.
+Answer:
+WITH ranked_users AS (
+SELECT
+user_id,
+email,
+ROW_NUMBER() OVER (PARTITION BY email ORDER
+BY created_at DESC) AS rank
+FROM users
+)
+DELETE FROM users
+WHERE user_id IN (
+SELECT user_id
+FROM ranked_users
+WHERE rank > 1
+);
+Question:
+A table subscriptions(user_id, subscription_start,
+subscription_end) contains user subscription data. Write a
+query to find users who did not renew their subscription
+within 30 days of expiry.
+Answer:
+SELECT s1.user_id
+FROM subscriptions s1
+LEFT JOIN subscriptions s2
+ON s1.user_id = s2.user_id
+AND s2.subscription_start <= s1.subscription_end +
+INTERVAL 30 DAYWHERE s2.user_id IS NULL;
+
+Question:
+Write a query to fetch only the rows added or updated in
+a source table orders since the last ETL run, using the
+column last_updated.
+Answer:
+SELECT *FROM orders
+WHERE last_updated > '2024-12-01 00:00:00'; -- Replace
+with the last ETL run timestamp
+Question:
+A table sales(product_id, sale_date, quantity) contains
+product sales data. Write a query to rank products by
+total sales quantity for the past 30 days.
+Answer:
+SELECT
+product_id,
+SUM(quantity) AS total_quantity,
+RANK() OVER (ORDER BY SUM(quantity) DESC) AS rank
+FROM sales
+WHERE sale_date >= CURRENT_DATE - INTERVAL '30
+days'GROUP BY product_id;
+Question:
+Two tables: products(product_id, product_name) and
+sales(product_id, quantity). Write a query to find products
+that have never been sold.
+Answer:
+SELECT p.product_id, p.product_name
+FROM products p
+LEFT JOIN sales s ON p.product_id = s.product_id
+WHERE s.product_id IS NULL;
+
+
+Question:
+A table sales(product_id, sale_date, quantity) tracks
+product sales. Write a query to find products that sold the
+same quantity every day.
+Answer:
+SELECT product_id
+FROM sales
+GROUP BY product_id
+HAVING COUNT(DISTINCT quantity) = 1;
+Question:
+A table sales(product_id, sale_date, revenue) tracks
+revenue. Write a query to find the most profitable product
+for each year.
+Answer:
+WITH yearly_revenue AS (
+SELECT
+product_id,
+EXTRACT(YEAR FROM sale_date) AS year,
+SUM(revenue) AS total_revenue
+FROM sales
+GROUP BY product_id, EXTRACT(YEAR FROM sale_date)
+)
+SELECT product_id, year, total_revenue
+FROM (
+SELECT
+product_id,
+year,
+total_revenue,
+RANK() OVER (PARTITION BY year ORDER BY
+total_revenue DESC) AS rank
+FROM yearly_revenue
+) ranked
+WHERE rank = 1;
+
+Question:
+A table prices(product_id, price_date, price) tracks product
+prices. Write a query to find products whose prices have
+changed.
+Answer:
+SELECT product_id
+FROM prices
+GROUP BY product_id
+HAVING COUNT(DISTINCT price) > 1;
+Question:
+A table sales(product_id, sale_date, quantity) tracks
+product sales. Write a query to find products that have sold
+the same quantity every month.
+Answer:
+WITH monthly_sales AS (
+SELECT
+product_id,
+EXTRACT(MONTH FROM sale_date) AS sale_month,
+SUM(quantity) AS monthly_quantity
+FROM sales
+GROUP BY product_id, EXTRACT(MONTH FROM
+sale_date)
+)
+SELECT product_id
+FROM monthly_sales
+GROUP BY product_id
+HAVING COUNT(DISTINCT monthly_quantity) = 1;
+
+
+Question:
+A table sales(sale_date, quantity) tracks product sales.
+Write a query to find the date with the highest number of
+sales.
+Answer:
+SELECT sale_date, SUM(quantity) AS total_sales
+FROM sales
+GROUP BY sale_date
+ORDER BY total_sales DESC
+LIMIT 1;
+Question:
+A table sales(product_id, quantity) tracks product sales.
+Write a query to find products sold more than 100 times.
+Answer:
+SELECT product_id
+FROM sales
+GROUP BY product_id
+HAVING SUM(quantity) > 100;
+Question:
+A table sales(product_id, sale_date) tracks product sales.
+Write a query to find products that were sold only in 2023.
+Answer:
+SELECT product_id
+FROM sales
+WHERE EXTRACT(YEAR FROM sale_date) = 2023GROUP BY
+product_id
+HAVING COUNT(DISTINCT EXTRACT(YEAR FROM
+sale_date)) = 1;
+
+
+Question:
+A table transactions(customer_id, transaction_date) tracks
+transactions. Write a query to find customers who have
+made more than one purchase in the same day.
+Answer:
+SELECT customer_id, transaction_date
+FROM transactions
+GROUP BY customer_id, transaction_date
+HAVING COUNT(*) > 1;
+Question:
+A table orders(customer_id, product_id) tracks customer
+orders. Write a query to find customers who have bought
+the same product more than once.
+Answer:
+SELECT customer_id, product_id
+FROM orders
+GROUP BY customer_id, product_id
+HAVING COUNT(*) > 1;
+Question:
+A table transactions(customer_id, transaction_date) tracks
+customer transactions. Write a query to find customers
+who made purchases in all 4 quarters of 2024.
+Answer:
+SELECT customer_id
+FROM transactions
+WHERE EXTRACT(YEAR FROM transaction_date) =
+2024GROUP BY customer_id
+HAVING COUNT(DISTINCT EXTRACT(QUARTER FROM
+transaction_date)) = 4;
+
+Question:
+A table sales(product_id, sale_date) tracks product sales.
+Write a query to find the products that were sold in both
+2023 and 2024.
+Answer:
+SELECT product_id
+FROM sales
+WHERE EXTRACT(YEAR FROM sale_date) IN (2023, 2024)
+GROUP BY product_id
+HAVING COUNT(DISTINCT EXTRACT(YEAR FROM
+sale_date)) = 2;
+Question:
+A table sales(product_id, sale_date) tracks product sales.
+Write a query to find products that were sold only in the
+last 3 months.
+Answer:
+SELECT product_id
+FROM sales
+WHERE sale_date >= CURRENT_DATE - INTERVAL '3
+months'GROUP BY product_id
+HAVING COUNT(DISTINCT EXTRACT(MONTH FROM
+sale_date)) = 1;
+
+Question:
+A table orders(customer_id, order_id, total_amount) tracks
+customer orders, and a table order_items(order_id,
+product_id, price) tracks the products in each order. Write
+a query to find the most expensive product purchased by
+each customer.
+Answer:
+SELECT o.customer_id, oi.product_id, MAX(oi.price) AS
+max_price
+FROM orders o
+JOIN order_items oi ON o.order_id = oi.order_id
+GROUP BY o.customer_id, oi.product_id;
+Question:
+A table orders(customer_id, order_id) tracks customer
+orders. Write a query to find customers who have made
+more than 10 orders.
+Answer:
+SELECT customer_id
+FROM orders
+GROUP BY customer_id
+HAVING COUNT(order_id) > 10;
+
+Question:
+A table transactions(customer_id, transaction_date) tracks
+customer transactions. Write a query to find customers
+who made their first purchase in 2024.
+Answer:
+SELECT customer_id
+FROM transactions
+WHERE EXTRACT(YEAR FROM transaction_date) =
+2024AND transaction_date = (
+SELECT MIN(transaction_date)
+Question:
+A table customers(customer_id, registration_date) tracks
+customer registrations. Write a query to find the number of
+new customers acquired each month in 2024.
+Answer:
+SELECT EXTRACT(MONTH FROM registration_date) AS
+month, COUNT(*) AS new_customers
+FROM customers
+WHERE EXTRACT(YEAR FROM registration_date) =
+2024GROUP BY monthORDER BY month;
+
+
+---------------------------------------------------------------------------
+DELOITTE
+
+Scenario:
+A table in Synapse stores product details. The business
+wants to track changes (e.g., price updates) to maintain
+historical records. Implement a Slowly Changing
+Dimension (SCD) Type 2 process.
+Questions:
+Write a SQL query to insert new rows and update
+existing ones, ensuring historical records are retained.
+1.
+How would you automate this process using Synapse
+Pipelines?
+2.
+What challenges arise when dealing with large datasets
+in SCD implementations, and how do you overcome
+them?
+3.
+Scenario:
+Your company wants to integrate sales data from multiple
+sources:
+On-premises SQL Server
+Cosmos DB
+Azure Blob Storage (JSON files) This integrated data
+must be available in Synapse for analytical reporting.
+Questions:
+How would you design a Synapse pipeline to handle
+multi-source integration?
+1.
+Write a PySpark script to extract data from Cosmos DB
+and merge it into a Synapse SQL Pool table.
+2.
+How would you handle conflicting schemas between
+the sources?
+3.
+What challenges could arise with data latency or
+consistency across sources, and how would you
+mitigate them?
+
+
+Scenario:
+Synapse queries in your environment are taking longer to
+execute. The resource utilization metrics indicate a high
+level of concurrency and underutilization of certain nodes.
+Questions:
+How would you analyze and resolve query performance
+issues in Synapse?
+1.
+What metrics from Synapse’s monitoring tools are most
+useful for troubleshooting?
+2.
+Write a query to identify the top 5 longest-running
+queries in the SQL Pool.
+3.
+How can you use resource classes to optimize query
+performance for different workloads?
+4.
+Scenario:
+You are using PolyBase to load data from Azure Blob
+Storage into a Synapse SQL Pool. However, the load
+performance is slower than expected.
+Questions:
+What are common performance bottlenecks when
+using PolyBase, and how would you resolve them?
+1.
+How would you optimize the file formats and sizes for
+efficient data loading?
+2.
+Write a script to configure and use PolyBase to load
+data from CSV files.
+3.
+Compare PolyBase with Spark for data ingestion in
+Synapse.
+
+
+Scenario:
+Your organization stores customer data in Synapse, and
+you need to comply with GDPR regulations. This includes
+deleting all data related to a specific customer upon
+request.
+Questions:
+How would you design Synapse tables to simplify
+customer data deletion?
+1.
+Write a SQL script to delete all customer-related
+records from multiple tables.
+2.
+What challenges could arise when implementing GDPR
+compliance in Synapse?
+3.
+How would you implement audit logging to track data
+access and modifications?
+4.
+Scenario:
+Your organization wants to use Delta Lake for its ACID
+capabilities and versioned data storage, but the data must
+also be accessible in Synapse.
+Questions:
+How would you integrate Delta Lake with Synapse for
+analytics?
+1.
+Write a PySpark script to create and update Delta Lake
+tables in Azure Data Lake.
+2.
+Discuss the trade-offs of using Delta Lake versus
+Synapse’s internal table formats.
+3.
+How would you query Delta Lake tables directly from
+Synapse’s serverless SQL?
+
+
+Scenario:
+Your company wants to trigger Synapse pipelines
+automatically whenever new data is uploaded to Azure
+Blob Storage.
+Questions:
+How would you design an event-driven workflow using
+Azure Synapse and Azure Event Grid?
+1.
+Write a Synapse pipeline script to process and load the
+data upon triggering.
+2.
+What are the benefits and limitations of event-driven
+architectures in Synapse?
+3.
+How would you monitor and troubleshoot such eventdriven workflows?
+4.
+Scenario:
+You need to calculate advanced metrics, such as customer
+retention rates, cohort analysis, and rolling averages, from
+a large Synapse SQL Pool table.
+Questions:
+Write a query to calculate customer retention rates
+over time.
+1.
+How would you design the table schema to optimize
+complex aggregations?
+2.
+What Synapse features (e.g., materialized views) could
+you use to improve query performance?
+3.
+How would you handle large-scale aggregation queries
+that frequently run on the same data?
+
+
+Scenario:
+Your ETL pipeline loads data into Synapse from multiple
+source systems daily. However, discrepancies in record
+counts have been observed between source and target
+tables.
+Questions:
+How would you design a reconciliation process to
+compare source and target tables?
+1.
+Write a SQL script to identify missing or mismatched
+records between source and Synapse tables.
+2.
+What tools or services in Azure can help automate data
+reconciliation?
+3.
+How can you handle reconciliation in near-real-time
+scenarios?
+4.
+Scenario:
+Your Synapse pipeline processes sales data. If the daily
+sales exceed a threshold, an alert should be sent and the
+data processed further. Otherwise, the data should be
+archived.
+Questions:
+How would you implement conditional branching in a
+Synapse pipeline?
+1.
+Write a pipeline JSON snippet with conditional logic for
+this scenario.
+2.
+What are the best practices for handling conditional
+workflows in Synapse?
+3.
+How can you monitor pipeline execution to ensure the
+conditions are being met?
+
+Scenario:
+You need to process a batch of unstructured log files
+stored in Azure Data Lake and load the transformed data
+into Synapse SQL.
+Questions:
+Write a PySpark job to process and transform the log
+files.
+1.
+How would you use Synapse Spark Pools for parallel
+processing of large files?
+2.
+What challenges can arise when processing
+unstructured data in Synapse?
+3.
+Compare the performance of Spark Pools versus using
+a Data Flow in Synapse pipelines for this task.
+4.
+Scenario:
+Your company collects geospatial data, such as latitude
+and longitude points, for logistics and routing. You need to
+analyze this data in Synapse.
+Questions:
+How would you store and query geospatial data in
+Synapse?
+1.
+Write a query to calculate the distance between two
+geospatial points.
+2.
+What are the limitations of Synapse for geospatial
+analytics?
+3.
+How would you integrate Synapse with tools like Azure
+Maps for advanced geospatial processing?
+
+Scenario:
+Your Synapse environment is critical to business
+operations, and you need to design a disaster recovery
+plan to ensure minimal downtime in case of a failure.
+Questions:
+How would you set up a disaster recovery plan for Azure
+Synapse?
+1.
+What tools and features (e.g., Geo-Replication, Data
+Lake Snapshots) would you use to back up Synapse
+workloads?
+2.
+How would you test and validate the disaster recovery
+setup without affecting production workloads?
+3.
+Compare Recovery Time Objective (RTO) and Recovery
+Point Objective (RPO) considerations for Synapse.
+4.
+Scenario:
+Your organization must ensure compliance with GDPR by
+implementing strict data governance practices in Synapse,
+including managing Personally Identifiable Information
+(PII).
+Questions:
+How would you ensure GDPR compliance in Synapse,
+particularly for PII data?
+1.
+Write a query to anonymize sensitive data in Synapse
+SQL Pool.
+2.
+How would you use Azure Purview to enforce data
+governance and track data lineage?
+3.
+What are the trade-offs of anonymizing versus
+encrypting data for GDPR compliance?
+
+Scenario:
+Your pipelines process data hourly, but occasionally, some
+records arrive late and miss their processing window.
+Questions:
+How would you design a Synapse pipeline to handle
+late-arriving data without reprocessing the entire
+dataset?
+1.
+Write a Spark job to merge late-arriving records with
+existing processed data.
+2.
+What techniques would you use to identify and process
+only late-arriving records?
+3.
+How can watermarking and event-time processing
+improve your pipeline?
+4.
+Scenario:
+Your team wants to consolidate structured, semistructured, and unstructured data into a unified data
+lakehouse architecture using Synapse.
+Questions:
+How would you design a Synapse-based data lakehouse
+for handling different types of data?
+1.
+What file formats and partitioning strategies would you
+use for optimal performance?
+2.
+Compare and contrast the lakehouse model with
+traditional data warehouse and data lake architectures.
+3.
+How would you enable BI tools like Power BI to directly
+query data in the lakehouse?
+
+
+Scenario:
+Your Synapse workload experiences significant variability
+in demand, with peaks during business hours and minimal
+usage at other times.
+Questions:
+How would you design a high-availability and scalable
+Synapse architecture?
+1.
+What features in Synapse (e.g., scaling SQL Pools,
+autoscaling Spark Pools) would you leverage?
+2.
+How can you automate scaling to handle workload
+peaks while minimizing costs?
+3.
+Compare the use of dedicated SQL Pools versus
+serverless SQL Pools for unpredictable workloads.
+4.
+Scenario:
+Your organization processes transaction data in near realtime and needs to implement a system to detect
+fraudulent transactions using Synapse.
+Questions:
+How would you design a real-time fraud detection
+pipeline using Synapse?
+1.
+Write a PySpark job to apply a machine learning fraud
+detection model to streaming data.
+2.
+What Synapse features would you use to enable realtime alerts for detected fraud?
+3.
+How would you ensure low-latency processing while
+maintaining accuracy in fraud detection?
+
+
+Scenario:
+Your organization frequently uses Synapse serverless SQL
+pools to run ad-hoc queries on semi-structured data, but
+query performance and cost optimization have become
+concerns.
+Questions:
+How would you design a serverless SQL environment to
+handle large-scale ad-hoc queries effectively?
+1.
+Write a query to filter and aggregate Parquet data
+stored in Azure Data Lake using serverless SQL.
+2.
+How would you monitor and control costs in serverless
+SQL usage?
+3.
+What are the key differences between serverless SQL
+pools and dedicated SQL pools for such workloads?
+4.
+Scenario:
+Your organization requires a data retention policy to
+automatically archive or delete records older than five
+years to comply with regulatory requirements.
+Questions:
+How would you design a Synapse pipeline to
+implement a data retention policy?
+1.
+Write a SQL query to delete records older than five
+years from a Synapse SQL Pool.
+2.
+How would you automate data archiving to a cheaper
+storage tier in Azure?
+3.
+What considerations must you make when designing
+retention policies for compliance and performance?
+
+
+Scenario:
+Your organization wants to use Synapse for a hybrid
+transactional and analytical processing (HTAP) scenario,
+combining real-time transactions with analytics.
+Questions:
+How would you design a Synapse architecture to
+support HTAP workloads?
+1.
+What challenges arise when combining OLTP and
+OLAP workloads in Synapse?
+2.
+How can Synapse's integration with Cosmos DB help
+enable HTAP use cases?
+3.
+Write a query to analyze real-time transactional data
+while integrating historical records.
+4.
+Scenario:
+You need to design a disaster recovery (DR) plan for
+Synapse to ensure data and system availability in case of
+failures.
+Questions:
+How would you set up a DR plan for Synapse dedicated
+SQL pools?
+1.
+What Azure tools would you use to automate backups
+and ensure failover capabilities?
+2.
+How would you replicate Synapse data and metadata to
+a secondary region?
+3.
+Compare active-passive versus active-active DR setups
+for Synapse workloads.
+
+
+----------------------------------------------------------------------------------------
+PYTHON
+
+Scenario: Your data pipeline works fine with a small
+dataset, but as the dataset grows, the system starts
+experiencing slowdowns and bottlenecks. How would you
+scale the pipeline to handle the increased data load?
+Follow-up: How would you ensure that scaling the
+pipeline doesn’t affect its performance or increase costs
+unnecessarily?
+Scenario: You are working with data that is being sourced
+from multiple systems, and there are inconsistencies in the
+data, leading to duplicate entries. How would you
+implement a deduplication strategy in your data pipeline
+to ensure that only unique records are processed?
+Follow-up: How would you implement this strategy for
+both batch processing and real-time streaming
+systems?
+Scenario: You have two systems that need to stay in sync
+with each other — one is a transactional system and the
+other is a reporting system. How would you approach
+ensuring that data between these systems is consistent
+and up-to-date in real time?
+Follow-up: What tools or techniques would you use to
+keep the data synchronized while minimizing
+downtime?
+Scenario: Your company wants to implement a real-time
+recommendation system that uses user activity data to
+generate personalized recommendations immediately.
+How would you design the data pipeline to ensure low
+latency and real-time decision-making?
+Follow-up: What technologies would you use, and how
+would you ensure data consistency and accuracy in
+real-time?
+
+
+Scenario: Your organization has large amounts of data but
+lacks proper governance policies. You are asked to
+implement a data governance strategy. How would you go
+about this, and what areas would you focus on?
+Follow-up: How would you define data quality, access
+control, and retention policies?
+Scenario: Your company has adopted a multi-cloud
+strategy and stores data in multiple cloud providers (e.g.,
+AWS, Azure, GCP). How would you design a data pipeline
+that spans multiple clouds, ensuring seamless data
+integration and management?
+Follow-up: What tools or services would you use to
+manage data transfer, latency, and security between
+clouds?
+Scenario: You are asked to design a service that
+aggregates user behavior data (e.g., clicks, purchases) in
+near real-time, and then generates periodic reports for
+stakeholders. How would you design this system to handle
+high data volumes and ensure the reports are generated
+on time?
+Follow-up: How would you handle situations where the
+data quality or completeness is compromised?
+Scenario: You are working with a data lake that contains
+raw, unstructured data from various sources. Some of the
+data has inconsistent schemas. How would you handle this
+schema inconsistency and prepare the data for
+downstream processing?
+Follow-up: How would you ensure that new data
+sources can be easily integrated into the system
+without breaking the pipeline?
+
+Scenario: Your company wants to transition to an event-driven
+architecture where each event triggers a chain of downstream
+processes (e.g., data processing, ML model scoring, reporting).
+How would you design the data pipeline to support this
+architecture, ensuring scalability and reliability?
+Follow-up: What message broker or event streaming
+platform would you use, and how would you ensure
+message durability and fault tolerance?
+Scenario: Your company wants to implement a real-time
+analytics dashboard to monitor key metrics (e.g., website
+traffic, sales) with data refreshed every minute. How would you
+design a data pipeline to support real-time data ingestion,
+processing, and visualization?
+Follow-up: How would you address challenges like high
+data volume and the need for low-latency processing?
+Scenario: Your company provides a SaaS platform, and you
+need to store data for multiple clients (tenants) in a single
+database. How would you design the data model to ensure
+that each tenant’s data is isolated, secure, and scalable?
+Follow-up: How would you handle situations where tenants
+have different data access needs or data volume growth?
+Scenario: You are working with a real-time data processing
+pipeline that needs to minimize latency to ensure that
+decisions are made in real time (e.g., fraud detection, real-time
+bidding). How would you design the system to achieve lowlatency processing, and what techniques would you use to
+manage data latency effectively?
+Follow-up: How would you monitor and optimize the
+system to ensure it continues to meet real-time
+performance requirements as data volume grows?
+
+Scenario: You are working with a cloud-based data
+processing pipeline, and the costs associated with data
+storage and compute resources are rising rapidly. How
+would you optimize the pipeline to reduce costs without
+sacrificing performance?
+Follow-up: What strategies would you use to optimize
+storage, reduce data transfer costs, and scale compute
+resources efficiently?
+Scenario: Your company has a distributed system across
+multiple geographic regions, and you need to design a data
+pipeline that processes data in real time and is faulttolerant. How would you build such a pipeline to ensure
+data consistency and minimal latency, regardless of
+geographic location?
+Follow-up: How would you address issues like network
+partitioning, data synchronization, and latency between
+regions?
+Scenario: Your company’s data analytics team needs to
+perform complex queries over massive datasets for realtime insights. You’re tasked with optimizing the ETL
+pipeline to ensure high-performance analytics. How would
+you optimize data transformation to speed up query
+performance and reduce latency in an analytics system?
+Follow-up: How would you implement data preaggregation, indexing, or caching to improve query
+performance?
+
+Scenario: Your data pipelines are evolving, and you need a
+strategy to manage different versions of both the pipeline
+code and the datasets it processes. How would you
+implement versioning for the data pipelines and the data
+itself?
+Follow-up: How would you ensure backward
+compatibility and testing of older versions of the
+pipeline to prevent breaking changes?
+Scenario: Your company has accumulated large volumes of
+historical data over the years, and the data warehouse is
+growing in size. How would you optimize the storage and
+retrieval of this historical data to ensure cost-efficiency and
+fast query performance?
+Follow-up: How would you partition, index, or archive
+the data to balance between cost and performance?
+Scenario: Your company wants to build a data pipeline that
+collects and processes user behavior data (e.g., clicks, page
+views) from web and mobile apps for real-time analytics.
+How would you design a system that processes this data in
+real-time while handling data privacy concerns?
+Follow-up: How would you ensure that the data is
+cleaned, transformed, and aggregated to provide
+meaningful insights for business users?
+
+Scenario: Your organization has legacy systems that store
+data in outdated formats and structures, and you need to
+ingest this data into a modern data platform. How would
+you design a solution to extract, transform, and load (ETL)
+data from these legacy systems while ensuring data
+integrity and minimal disruption?
+Follow-up: How would you handle the challenges of
+integrating structured and unstructured data from
+legacy systems?
+Scenario: You are building a streaming data pipeline, and
+you realize that the schema of incoming data can vary over
+time (e.g., new fields may be added, or data structures may
+change). How would you design the pipeline to handle this
+variability without breaking downstream systems?
+Follow-up: How would you ensure schema evolution is
+managed properly, and how would you handle
+backward compatibility?
+Scenario: Your organization is working with real-time data
+pipelines that ingest data from various sources with
+different formats, such as JSON, XML, and Protobuf. How
+would you design the pipeline to efficiently process and
+transform this heterogeneous data into a uniform format
+for analysis?
+Follow-up: How would you handle schema evolution
+and format conversions without introducing latency in
+the streaming pipeline?
+
+Scenario: You are tasked with ensuring data consistency
+across multiple distributed databases. The databases are
+spread across different geographical regions, and each
+database is a critical part of the system. How would you
+manage data consistency and ensure that data is
+synchronized across all databases?
+Follow-up: How would you handle network partitions,
+latency, and replication lag to ensure consistency?
+Scenario: Your company is migrating from a legacy data
+storage solution to a modern data warehouse, and the data
+loading process is taking longer than expected. How would
+you optimize the data loading performance to speed up
+the ETL process without affecting data quality?
+Follow-up: How would you handle the trade-off between
+batch size and processing time in this context?
+Scenario: Your company is building a SaaS platform with
+multiple tenants, and you need to design a data pipeline
+that processes data from each tenant while ensuring data
+separation and security. How would you design this system
+to handle multiple data sources and provide tenant-specific
+analytics?
+Follow-up: How would you handle data access control,
+data privacy, and scalability in a multi-tenant
+architecture?
+
+Scenario: Your company is collecting data from multiple
+distributed sources, and you notice that some data records
+are being duplicated during ingestion. How would you
+implement deduplication logic in your data pipeline to
+ensure that only unique records are processed and stored?
+Follow-up: How would you handle scenarios where the
+data arrives in different formats or from systems with
+inconsistent timestamping?
+Scenario: Your data pipeline is running across multiple
+cloud platforms, and you're handling sensitive information
+that needs to be encrypted at all stages. How would you
+design encryption for data at rest, in transit, and during
+processing in a multi-cloud environment?
+Follow-up: How would you manage encryption keys and
+ensure compliance with security standards such as SOC
+2, HIPAA, or GDPR?
+Scenario: Your company has a complex data pipeline where
+datasets change over time. You need to implement version
+control to track changes and ensure that the pipeline is
+working with the correct versions of data. How would you
+implement version control for datasets in your pipeline?
+Follow-up: How would you manage backward and
+forward compatibility when versions of data change?
+
+Scenario: You are tasked with integrating data from a
+legacy system with new, cloud-based systems. The legacy
+system has inconsistent data formats, missing fields, and
+outdated information. How would you handle these data
+inconsistencies during the integration process to ensure
+that the new system can work with the data effectively?
+Follow-up: What strategies would you use to clean and
+transform the legacy data to be compatible with the
+new system, while maintaining data integrity?
+Scenario: You are responsible for ensuring that your
+organization’s data pipeline maintains clear data lineage
+from source to destination. How would you track and
+visualize the flow of data through the pipeline, and how
+would you ensure transparency and compliance for
+auditing purposes?
+Follow-up: What tools or frameworks would you use to
+implement data lineage, and how would you handle the
+complexities of tracing data across multiple systems
+and transformations?
+Scenario: Your company needs to detect fraudulent
+transactions in real-time from a large stream of financial
+data. How would you design the data pipeline to process
+and analyze the data quickly enough to identify potential
+fraud and raise alerts in real-time?
+Follow-up: What algorithms or machine learning
+models would you consider for fraud detection, and how
+would you incorporate them into the pipeline?
+
+Scenario: Your company wants to implement a predictive
+analytics pipeline that can process large volumes of
+historical and real-time data to generate forecasts. How
+would you design and scale the pipeline to handle the
+computational demands of predictive analytics while
+ensuring that results are delivered in a timely manner?
+Follow-up: What modeling techniques and technologies
+would you integrate into the pipeline for predictive
+analytics, and how would you scale the system to
+accommodate future data growth?
+Scenario: Your company processes millions of transactions
+every day, and storage costs are increasing rapidly due to
+the volume of data being stored. How would you optimize
+the data storage layer of your pipeline to minimize costs
+while ensuring that data is still accessible for future
+analysis?
+Follow-up: What strategies or technologies (e.g.,
+compression, tiered storage, or partitioning) would you
+use to reduce storage costs?
+Scenario: Your company wants to perform sentiment
+analysis on social media posts to monitor brand health.
+How would you design a pipeline that ingests social media
+data in real-time, processes and cleans it, performs
+sentiment analysis, and stores the results for further
+analysis?
+Follow-up: What natural language processing (NLP)
+techniques and tools would you use to process the text
+data, and how would you handle varying data quality
+from different social media platforms?
+
+Scenario: Your company is running aggregated reporting
+queries on large datasets, but the queries are taking too
+long to process. How would you optimize the data pipeline
+to improve the performance of these queries, while
+ensuring that data accuracy is not compromised?
+Follow-up: How would you handle complex
+aggregations, such as calculating moving averages or
+percentiles, to improve query performance in your data
+pipeline?
+Scenario: Your company is processing sensitive customer
+data, and you must ensure compliance with privacy laws
+like GDPR and CCPA. How would you design a pipeline that
+anonymizes personally identifiable information (PII) while
+still allowing for meaningful analytics?
+Follow-up: What techniques or tools would you use for
+data anonymization and de-identification, and how
+would you ensure the anonymization process is
+reversible when necessary for legitimate use cases?
+Scenario: Your organization requires comprehensive
+auditing and logging of all data transformations for
+compliance reasons. How would you design a pipeline that
+captures all necessary logs, including data provenance,
+error handling, and the transformations applied to the data
+at each step?
+Follow-up: What tools or frameworks would you use to
+ensure that logs are captured, stored, and can be easily
+queried for auditing purposes?
+
+----------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+

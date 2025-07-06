@@ -1,0 +1,714 @@
+We are getting data without delimeter from one application. Thatswhy we need to extract the data and assign column to it.
+id - 101
+name - John Reed
+salary - 10000
+age - 29
+
+101John Reed 1000029
+
+
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import substring
+
+# Initialize a Spark session
+spark = SparkSession.builder \
+    .appName("FixedWidthFileReader") \
+    .getOrCreate()
+
+# Define the file path
+file_path = "/home/amit/PRAC/PYSPARK/emp_slicing.txt"
+
+# Read the fixed-width file
+df = spark.read.text(file_path)
+df.show() # By default value column is assigned to df.
+
+# Extract the columns using substring    # in value column, i want to extract from 4 th field. and from 4 th field total 9 character.
+df_extracted = df.withColumn("id", substring("value", 1, 3)) \
+    .withColumn("name", substring("value", 4, 9)) \
+    .withColumn("salary", substring("value", 14, 5)) \
+    .withColumn("age", substring("value", 19, 2))
+# Show the resulting DataFrame
+df_extracted.select("id", "name", "salary", "age").show()
+
+# Stop the Spark session
+spark.stop()
+############################################################################################################################################################
+Ques- how many count of rows in inner join,  left join, right join, full outer in sql?
+
+table1
+Id
+1
+1
+0
+NULL
+NULL
+
+table2
+Id
+1
+0
+NULL
+
+Join Operations:
+1. INNER JOIN
+An INNER JOIN returns only the rows where there is a match in both tables.
+
+SELECT * FROM table1 t1
+INNER JOIN table2 t2
+ON t1.Id = t2.Id;
+
+Id | Id
+1  | 1
+1  | 1
+1  | 1
+1  | 1
+0  | 0
+NULL | NULL
+NULL | NULL
+Row Count: 7
+.......................................
+2. LEFT JOIN
+A LEFT JOIN returns all the rows from the left table (table1), and the matched rows from the right table (table2). If there is no match, NULL values are returned for columns from the right table.
+
+SELECT * FROM table1 t1
+LEFT JOIN table2 t2
+ON t1.Id = t2.Id;
+
+Id | Id
+1  | 1
+1  | 1
+1  | 1
+1  | 1
+0  | 0
+NULL | NULL
+NULL | NULL
+Row Count: 7
+
+
+Based on the provided tables, let's determine the row counts for different types of joins: INNER JOIN, LEFT JOIN, RIGHT JOIN, and FULL OUTER JOIN in SQL.
+
+Table Data:
+yaml
+Copy code
+table1:
+Id
+1
+1
+0
+NULL
+NULL
+
+table2:
+Id
+1
+1
+0
+NULL
+Join Operations:
+1. INNER JOIN
+An INNER JOIN returns only the rows where there is a match in both tables.
+
+sql
+Copy code
+SELECT * FROM table1 t1
+INNER JOIN table2 t2
+ON t1.Id = t2.Id;
+Result:
+
+arduino
+Copy code
+Id | Id
+1  | 1
+1  | 1
+1  | 1
+1  | 1
+0  | 0
+NULL | NULL
+NULL | NULL
+Row Count: 7
+
+2. LEFT JOIN
+A LEFT JOIN returns all the rows from the left table (table1), and the matched rows from the right table (table2). If there is no match, NULL values are returned for columns from the right table.
+
+
+SELECT * FROM table1 t1
+LEFT JOIN table2 t2
+ON t1.Id = t2.Id;
+Result:
+Id | Id
+1  | 1
+1  | 1
+1  | 1
+1  | 1
+0  | 0
+NULL | NULL
+NULL | NULL
+Row Count: 7
+
+3. RIGHT JOIN
+A RIGHT JOIN returns all the rows from the right table (table2), and the matched rows from the left table (table1). If there is no match, NULL values are returned for columns from the left table.
+
+SELECT * FROM table1 t1
+RIGHT JOIN table2 t2
+ON t1.Id = t2.Id;
+
+Id | Id
+1  | 1
+1  | 1
+1  | 1
+1  | 1
+0  | 0
+NULL | NULL
+Row Count: 6
+
+4. FULL OUTER JOIN
+A FULL OUTER JOIN returns all the rows when there is a match in one of the tables. If there is no match, NULL values are returned for columns from the table without a match.
+
+SELECT * FROM table1 t1
+FULL OUTER JOIN table2 t2
+ON t1.Id = t2.Id;
+
+Id | Id
+1  | 1
+1  | 1
+1  | 1
+1  | 1
+0  | 0
+NULL | NULL
+NULL | NULL
+Row Count: 7
+
+############################################################################################################################################
+
+The query provided is attempting to count the number of records that match across three tables (tableA, tableB, and tableC) based on the col column. The INNER JOIN operations indicate that only those records where the col values match across all three tables will be counted.
+
+TableA
+-----
+col
+null
+null
+X
+X
+Y
+Y
+
+TableB
+-----
+col
+Y
+X
+Y
+Y
+null
+null
+
+TableC
+-----
+col
+Y
+Y
+Y
+Y
+null
+null
+
+SELECT count(*)
+FROM tableA
+INNER JOIN tableB
+  ON tableA.col = tableB.col
+INNER JOIN tableC
+  ON tableA.col = tableC.col;
+
+############################################################################################################
+
+Ques - in this list of name, check first letter of name. if letter contain vowel, then those name should go in volwel name. And first letter is consonent, then it should go in consonent list?
+
+li_names = ['Arun', 'Ajay', 'Rahul', 'Vikas']
+
+# Vowel letters
+vowels = 'AEIOUaeiou'
+
+# Lists to store names
+vowel_names = []
+consonent_names = []
+
+for name in li_names:
+    if name[0] in vowels:
+        vowel_names.append(name)
+    else
+        consonent_names.append(name)
+
+print("Vowel Names:", vowel_names)
+print("Consonent Names:", consonent_names)
+
+#############################################################################################################
+
+Ques - read a csv file and write in parquet in pypark?
+
+from pyspark.sql import SparkSession
+
+# Initialize a SparkSession
+spark = SparkSession.builder \
+    .appName("CSV to Parquet") \
+    .getOrCreate()
+
+# Path to your CSV file
+csv_file_path = "/path/to/your/csvfile.csv"
+
+# Read the CSV file into a DataFrame
+df = spark.read.csv(csv_file_path, header=True, inferSchema=True)
+
+# Path to save the Parquet file
+parquet_file_path = "/path/to/save/parquetfile"
+
+# Write the DataFrame to Parquet format
+df.write.parquet(parquet_file_path)
+
+# Stop the SparkSession
+spark.stop()
+
+#########################################################################################################
+Ques - in this list of name, check first letter of name. if letter contain vowel, then those name should go in volwel name. And first letter is consonent, then it should go in consonent list?
+
+li_names = ['Arun', 'Ajay', 'Rahul', 'Vikas']
+
+# Vowel letters
+vowels = 'AEIOUaeiou'
+
+# Lists to store names
+vowel_names = []
+consonent_names = []
+
+for name in li_names:
+    if name[0] in vowels:
+        vowel_names.append(name)
+    else:
+        consonent_names.append(name)
+
+print("Vowel Names:", vowel_names)
+print("Consonent Names:", consonent_names)
+###############################################################################################################
+team
+
+IND
+AUS
+NZ
+
+OP- 
+IND VS AUS
+IND VS NZ
+AUS VS NZ
+
+To generate the desired output in SQL, you can use a CROSS JOIN to create a combination of all teams. Then filter out the cases where a team is paired with itself.
+
+-- Create the table
+CREATE TABLE teams (
+    team VARCHAR(10)
+);
+
+-- Insert the teams
+INSERT INTO teams (team) VALUES ('Ind'), ('Aus'), ('NZ');
+
+-- Generate the output
+SELECT 
+    t1.team || ' vs ' || t2.team AS matchup
+FROM 
+    teams t1
+CROSS JOIN 
+    teams t2
+WHERE 
+    t1.team <> t2.team
+ORDER BY 
+    t1.team, t2.team;
+
+######################################################################################################################
+Ques - write a python program to drop the dublicate "aaagaffdgs"?
+
+def remove_duplicates(input_str):
+    seen = set()
+    result = []
+    
+    for char in input_str:
+        if char not in seen:
+            seen.add(char)
+            result.append(char)
+    
+    return ''.join(result)
+
+# Example usage
+input_str = "aaagaffdgs"
+output_str = remove_duplicates(input_str)
+print("Input string:", input_str)
+print("Output string:", output_str)
+
+##########################################################################################################################
+count every character "aaagaffdgs" in python
+
+from collections import Counter
+
+
+def count_characters(input_str):
+    return Counter(input_str)
+
+# Example usage
+input_str = "aaagaffdgs"
+char_counts = count_characters(input_str)
+
+# Print the counts
+for char, count in char_counts.items():
+    print(f"'{char}': {count}")
+
+#####################################################################################################
+INPUT:
+| id | name  | salary | departmentId |
+|----|-------|--------|--------------|
+| 1  | Joe   | 70000  | IT           |
+| 2  | Jim   | 90000  | IT           |
+| 3  | Henry | 80000  | Sales        |
+| 4  | Sam   | 60000  | Sales        |
+| 5  | Max   | 90000  | IT           |
+
+OUTPUT:
+| Department | Employee | Salary |
+|------------|----------|--------|
+| IT         | Jim      | 90000  |
+| Sales      | Henry    | 80000  |
+| IT         | Max      | 90000  |
+
+QUES - find department wise highest salary?
+
+To find the department-wise highest salary, you can use SQL to query the data. 
+SELECT 
+    departmentId AS Department,
+    name AS Employee,
+    salary AS Salary
+FROM 
+    employees
+WHERE 
+    (departmentId, salary) IN (
+        SELECT 
+            departmentId, 
+            MAX(salary)
+        FROM 
+            employees
+        GROUP BY 
+            departmentId
+    );
+
+#############################################################################################################################
+Ques:- write sql query using window function??
+INPUT-
+| id | score |
+|----|-------|
+|  1 | 3.50  |
+|  2 | 3.65  |
+|  3 | 4.00  |
+|  4 | 3.85  |
+|  5 | 4.00  |
+|  6 | 3.65  |
+
+OUTPUT:-
+| score | rank |
+|-------|------|
+|  4.00 |    1 |
+|  4.00 |    1 |
+|  3.85 |    3 |
+|  3.65 |    4 |
+|  3.65 |    4 |
+|  3.50 |    6 |
+
+SELECT
+    score,
+    RANK() OVER (ORDER BY score DESC) AS rank
+FROM
+    Scores;
+
+Additional Considerations:
+Handling Ties: The RANK() function will give the same rank to rows with the same score. This can be seen with the scores 4.00 and 3.65 in the output.
+Dense Ranking: If you need a dense ranking where there are no gaps in the rank values, you can use the DENSE_RANK() function instead of RANK()
+
+SELECT
+    score,
+    DENSE_RANK() OVER (ORDER BY score DESC) AS rank
+FROM
+    Scores;
+
+| score | rank |
+|-------|------|
+|  4.00 |    1 |
+|  4.00 |    1 |
+|  3.85 |    2 |
+|  3.65 |    3 |
+|  3.65 |    3 |
+|  3.50 |    4 |
+
+#######################################################################################################################3
+QUES - WRITE CODE IN PYSPARK?
+
+INPUT-
+| id | score |
+|----|-------|
+|  1 | 3.50  |
+|  2 | 3.65  |
+|  3 | 4.00  |
+|  4 | 3.85  |
+|  5 | 4.00  |
+|  6 | 3.65  |
+
+OUTPUT:-
+| score | rank |
+|-------|------|
+|  4.00 |    1 |
+|  4.00 |    1 |
+|  3.85 |    3 |
+|  3.65 |    4 |
+|  3.65 |    4 |
+|  3.50 |    6 |
+
+from pyspark.sql import SparkSession
+from pyspark.sql.window import Window
+import pyspark.sql.functions as F
+
+# Initialize Spark session
+spark = SparkSession.builder \
+    .appName("RankScores") \
+    .getOrCreate()
+
+# Sample data
+data = [
+    (1, 3.50),
+    (2, 3.65),
+    (3, 4.00),
+    (4, 3.85),
+    (5, 4.00),
+    (6, 3.65)
+]
+
+# Create DataFrame
+columns = ["id", "score"]
+df = spark.createDataFrame(data, columns)
+
+# Define window specification
+window_spec = Window.orderBy(F.col("score").desc())
+
+# Apply ranking function
+df_with_rank = df.withColumn("rank", F.rank().over(window_spec))
+
+# Show results
+df_with_rank.select("score", "rank").show()
++-----+----+
+|score|rank|
++-----+----+
+| 4.00|   1|
+| 4.00|   1|
+| 3.85|   3|
+| 3.65|   4|
+| 3.65|   4|
+| 3.50|   6|
++-----+----+
+
+Additional Considerations:
+Handling Ties: The rank function gives the same rank to rows with the same score. To avoid gaps in ranks, you can use the dense_rank() function instead of rank().
+Filtering Columns: The select method is used to filter the columns to show only score and rank.
+Using dense_rank for No Gaps:
+
+# Apply dense ranking function
+df_with_dense_rank = df.withColumn("rank", F.dense_rank().over(window_spec))
+
+# Show results
+df_with_dense_rank.select("score", "rank").show()
+
++-----+----+
+|score|rank|
++-----+----+
+| 4.00|   1|
+| 4.00|   1|
+| 3.85|   2|
+| 3.65|   3|
+| 3.65|   3|
+| 3.50|   4|
++-----+----+
+
+
+############################################################################################################
+QUES: you need to write a Python program that takes a list of numbers and a frequency k as input, and returns a list of elements from the input list that appear exactly k times. 
+If no elements match the frequency, it should return an empty list.
+
+from collections import Counter
+
+def elements_with_frequency(nums, k):
+    # Count the frequency of each element in the list
+    frequency_count = Counter(nums)
+    
+    # Find elements with the specified frequency k
+    result = [num for num, freq in frequency_count.items() if freq == k]
+    
+    return result
+
+# Example usage:
+nums = [0, 0, 2, 3, 3, 3, 5, 5]
+k = 2
+output = elements_with_frequency(nums, k)
+print(output)  # Output: [0, 5]
+
+
+Use Counter from the collections module to count the frequency of each element in the list.
+
+#################################################################################################################333
+Table: Transactions
++-----------+--------+
+| Column Name | Type |
++-----------+--------+
+| id         | int   |
+| country    | varchar |
+| state      | enum  |
+| amount     | int   |
+| trans_date | date  |
++-----------+--------+
+
+id is the primary key of this table.
+The table has information about incoming transactions.
+The state column is an enum of type [“approved”, “declined”].
+
+Write an SQL query to find for each month and country, the number of transactions and their total amount, the number of approved transactions and their total amount.
+Transactions table:
++-----+---------+----------+--------+------------+
+| id  | country | state    | amount | trans_date |
++-----+---------+----------+--------+------------+
+| 121 | US      | approved | 1000   | 2018-12-18 |
+| 122 | US      | declined | 1000   | 2018-12-23 |
+| 123 | US      | approved | 2000   | 2019-01-01 |
+| 124 | DE      | approved | 2000   | 2019-01-09 |
++-----+---------+----------+--------+------------+
+Output:
++-------+---------+-------------+--------------------+----------------+-----------------------+
+| month | country | trans_count | trans_total_amount | approved_count | approved_total_amount |
++-------+---------+-------------+--------------------+----------------+-----------------------+
+| 2018-12 | US    | 2           | 2000               | 1              | 1000                  |
+| 2019-01 | US    | 1           | 2000               | 1              | 2000                  |
+| 2019-01 | DE    | 1           | 2000               | 1              | 2000                  |
++-------+---------+-------------+--------------------+----------------+-----------------------+
+
+
+SELECT
+    DATE_FORMAT(trans_date, '%Y-%m') AS month,
+    country,
+    COUNT(*) AS trans_count,
+    SUM(amount) AS trans_total_amount,
+    COUNT(CASE WHEN state = 'approved' THEN 1 END) AS approved_count,
+    SUM(CASE WHEN state = 'approved' THEN amount END) AS approved_total_amount
+FROM Transactions
+GROUP BY month, country
+ORDER BY month, country;
+
+############################################################################################################################################3
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
